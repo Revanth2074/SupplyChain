@@ -1,0 +1,92 @@
+{
+ "trained_at": "2026-10-06 12:18:55",
+ "n_rows": 100000,
+ "targets": {
+  "production_impact_pct": {
+   "label": "Production impact (%)",
+   "mae": 7.787,
+   "r2": 0.6998,
+   "importance": {
+    "disruption_type": 4e-05,
+    "industry": -0.00037,
+    "supplier_region": 0.00055,
+    "supplier_size": -0.00012,
+    "response_type": -0.0002,
+    "supplier_tier": 0.22653,
+    "has_backup_supplier": -7e-05,
+    "disruption_severity": 1.19205,
+    "response_time_days": 6e-05
+   }
+  },
+  "revenue_loss_usd": {
+   "label": "Revenue loss (USD)",
+   "mae": 1586085.059,
+   "r2": 0.3255,
+   "importance": {
+    "disruption_type": 0.00046,
+    "industry": 0.21802,
+    "supplier_region": 0.00043,
+    "supplier_size": 0.63992,
+    "response_type": 0.00061,
+    "supplier_tier": 0.03579,
+    "has_backup_supplier": 2e-05,
+    "disruption_severity": 0.26616,
+    "response_time_days": 0.00021
+   }
+  },
+  "full_recovery_days": {
+   "label": "Full recovery (days)",
+   "mae": 30.952,
+   "r2": 0.4003,
+   "importance": {
+    "disruption_type": 0.00021,
+    "industry": -0.00045,
+    "supplier_region": -0.00141,
+    "supplier_size": 0.0007,
+    "response_type": 0.02765,
+    "supplier_tier": 0.0096,
+    "has_backup_supplier": 0.06708,
+    "disruption_severity": 0.69347,
+    "response_time_days": -0.00193
+   }
+  },
+  "partial_recovery_days": {
+   "label": "Partial recovery (days)",
+   "mae": 15.25,
+   "r2": 0.2741,
+   "importance": {
+    "disruption_type": 0.00035,
+    "industry": 0.00034,
+    "supplier_region": -0.00064,
+    "supplier_size": 0.00012,
+    "response_type": 0.12491,
+    "supplier_tier": 0.03376,
+    "has_backup_supplier": -6e-05,
+    "disruption_severity": 0.45169,
+    "response_time_days": -0.00323
+   }
+  },
+  "risk": {
+   "label": "High-impact disruption risk",
+   "auc": 0.8725,
+   "positive_rate": 0.4672,
+   "thresholds": {
+    "revenue_loss_usd": 2492971.3674999997,
+    "full_recovery_days": 100.0,
+    "production_impact_pct": 50.0
+   },
+   "importance": {
+    "disruption_type": 0.00043,
+    "industry": 0.0286,
+    "supplier_region": 0.0002,
+    "supplier_size": 0.07422,
+    "response_type": 0.00315,
+    "supplier_tier": 0.00889,
+    "has_backup_supplier": 0.00629,
+    "disruption_severity": 0.27522,
+    "response_time_days": -0.00013
+   }
+  }
+ },
+ "train_seconds": 7.1
+}

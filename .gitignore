@@ -1,0 +1,91 @@
+# ==============================================================================
+# Git Ignore Configuration
+# Project 9: AI-Powered Supply Chain Disruption Assistant with Synapt MCP
+# ==============================================================================
+
+# --- Secrets & Environment Variables (CRITICAL) ---
+.env
+.env.*
+*.env
+backend/.env
+!*.env.example
+!backend/.env.example
+
+# --- Python Virtual Environments ---
+.venv/
+venv/
+ENV/
+env/
+*/.venv/
+*/venv/
+
+# --- Python Bytecode & Cache ---
+__pycache__/
+*/__pycache__/
+*/*/__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- Node / Frontend (Vite + React) ---
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- Runtime Artifacts, Models & Databases ---
+# Note: Keep artifacts directory structure, ignore binary models and SQLite DBs
+backend/artifacts/*.joblib
+backend/artifacts/*.db
+backend/artifacts/*.sqlite
+backend/artifacts/*.sqlite3
+.deepeval/
+backend/.deepeval/
+
+# --- Logs & Debug Outputs ---
+*.log
+logs/
+*.tmp
+
+# --- Operating System Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- IDE & Editor Configs ---
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+.gemini/
