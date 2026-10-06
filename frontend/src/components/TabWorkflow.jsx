@@ -15,7 +15,7 @@ import {
   FileText,
   GitBranch
 } from 'lucide-react';
-import { streamAnalyze, submitFeedback } from '../api';
+import { openIncident, streamAnalyze, submitFeedback } from '../api';
 import WhatIfPanel from './WhatIfPanel';
 import { Callout, Kpi, SynaptPassCard } from './ui';
 import { fmtUsd, fmtUsdShort } from '../format';
@@ -53,7 +53,8 @@ const AGENT_META = {
   judge: { title: 'LLM-as-Judge Agent', role: 'Groundedness & safety audit' },
 };
 
-export default function TabWorkflow({ options }) {
+export default function TabWorkflow({ options, onOpen }) {
+  const [incidentMsg, setIncidentMsg] = useState(null);
   const [description, setDescription] = useState(PRESETS[0].text);
   const [customFields, setCustomFields] = useState(PRESETS[0].fields);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -81,6 +82,7 @@ export default function TabWorkflow({ options }) {
     setStepsState({});
     setActiveStep('intake');
     setFeedbackSent(false);
+    setIncidentMsg(null);
 
     const payload = {
       description,
@@ -354,6 +356,21 @@ export default function TabWorkflow({ options }) {
       {/* Main Results Display */}
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          {/* hand-off to the incident desk */}
+          <div className="handoff">
+            <div>
+              <b>Ready to act on this?</b>
+              <span>Open it as an incident: the plan's actions become tracked tasks with owners, deadlines and an SLA clock.</span>
+            </div>
+            {incidentMsg ? (
+              <button className="btn btn-secondary" onClick={() => onOpen?.('incidents')}>Go to Incident Desk →</button>
+            ) : (
+              <button className="btn btn-primary" onClick={async () => {
+                try { await openIncident(result.analysis_id); setIncidentMsg('opened'); } catch (e) { setIncidentMsg(e.message); }
+              }}>Open incident & track actions</button>
+            )}
+          </div>
+
           {/* Executive KPI Callouts (figures match the briefing: predicted with the chosen strategy) */}
           {result.recovery?.support?.warning && <Callout tone="warning">{result.recovery.support.warning}</Callout>}
           <div className="grid-auto" style={{ '--min': '220px' }}>

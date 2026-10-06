@@ -12,30 +12,43 @@ from .data_store import store
 from .ml_models import registry
 
 REQUIRED = ["supplier_name", "industry", "supplier_region", "supplier_tier", "supplier_size", "has_backup_supplier"]
+# Optional operational columns (your own supplier data, not part of the historical dataset).
+# Defaults are neutral so a minimal CSV still works.
+OPTIONAL = {
+    "inventory_days": 21.0,          # days of stock cover held for this supplier's parts
+    "dependency_pct": 0.5,           # share of the part's volume sourced from this supplier (0-1)
+    "on_time_rate": 0.95,            # on-time-in-full delivery rate over the last 12 months (0-1)
+    "recent_disruptions": 0,         # disruptions with this supplier in the last 12 months
+    "annual_spend_usd": 5_000_000.0,
+    "products": "",                  # ';'-separated products this supplier feeds
+}
+# Sample portfolio (demo data): name, industry, region, tier, size, backup,
+# inventory_days, dependency_pct, on_time_rate, recent_disruptions, annual_spend_usd, products
 SAMPLE = [
-    ("Shenzhen MicroParts", "Electronics", "Asia-Pacific", 2, "Medium", False),
-    ("Bavaria Brake Systems", "Automotive", "Europe", 1, "Large", True),
-    ("Ohio Precision Castings", "Automotive", "North America", 2, "Small", False),
-    ("Penang Wafer Services", "Electronics", "Asia-Pacific", 3, "Small", False),
-    ("Lyon Pharma API", "Pharmaceuticals", "Europe", 1, "Medium", False),
-    ("Hyderabad Generics", "Pharmaceuticals", "Asia-Pacific", 2, "Large", True),
-    ("Toulouse Avionics", "Aerospace", "Europe", 1, "Large", True),
-    ("Kansas Composite Works", "Aerospace", "North America", 2, "Medium", False),
-    ("Sao Paulo Packaging", "Consumer Goods", "South America", 1, "Medium", True),
-    ("Dubai Logistics Hub", "Consumer Goods", "Africa/Middle East", 2, "Large", False),
-    ("Monterrey Harness Co", "Automotive", "North America", 1, "Medium", True),
-    ("Taipei Display Glass", "Electronics", "Asia-Pacific", 1, "Large", True),
-    ("Johannesburg Metals", "Automotive", "Africa/Middle East", 3, "Medium", False),
-    ("Santiago Lithium", "Electronics", "South America", 3, "Small", False),
-    ("Basel Biologics", "Pharmaceuticals", "Europe", 2, "Small", False),
-    ("Quebec Titanium", "Aerospace", "North America", 3, "Medium", True),
-    ("Ho Chi Minh Textiles", "Consumer Goods", "Asia-Pacific", 2, "Small", False),
-    ("Rotterdam Chemicals", "Pharmaceuticals", "Europe", 3, "Large", True),
+    ("Shenzhen MicroParts", "Electronics", "Asia-Pacific", 2, "Medium", False, 9, 0.85, 0.88, 3, 14e6, "Control Unit;Sensor Pack"),
+    ("Bavaria Brake Systems", "Automotive", "Europe", 1, "Large", True, 28, 0.55, 0.97, 0, 22e6, "Brake Module"),
+    ("Ohio Precision Castings", "Automotive", "North America", 2, "Small", False, 12, 0.9, 0.91, 2, 6e6, "Brake Module;Housing"),
+    ("Penang Wafer Services", "Electronics", "Asia-Pacific", 3, "Small", False, 6, 1.0, 0.86, 4, 9e6, "Control Unit"),
+    ("Lyon Pharma API", "Pharmaceuticals", "Europe", 1, "Medium", False, 35, 0.8, 0.96, 1, 18e6, "API Batch"),
+    ("Hyderabad Generics", "Pharmaceuticals", "Asia-Pacific", 2, "Large", True, 40, 0.45, 0.94, 1, 11e6, "API Batch;Packaging Kit"),
+    ("Toulouse Avionics", "Aerospace", "Europe", 1, "Large", True, 30, 0.6, 0.97, 0, 26e6, "Avionics Suite"),
+    ("Kansas Composite Works", "Aerospace", "North America", 2, "Medium", False, 14, 0.95, 0.9, 2, 12e6, "Airframe Panel"),
+    ("Sao Paulo Packaging", "Consumer Goods", "South America", 1, "Medium", True, 25, 0.5, 0.95, 1, 4e6, "Packaging Kit"),
+    ("Dubai Logistics Hub", "Consumer Goods", "Africa/Middle East", 2, "Large", False, 18, 0.7, 0.92, 2, 7e6, "Packaging Kit;Housing"),
+    ("Monterrey Harness Co", "Automotive", "North America", 1, "Medium", True, 22, 0.5, 0.96, 0, 8e6, "Wiring Harness"),
+    ("Taipei Display Glass", "Electronics", "Asia-Pacific", 1, "Large", True, 20, 0.6, 0.97, 0, 16e6, "Display Panel"),
+    ("Johannesburg Metals", "Automotive", "Africa/Middle East", 3, "Medium", False, 16, 0.75, 0.89, 3, 5e6, "Housing"),
+    ("Santiago Lithium", "Electronics", "South America", 3, "Small", False, 10, 1.0, 0.87, 2, 6e6, "Battery Cell"),
+    ("Basel Biologics", "Pharmaceuticals", "Europe", 2, "Small", False, 20, 0.9, 0.93, 1, 7e6, "API Batch"),
+    ("Quebec Titanium", "Aerospace", "North America", 3, "Medium", True, 45, 0.4, 0.98, 0, 9e6, "Airframe Panel"),
+    ("Ho Chi Minh Textiles", "Consumer Goods", "Asia-Pacific", 2, "Small", False, 11, 0.8, 0.9, 2, 3e6, "Seat Fabric"),
+    ("Rotterdam Chemicals", "Pharmaceuticals", "Europe", 3, "Large", True, 32, 0.5, 0.96, 0, 10e6, "API Batch;Packaging Kit"),
 ]
+COLUMNS = REQUIRED + list(OPTIONAL)
 
 
 def sample_csv() -> str:
-    return pd.DataFrame(SAMPLE, columns=REQUIRED).to_csv(index=False)
+    return pd.DataFrame(SAMPLE, columns=COLUMNS).to_csv(index=False)
 
 
 def parse_csv(text: str) -> list[dict]:
@@ -46,7 +59,18 @@ def parse_csv(text: str) -> list[dict]:
         raise ValueError(f"CSV is missing columns: {', '.join(missing)}")
     df["has_backup_supplier"] = df["has_backup_supplier"].astype(str).str.strip().str.lower().isin(
         ["true", "yes", "y", "1"])
-    return df[REQUIRED].to_dict("records")
+    for col, default in OPTIONAL.items():
+        if col not in df.columns:
+            df[col] = default
+        df[col] = df[col].fillna(default)
+        if col != "products":
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(default)
+    df["products"] = df["products"].astype(str).replace("nan", "")
+    return df[COLUMNS].to_dict("records")
+
+
+def rows_or_sample(csv: str | None) -> list[dict]:
+    return parse_csv(csv) if csv and csv.strip() else parse_csv(sample_csv())
 
 
 def _validate(rows: list[dict]) -> list[str]:

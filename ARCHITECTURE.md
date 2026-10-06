@@ -9,6 +9,70 @@ This document provides the complete architectural blueprint and design specifica
 
 ```mermaid
 flowchart TB
+    subgraph Sources ["Inputs"]
+        EXT["External signals<br/>GDACS live disasters · pasted headlines · demo alerts"]
+        HIST["100,000 historical disruptions (CSV)"]
+        PORT["Your supplier portfolio<br/>(+ inventory cover, dependency, on-time rate, products)"]
+    end
+
+    subgraph Synapt ["SYNAPT CONTEXT SUBSTRATE (MCP)"]
+        KS["Knowledge store<br/>4k-case narratives · 100k-case statistics · ontology · alerts"]
+        GS["Knowledge graph<br/>graph-RAG reasoning subgraph"]
+        PS["Procedure store<br/>6 response playbooks"]
+        TS["Ticket store + episodic memory"]
+        QS["Answer-quality signals"]
+    end
+
+    subgraph Local ["LOCAL ANALYTICS (all 100k rows)"]
+        BM["BM25 + LSA index"]
+        PRO["Profile matcher"]
+        ML["HistGradientBoosting<br/>impact · loss · recovery · risk · P10/P90"]
+        XAI["Explainability"]
+    end
+
+    subgraph Agents ["7-AGENT WORKFLOW"]
+        A["Intake → Investigate → Impact → Plan (Synapt playbook) → Recovery → Report (fact-checked) → Judge"]
+    end
+
+    subgraph Decide ["DECISION LAYER"]
+        EW["Early warning<br/>signals × supplier health × ML impact"]
+        DS["Decision Studio<br/>scenarios · cost vs avoided loss · ROI"]
+        RC["Root cause<br/>propagation chain + drivers"]
+        NW["Dependency network<br/>supplier → product → line → customer"]
+    end
+
+    subgraph Act ["ACT & LEARN"]
+        INC["Incident desk<br/>SLA timers · escalation · action tracking"]
+        FB["Feedback + real outcomes"]
+        EV["DeepEval · LLM-as-Judge · Synapt quality"]
+    end
+
+    EXT --> EW
+    EXT -->|"ingest alert"| KS
+    HIST --> KS & BM & PRO & ML
+    PORT --> EW & NW & DS
+    KS & GS & PS & TS --> A
+    BM & PRO & ML & XAI --> A
+    ML --> EW & DS & RC & NW
+    GS --> RC
+    PS --> EW
+    A --> INC
+    DS & RC --> INC
+    INC --> FB -->|"retrain"| ML
+    FB -->|"trident_feedback"| QS
+    A --> EV
+```
+
+**Synapt is the knowledge and reasoning substrate**: every narrative, statistic, playbook and alert the
+assistant reasons over lives there, and every graph answer is scored by Synapt itself. The local layer
+handles what a knowledge base cannot: numeric prediction over all 100,000 rows, exact-profile matching and
+explainability. The agents combine both; the decision layer turns them into choices; the incident desk turns
+choices into tracked work whose real outcomes retrain the models.
+
+### Legacy diagram (component view)
+
+```mermaid
+flowchart TB
     subgraph ClientLayer ["Frontend Presentation (Vite + React)"]
         UI["Executive Dashboard & Cockpit"]
         T1["Multi-Agent Investigation Stepper (SSE)"]

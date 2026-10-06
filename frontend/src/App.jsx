@@ -1,107 +1,107 @@
-import React, { Suspense, lazy, useState, useEffect } from 'react';
-import Navbar from './components/Navbar';
+import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
+import TabHome from './components/TabHome';
+import TabEarlyWarning from './components/TabEarlyWarning';
 import TabWorkflow from './components/TabWorkflow';
 import TabSearch from './components/TabSearch';
-import TabPrioritize from './components/TabPrioritize';
-import TabPredict from './components/TabPredict';
-import TabAnalytics from './components/TabAnalytics';
-import TabEval from './components/TabEval';
-import TabPortfolio from './components/TabPortfolio';
 import TabKnowledge from './components/TabKnowledge';
+import TabPredict from './components/TabPredict';
+import TabRootCause from './components/TabRootCause';
+import TabDecision from './components/TabDecision';
+import TabPortfolio from './components/TabPortfolio';
+import TabNetwork from './components/TabNetwork';
+import TabPrioritize from './components/TabPrioritize';
+import TabIncidents from './components/TabIncidents';
+import TabEval from './components/TabEval';
+import TabAnalytics from './components/TabAnalytics';
+import { InfoDrawer, Sidebar, TopBar } from './components/layout';
+import { fetchHealth, fetchMeta, fetchOverview } from './api';
 
 // three.js is heavy: load the 3D control tower on demand
 const ControlTower = lazy(() => import('./components/ControlTower'));
-import { fetchHealth, fetchMeta } from './api';
+
+const readHash = () => (window.location.hash || '').replace('#', '') || 'home';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('tower');
+  const [active, setActive] = useState(readHash);
   const [health, setHealth] = useState(null);
   const [meta, setMeta] = useState(null);
-  const [visited, setVisited] = useState(() => new Set(['tower']));
-  const [portfolio, setPortfolio] = useState(null);
+  const [visited, setVisited] = useState(() => new Set([readHash()]));
+  const [portfolio, setPortfolio] = useState(null);       // last user-uploaded portfolio (scored)
+  const [portfolioCsv, setPortfolioCsv] = useState(null); // ...and its CSV, shared with risk pages
+  const [info, setInfo] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [badges, setBadges] = useState({});
 
-  const openTab = (id) => {
-    setActiveTab(id);
+  const open = useCallback((id) => {
+    setActive(id);
     setVisited((v) => (v.has(id) ? v : new Set(v).add(id)));
-  };
+    if (window.location.hash !== `#${id}`) window.history.replaceState(null, '', `#${id}`);
+    window.scrollTo({ top: 0 });
+  }, []);
 
   useEffect(() => {
-    const loadSystem = async () => {
-      try {
-        const [h, m] = await Promise.all([
-          fetchHealth(),
-          fetchMeta(),
-        ]);
-        setHealth(h);
-        setMeta(m);
-      } catch (err) {
-        console.error('Initial load error:', err);
-      }
-    };
-    loadSystem();
+    Promise.all([fetchHealth(), fetchMeta()]).then(([h, m]) => { setHealth(h); setMeta(m); }).catch(() => {});
+    const t = setInterval(() => fetchHealth().then(setHealth).catch(() => {}), 10000);
+    const onHash = () => open(readHash());
+    window.addEventListener('hashchange', onHash);
+    return () => { clearInterval(t); window.removeEventListener('hashchange', onHash); };
+  }, [open]);
 
-    const timer = setInterval(async () => {
-      try {
-        const h = await fetchHealth();
-        setHealth(h);
-      } catch {
-        // silent health poll error
-      }
-    }, 10000);
-    return () => clearInterval(timer);
+  // attention badges in the sidebar
+  useEffect(() => {
+    const load = () => fetchOverview().then((o) => setBadges({
+      warning: (o.early_warning.Critical || 0) + (o.early_warning.High || 0) || null,
+      incidents: o.sla_breached || o.incidents_open || null,
+    })).catch(() => {});
+    load();
+    const t = setInterval(load, 60000);
+    return () => clearInterval(t);
   }, []);
 
   const opts = meta?.options;
+  const onScored = (r, csv) => { setPortfolio(r); setPortfolioCsv(csv); };
   const panes = {
+    home: () => <TabHome onOpen={open} />,
     tower: () => (
       <Suspense fallback={<div className="ct-root"><div className="ct-loading">Loading 3D view…</div></div>}>
         <ControlTower portfolio={portfolio} />
       </Suspense>
     ),
-    workflow: () => <TabWorkflow options={opts} />,
+    warning: () => <TabEarlyWarning portfolioCsv={portfolioCsv} />,
+    workflow: () => <TabWorkflow options={opts} onOpen={open} />,
     search: () => <TabSearch options={opts} />,
-    prioritize: () => <TabPrioritize options={opts} />,
-    predict: () => <TabPredict options={opts} />,
-    portfolio: () => <TabPortfolio onScored={setPortfolio} />,
     knowledge: () => <TabKnowledge />,
-    analytics: () => <TabAnalytics />,
+    predict: () => <TabPredict options={opts} />,
+    rootcause: () => <TabRootCause options={opts} />,
+    decision: () => <TabDecision options={opts} />,
+    portfolio: () => <TabPortfolio onScored={onScored} />,
+    network: () => <TabNetwork portfolioCsv={portfolioCsv} />,
+    prioritize: () => <TabPrioritize options={opts} />,
+    incidents: () => <TabIncidents onOpen={open} />,
     eval: () => <TabEval />,
+    analytics: () => <TabAnalytics />,
   };
+  const page = panes[active] ? active : 'home';
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* Top Navigation */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={openTab}
-        health={health}
-      />
-
-      {/* Main Content Area */}
-      <main style={{ flex: 1, paddingBottom: activeTab === 'tower' ? 0 : '3rem' }}>
-        {Object.entries(panes).map(([id, render]) => visited.has(id) && (
-          // visited tabs stay mounted so their results survive tab switches
-          <div key={id} hidden={activeTab !== id}>{render()}</div>
-        ))}
-      </main>
-
-      {/* Modern Footer */}
-      {activeTab !== 'tower' && (
-      <footer style={{ borderTop: '1px solid var(--border-subtle)', background: 'rgba(255, 255, 255, 0.9)', padding: '1.25rem 1.5rem', marginTop: 'auto' }}>
-        <div style={{ maxWidth: '1440px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ color: 'var(--text-strong)', fontWeight: 600 }}>Project 9</span>
-            <span>· AI-Powered Supply Chain Disruption Assistant with Synapt MCP</span>
-          </div>
-
-          <div style={{ display: 'flex', gap: '1.25rem' }}>
-            <span>Knowledge Substrate: <strong style={{ color: '#4338ca' }}>beta.synapt.ai MCP</strong></span>
-            <span>Dataset: <strong style={{ color: 'var(--text-strong)' }}>100,000 Disruption Cases</strong></span>
-            <span>Evaluation: <strong style={{ color: '#059669' }}>DeepEval + LLM-as-Judge + Synapt quality</strong></span>
-          </div>
-        </div>
-      </footer>
-      )}
+    <div className={`shell ${collapsed ? 'sb-collapsed' : ''}`}>
+      <Sidebar active={page} onOpen={open} collapsed={collapsed} setCollapsed={setCollapsed}
+        mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} badges={badges} />
+      <div className="shell-main">
+        <TopBar page={page} health={health} onInfo={() => setInfo(true)} onMenu={() => setMobileOpen(true)} />
+        <main className={`shell-content ${page === 'tower' ? 'full' : ''}`}>
+          {Object.entries(panes).map(([id, render]) => visited.has(id) && (
+            // visited pages stay mounted so their results survive navigation
+            <motion.div key={id} hidden={page !== id} initial={false}
+              animate={page === id ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }} transition={{ duration: 0.25 }}>
+              {render()}
+            </motion.div>
+          ))}
+        </main>
+      </div>
+      <InfoDrawer page={page} open={info} onClose={() => setInfo(false)} />
     </div>
   );
 }

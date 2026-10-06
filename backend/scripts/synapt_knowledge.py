@@ -5,6 +5,9 @@ Run from backend/:
     python -m scripts.synapt_knowledge ingest    # upload those docs via trident_ingest (no TTL)
     python -m scripts.synapt_knowledge graph     # create typed entities, concepts and stat-backed edges
     python -m scripts.synapt_knowledge learn-regions  # map Synapt's masked region tokens -> regions
+    python -m scripts.synapt_knowledge ontology  # ingest an explicit ontology doc so Synapt's extractor builds
+                                                 # typed entities + relations (workaround while trident_create_entity
+                                                 # fails server-side with "index_node() missing 'neo4j_id'")
     python -m scripts.synapt_knowledge tickets   # write ../synapt_ingest/disruption_tickets.xlsx for the
                                                  # console's Data Ingestion > Ticketing source (ticket store +
                                                  # mined episodes; MCP trident_ingest cannot create one)
@@ -315,6 +318,65 @@ def build_tickets(df: pd.DataFrame, n: int = 5000) -> Path:
     return path
 
 
+ONTO_ENTITY_TYPES = json.dumps([
+    {"name": "DisruptionType", "description": "A category of supply chain disruption"},
+    {"name": "Industry", "description": "An industry sector whose suppliers are disrupted"},
+    {"name": "SupplierRegion", "description": "A geographic region where suppliers are located"},
+    {"name": "ResponseStrategy", "description": "A strategy used to respond to and recover from a disruption"},
+    {"name": "SupplierTier", "description": "A supplier tier (Tier 1 direct to Tier 4 upstream)"},
+    {"name": "OutcomeMetric", "description": "A measure of disruption impact or recovery"},
+])
+ONTO_REL_TYPES = json.dumps([
+    {"name": "RECOVERED_WITH", "description": "A disruption type is best recovered with a response strategy"},
+    {"name": "EXPOSED_TO", "description": "An industry or region is exposed to a disruption type"},
+    {"name": "MEASURED_BY", "description": "An outcome is measured by a metric"},
+])
+
+
+def build_ontology(df: pd.DataFrame) -> Path:
+    """Short declarative sentences, one fact each: the form LLM extractors turn into clean entities + edges."""
+    lines = ["# Supply Chain Disruption Ontology", "",
+             "This document defines the entities of the supply chain disruption domain and how they relate.", ""]
+    lines += ["## Disruption types", ""]
+    for t, g in df.groupby("disruption_type"):
+        rank = strategy_ranking(df, "disruption_type", t)
+        lines.append(f"{t} is a DisruptionType. {t} disruptions recover fastest with {rank[0][0]} "
+                     f"({rank[0][1]['full']:.0f} days on average) and slowest with {rank[-1][0]} ({rank[-1][1]['full']:.0f} days). "
+                     f"{t} RECOVERED_WITH {rank[0][0]}. {t} disruptions cause {agg(g)['impact']:.0f}% average production impact.")
+    lines += ["", "## Response strategies", ""]
+    for rt, g in df.groupby("response_type"):
+        lines.append(f"{rt} is a ResponseStrategy. {rt} reaches full recovery in {agg(g)['full']:.0f} days on average across all disruption types.")
+    lines += ["", "## Industries", ""]
+    for i, g in df.groupby("industry"):
+        worst = g.groupby("disruption_type").production_impact_pct.mean().idxmax()
+        lines.append(f"{i} is an Industry. {i} is most EXPOSED_TO {worst}, which causes the highest production impact for {i} suppliers.")
+    lines += ["", "## Supplier regions", ""]
+    for r, g in df.groupby("supplier_region"):
+        common = g.disruption_type.value_counts().idxmax()
+        lines.append(f"{r} is a SupplierRegion. {r} is most often EXPOSED_TO {common}.")
+    lines += ["", "## Supplier tiers", ""]
+    for t, g in df.groupby("supplier_tier"):
+        lines.append(f"Tier {t} is a SupplierTier. Tier {t} suppliers recover fully in {agg(g)['full']:.0f} days on average.")
+    lines += ["", "## Outcome metrics", "",
+              "Production Impact is an OutcomeMetric. Production Impact measures the share of production capacity lost.",
+              "Revenue Loss is an OutcomeMetric. Revenue Loss measures the money lost because of a disruption.",
+              "Full Recovery Time is an OutcomeMetric. Full Recovery Time measures days until operations are fully restored.",
+              "Backup Supplier is a ResponseStrategy enabler. Having a Backup Supplier shortens Full Recovery Time.", ""]
+    path = OUT / "ontology.md"
+    path.write_text("\n".join(lines), encoding="utf-8")
+    print(f"wrote {path}")
+    return path
+
+
+def ingest_ontology(path: Path) -> None:
+    r = call("trident_ingest", {
+        "connector_type": "content", "content": path.read_text(encoding="utf-8"), "filename": path.name,
+        "document_type": "text", "extraction_mode": "comprehensive", "has_ttl": False,
+        "entity_types": ONTO_ENTITY_TYPES, "relationship_types": ONTO_REL_TYPES,
+    })
+    print(path.name, "->", json.dumps(r, default=str)[:300])
+
+
 def check() -> None:
     print(json.dumps(call("trident_get_stats", {}), indent=1))
     hits = call("trident_get_chunks", {"query": "Supplier region profile Europe", "top_k": 3})
@@ -331,6 +393,8 @@ if __name__ == "__main__":
         ingest(build_docs(load()))
     elif cmd == "graph":
         build_graph(load())
+    elif cmd == "ontology":
+        ingest_ontology(build_ontology(load()))
     elif cmd == "tickets":
         build_tickets(load())
     elif cmd == "learn-regions":

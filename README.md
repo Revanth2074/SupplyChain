@@ -6,7 +6,7 @@ Retrieve similar historical disruptions, predict their impact, plan the response
 |---|---|
 | **Synapt (MCP)** | Semantic case retrieval, graph-RAG with a reasoning subgraph, response-playbook procedures, episodic memory, read-only graph analytics, answer-quality signals, feedback |
 | **Local engine** | BM25 keyword search, ML prediction models (full 100k rows), strategy statistics, guardrails, DeepEval, LLM-as-Judge |
-| **Console** | 9 tabs in a light theme: 3D control tower, cockpit, search, triage, simulator, portfolio risk, knowledge graph, analytics, quality |
+| **Console** | 15 pages in a sidebar grouped by stage (Detect → Investigate → Predict & explain → Decide → Act & learn), each with a plain-language *How it works* guide |
 
 ---
 
@@ -46,6 +46,20 @@ Retrieve similar historical disruptions, predict their impact, plan the response
 **Synapt-native labelling and episodic memory** (Knowledge Graph tab): compares how Synapt would label an incident with the app's classifier, and shows recalled episodes.
 
 ---
+
+### Decision assistant (Detect → Investigate → Predict → Explain → Simulate → Recommend → Act → Learn)
+| Page | What it answers | How |
+|---|---|---|
+| **Home** | What is the assistant watching, and what needs attention now? | Live counters, animated decision loop, architecture map |
+| **Early Warning** | Which suppliers are becoming risky *before* anything breaks? | External signals (live GDACS feed, pasted headlines classified by the LLM, demo alerts) matched to your suppliers; early-warning score = 60% transparent likelihood heuristic (alerts, delivery, recent incidents, stock cover, dependency, regional history) + 40% ML impact; Synapt playbook per alert; alerts can be ingested into Synapt |
+| **Decision Studio** | What should we do, in money and days? | Six response scenarios simulated by the ML models; loss scales with each option's effective outage; editable mitigation-cost assumptions; net benefit, ROI and the lowest total business cost |
+| **Root Cause** | Why does it hurt, and what made it worse? | Propagation chain sized by predictions; contributing / protective factors from XAI and history; optional Synapt graph explanation with its confidence |
+| **Supplier Network** | If this supplier goes offline, what breaks? | Sankey of supplier → product → line → customer; outage simulation using ML recovery time, stock cover and alternative sources |
+| **Incident Desk** | Is the plan actually being carried out? | SLA clocks per priority, automatic escalation chains, action tracking; closing an action with its real outcome writes a training row for retraining |
+
+Operational supplier fields (`inventory_days`, `dependency_pct`, `on_time_rate`, `recent_disruptions`, `annual_spend_usd`, `products`) are optional portfolio columns; the bundled sample uses demo values. Products, lines and order volumes in the network view are a sample bill of materials.
+
+**Known Synapt limitation:** `trident_create_entity` / `trident_create_concept` fail server-side (`index_node() missing 'neo4j_id'`), and document extraction does not create the requested typed entities (an explicit ontology document, `python -m scripts.synapt_knowledge ontology`, was ingested as a workaround: it adds searchable definitions but no new typed nodes). Graph-RAG, procedures, episodes and the ticket store all work.
 
 ## Architecture
 
@@ -116,6 +130,11 @@ Then, in the Synapt console, upload `synapt_ingest/disruption_tickets.xlsx` unde
 | `GET /api/synapt/knowledge`, `/synapt/insights/{key}`, `/synapt/procedures`, `/synapt/episodes`, `/synapt/quality`; `POST /api/synapt/graph`, `/synapt/label` | Synapt knowledge, graph, playbooks, memory, labelling, quality |
 | `POST /api/judge`, `/api/evaluate`; `GET /api/evaluate/status`, `/evaluate/results` | LLM-as-Judge, DeepEval |
 | `POST /api/feedback`, `GET /api/feedback/stats`, `POST /api/models/retrain` | Feedback loop |
+| `GET /api/overview` | Home-page status (alerts, risks, incidents, SLA, learning) |
+| `POST /api/early-warning`; `GET/POST /api/signals`, `PATCH /api/signals/{id}`, `POST /api/signals/{id}/synapt`, `POST /api/signals/fetch-live` | Early warning and external signals |
+| `POST /api/decision`, `/api/rootcause`, `/api/rootcause/synapt` | Scenario comparison with ROI; root cause |
+| `POST /api/network`, `/api/network/offline` | Supplier dependency graph and outage simulation |
+| `GET/POST /api/incidents`, `POST /api/incidents/seed-demo`, `PATCH /api/incidents/{id}`, `POST /api/incidents/{id}/actions`, `PATCH /api/actions/{id}` | Incident desk, SLA, escalation, action tracking |
 | `GET /api/health`, `/api/meta`, `/api/insights`, `/api/models` | System |
 
 ---
@@ -131,8 +150,9 @@ npm run build
 ## Repository layout
 ```
 backend/app/        main · agents · analysis · retrieval · portfolio · ml_models · evaluation · judge
+                    decision · risk_watch · network · ops
                     synapt_client · synapt_service · feedback · guardrails · data_store · llm · config
 backend/scripts/    synapt_knowledge · smoke_test · probe_synapt · discover_synapt
-frontend/src/       App · api · format · index.css + theme-light.css · components/ (ControlTower.jsx, logistics3d.jsx, logistics/{paths,world}.js + aircraft.jsx, Tab*.jsx, ui.jsx, WhatIfPanel.jsx)
+frontend/src/       App · api · format · guide (page guides + glossary) · index.css + theme-light.css + app-shell.css · components/ (ControlTower.jsx, logistics3d.jsx, logistics/{paths,world}.js + aircraft.jsx, Tab*.jsx, ui.jsx, WhatIfPanel.jsx)
 synapt_ingest/      Synapt documents + disruption_tickets.xlsx
 ```

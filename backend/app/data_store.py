@@ -65,7 +65,7 @@ class DataStore:
     """Loads the full dataset; builds indexes over a stratified index sample to
     keep startup fast while the full frame is used for stats & ML."""
 
-    INDEX_SIZE = 30000
+    INDEX_SIZE = 100000  # index every historical case for keyword + local semantic search
 
     def __init__(self) -> None:
         self.df: pd.DataFrame | None = None

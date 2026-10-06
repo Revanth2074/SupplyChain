@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import agents, analysis, evaluation, feedback, llm, portfolio
+from . import agents, analysis, decision, evaluation, feedback, llm, network, ops, portfolio, risk_watch
 from . import synapt_service as syn
 from .config import settings
 from .data_store import store
@@ -48,6 +48,8 @@ def _bootstrap():
 @app.on_event("startup")
 def startup():
     feedback.init()
+    ops.init()
+    risk_watch.init()
     threading.Thread(target=_bootstrap, daemon=True).start()
 
 
@@ -150,6 +152,53 @@ class GraphReq(BaseModel):
 class LabelReq(BaseModel):
     description: str
     incident: Optional[Incident] = None
+
+
+class DecisionReq(BaseModel):
+    incident: Incident
+    costs: Optional[dict[str, dict[str, float]]] = None
+
+
+class PortfolioCsvReq(BaseModel):
+    csv: Optional[str] = Field(None, max_length=500_000)
+    severity: int = Field(3, ge=1, le=5)
+
+
+class OfflineReq(PortfolioCsvReq):
+    supplier: str
+    disruption_type: Optional[str] = None
+
+
+class SignalReq(BaseModel):
+    headline: str = Field(..., min_length=8, max_length=300)
+    detail: Optional[str] = Field("", max_length=2000)
+    send_to_synapt: bool = False
+
+
+class SignalPatch(BaseModel):
+    active: bool
+
+
+class IncidentReq(BaseModel):
+    analysis_id: str
+
+
+class IncidentPatch(BaseModel):
+    status: Optional[str] = None
+    owner: Optional[str] = Field(None, max_length=80)
+
+
+class ActionReq(BaseModel):
+    title: str = Field(..., min_length=3, max_length=300)
+    owner: str = Field("Operations", max_length=80)
+    due_hours: float = Field(24, gt=0, le=24 * 90)
+
+
+class ActionPatch(BaseModel):
+    status: Optional[str] = None
+    actual_recovery_days: Optional[float] = Field(None, ge=0, le=1000)
+    actual_loss_usd: Optional[float] = Field(None, ge=0)
+    notes: Optional[str] = Field(None, max_length=500)
 
 
 class EvalReq(BaseModel):
@@ -438,6 +487,178 @@ def portfolio_score(req: PortfolioReq):
         return portfolio.score(rows, req.severity)
     except ValueError as e:
         raise HTTPException(422, str(e)) from e
+
+
+# ------------------------------------------------------------------ decision support
+def _incident_dict(inc: Incident) -> dict:
+    d = {k: v for k, v in inc.model_dump().items() if v is not None}
+    validate_incident(d, store.options())
+    if not d.get("disruption_type"):
+        raise HTTPException(422, "disruption_type is required")
+    return d
+
+
+@app.post("/api/decision")
+def decision_ep(req: DecisionReq):
+    """Compare response scenarios: predicted loss and recovery vs mitigation cost (ROI)."""
+    _ready()
+    return decision.compare_scenarios(_incident_dict(req.incident), req.costs)
+
+
+@app.post("/api/rootcause")
+def rootcause_ep(inc: Incident):
+    """How the disruption propagates (cause -> effects) and which factors made it worse or better."""
+    _ready()
+    return decision.root_cause(_incident_dict(inc))
+
+
+@app.post("/api/rootcause/synapt")
+def rootcause_synapt(inc: Incident):
+    """Ask the Synapt knowledge graph to explain the causal chain, with its evidence subgraph."""
+    d = _incident_dict(inc)
+    q = (f"For a {d['disruption_type']} disruption at a Tier {d.get('supplier_tier', 2)} {d.get('industry', '')} supplier"
+         f"{' with no backup supplier' if d.get('has_backup_supplier') is False else ''}, what drives the production impact "
+         f"and recovery time, and which response strategy recovers fastest?")
+    try:
+        return syn.graph_query(q, 6, None, 90, "rootcause")
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Synapt query failed: {e}") from e
+
+
+def _scored(csv: Optional[str], severity: int = 3) -> dict:
+    try:
+        return portfolio.score(portfolio.rows_or_sample(csv), severity)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+
+
+@app.post("/api/early-warning")
+def early_warning_ep(req: PortfolioCsvReq):
+    """Forward-looking supplier risk: external signals + operational health + ML impact-if-disrupted."""
+    _ready()
+    scored = _scored(req.csv, req.severity)
+    sigs = risk_watch.list_signals(active_only=True)
+    return {**risk_watch.early_warning(scored, sigs), "signals": risk_watch.signal_impacts(scored, sigs)}
+
+
+@app.get("/api/signals")
+def signals_ep():
+    return risk_watch.list_signals()
+
+
+@app.post("/api/signals")
+def add_signal(req: SignalReq):
+    _ready()
+    try:
+        return risk_watch.add_manual(req.headline, req.detail or "", req.send_to_synapt)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+
+
+@app.patch("/api/signals/{sid}")
+def patch_signal(sid: str, req: SignalPatch):
+    risk_watch.set_active(sid, req.active)
+    return {"id": sid, "active": req.active}
+
+
+@app.post("/api/signals/{sid}/synapt")
+def signal_to_synapt(sid: str):
+    try:
+        return risk_watch.push_to_synapt(sid)
+    except ValueError as e:
+        raise HTTPException(404, str(e)) from e
+
+
+@app.post("/api/signals/fetch-live")
+def fetch_live_signals():
+    """Pull current orange/red alerts from the public GDACS disaster feed."""
+    try:
+        return risk_watch.fetch_gdacs()
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Live feed unavailable: {e}") from e
+
+
+@app.post("/api/network")
+def network_ep(req: PortfolioCsvReq):
+    _ready()
+    return network.build(_scored(req.csv, req.severity))
+
+
+@app.post("/api/network/offline")
+def network_offline(req: OfflineReq):
+    _ready()
+    try:
+        return network.offline(_scored(req.csv, req.severity), req.supplier, req.disruption_type)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+
+
+# ------------------------------------------------------------------ incident desk
+@app.get("/api/incidents")
+def incidents_ep():
+    return ops.list_incidents()
+
+
+@app.post("/api/incidents")
+def open_incident(req: IncidentReq):
+    a = feedback.get_analysis(req.analysis_id)
+    if not a:
+        raise HTTPException(404, "analysis not found")
+    return {"id": ops.create_from_analysis(a)}
+
+
+@app.post("/api/incidents/seed-demo")
+def seed_incidents():
+    _ready()
+    return {"created": ops.seed_demo()}
+
+
+@app.patch("/api/incidents/{iid}")
+def patch_incident(iid: str, req: IncidentPatch):
+    try:
+        ops.update_incident(iid, req.status, req.owner)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+    return {"id": iid}
+
+
+@app.post("/api/incidents/{iid}/actions")
+def add_incident_action(iid: str, req: ActionReq):
+    try:
+        return {"id": ops.add_action(iid, req.title, req.owner, req.due_hours)}
+    except ValueError as e:
+        raise HTTPException(404, str(e)) from e
+
+
+@app.patch("/api/actions/{aid}")
+def patch_action(aid: str, req: ActionPatch):
+    try:
+        return ops.update_action(aid, req.status, req.actual_recovery_days, req.actual_loss_usd, req.notes)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
+
+
+@app.get("/api/overview")
+def overview():
+    """One-screen status for the home page: what the assistant watches and what needs attention."""
+    _ready()
+    scored = _scored(None)
+    sigs = risk_watch.list_signals(active_only=True)
+    ew = risk_watch.early_warning(scored, sigs)
+    incs = ops.list_incidents()
+    open_incs = [i for i in incs if i["status"] != "resolved"]
+    fb = feedback.stats()
+    q = feedback.synapt_quality()
+    return {
+        "cases": int(len(store.df)), "suppliers": scored["count"], "signals_active": len(sigs),
+        "early_warning": ew["levels"], "top_risks": ew["suppliers"][:3],
+        "incidents_open": len(open_incs), "sla_breached": sum(i["breached"] for i in open_incs),
+        "escalated": sum(i["escalated"] for i in open_incs),
+        "actions_open": sum(1 for i in open_incs for a in i["actions"] if a["status"] not in ("done", "rejected")),
+        "feedback": {"total": fb["total"], "with_outcomes": fb["with_outcomes"], "avg_rating": fb["avg_rating"]},
+        "synapt": {**syn.status(), "answers": q["n"], "avg_confidence": q["summary"].get("confidence")},
+        "models": {k: v.get("r2") for k, v in registry.meta.get("targets", {}).items() if "r2" in v},
+    }
 
 
 @app.get("/api/models")

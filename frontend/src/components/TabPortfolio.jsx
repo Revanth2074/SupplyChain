@@ -97,7 +97,7 @@ export default function TabPortfolio({ onScored }) {
     try {
       const r = await scorePortfolio(text, sev);
       setRes(r);
-      if (!sample.current || text !== sample.current) onScored?.(r);
+      if (!sample.current || text !== sample.current) onScored?.(r, text);
     } catch (e) { setError(e.message); } finally { setBusy(false); }
   };
 

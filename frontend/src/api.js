@@ -217,3 +217,28 @@ export const labelWithSynapt = (description) => postJson('/synapt/label', { desc
 export async function fetchSynaptQuality() {
   return handleResponse(await fetch(`${BASE_URL}/synapt/quality`));
 }
+
+// ---------------------------------------------------------------- decision support, early warning, incident desk
+const getJson = async (path) => handleResponse(await fetch(`${BASE_URL}${path}`));
+const patchJson = async (path, body) => handleResponse(await fetch(`${BASE_URL}${path}`, {
+  method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+}));
+
+export const fetchOverview = () => getJson('/overview');
+export const fetchDecision = (incident, costs = null) => postJson('/decision', { incident, costs });
+export const fetchRootCause = (incident) => postJson('/rootcause', incident);
+export const fetchRootCauseSynapt = (incident) => postJson('/rootcause/synapt', incident);
+export const fetchEarlyWarning = (csv = null) => postJson('/early-warning', { csv });
+export const fetchSignals = () => getJson('/signals');
+export const addSignal = (headline, detail = '', send_to_synapt = false) => postJson('/signals', { headline, detail, send_to_synapt });
+export const toggleSignal = (id, active) => patchJson(`/signals/${id}`, { active });
+export const signalToSynapt = (id) => postJson(`/signals/${id}/synapt`, {});
+export const fetchLiveSignals = () => postJson('/signals/fetch-live', {});
+export const fetchNetwork = (csv = null) => postJson('/network', { csv });
+export const fetchOffline = (supplier, csv = null, disruption_type = null) => postJson('/network/offline', { supplier, csv, disruption_type });
+export const fetchIncidents = () => getJson('/incidents');
+export const openIncident = (analysis_id) => postJson('/incidents', { analysis_id });
+export const seedIncidents = () => postJson('/incidents/seed-demo', {});
+export const patchIncident = (id, body) => patchJson(`/incidents/${id}`, body);
+export const addIncidentAction = (id, body) => postJson(`/incidents/${id}/actions`, body);
+export const patchAction = (id, body) => patchJson(`/actions/${id}`, body);

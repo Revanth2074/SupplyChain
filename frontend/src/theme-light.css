@@ -56,7 +56,7 @@ body {
 /* ================================================================== 3D control tower */
 .ct-root {
   position: relative;
-  height: calc(100vh - 128px);
+  height: calc(100vh - 77px);
   min-height: 620px;
   background: linear-gradient(180deg, #bfe0f7 0%, #e6f3fc 100%);
   overflow: hidden;
