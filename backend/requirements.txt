@@ -10,3 +10,4 @@ joblib>=1.4
 openai>=1.40
 rank-bm25>=0.2.2
 deepeval>=2.0
+openpyxl>=3.1

@@ -1,16 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Sliders,
-  TrendingDown,
-  TrendingUp,
-  Shield,
-  Activity,
-  Layers,
-  BarChart2,
-  HelpCircle,
-  Zap,
-  Info
-} from 'lucide-react';
+import { Sliders, Activity, BarChart2 } from 'lucide-react';
 import {
   BarChart,
   Bar,
@@ -20,9 +9,11 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  Legend
 } from 'recharts';
 import { predictIncident, explainIncident } from '../api';
+import WhatIfPanel from './WhatIfPanel';
+import { Callout, Kpi, PageHeader } from './ui';
+import { fmtUsd, fmtUsdShort } from '../format';
 
 export default function TabPredict({ options }) {
   const [params, setParams] = useState({
@@ -73,19 +64,14 @@ export default function TabPredict({ options }) {
   const globalImportance = explanation?.[activeTarget]?.global?.slice(0, 7) || [];
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-      {/* Header */}
-      <div className="glass-panel" style={{ padding: '1.5rem' }}>
-        <h2 style={{ fontSize: '1.3rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Sliders size={22} color="#6366f1" />
-          ML What-If Simulator & Explainable AI (XAI)
-        </h2>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-          HistGradientBoosting models trained on 100,000 disruption events. Adjust scenario attributes to observe real-time predictions, local feature contributions, and resilience scoring.
-        </p>
-      </div>
+    <div className="page">
+      <PageHeader
+        icon={Sliders}
+        title="ML Simulator, Prediction Ranges & XAI"
+        subtitle="HistGradientBoosting models trained on 100,000 disruptions. Change the scenario to see point predictions with 80% ranges, local feature contributions, resilience and what-if counterfactuals."
+      />
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: '1.5rem' }}>
+      <div className="grid-auto" style={{ '--min': '340px', gap: '1.5rem' }}>
         {/* Left Column: Interactive Scenario Controls */}
         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <h3 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -127,6 +113,7 @@ export default function TabPredict({ options }) {
                   <option value="1">Tier 1 (Direct)</option>
                   <option value="2">Tier 2 (Sub-tier)</option>
                   <option value="3">Tier 3 (Raw materials)</option>
+                  <option value="4">Tier 4 (Upstream)</option>
                 </select>
               </div>
 
@@ -158,7 +145,7 @@ export default function TabPredict({ options }) {
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.2rem' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Disruption Severity</span>
-                <strong style={{ color: '#fcd34d' }}>Level {params.disruption_severity} of 5</strong>
+                <strong style={{ color: '#b45309' }}>Level {params.disruption_severity} of 5</strong>
               </div>
               <input
                 type="range"
@@ -167,7 +154,7 @@ export default function TabPredict({ options }) {
                 step="1"
                 value={params.disruption_severity}
                 onChange={(e) => setParams({ ...params, disruption_severity: Number(e.target.value) })}
-                style={{ width: '100%', accentColor: '#6366f1', cursor: 'pointer' }}
+                style={{ width: '100%', accentColor: '#2563eb', cursor: 'pointer' }}
               />
             </div>
 
@@ -212,41 +199,26 @@ export default function TabPredict({ options }) {
 
         {/* Right Column: Model Predictions & Resilience Score */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Output Metric Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-            <div className="glass-card" style={{ borderLeft: '4px solid #f59e0b' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PRODUCTION IMPACT</span>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fcd34d', margin: '0.2rem 0' }}>
-                {prediction?.production_impact_pct}%
-              </div>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>HistGradientBoosting R2 = 0.70</span>
-            </div>
-
-            <div className="glass-card" style={{ borderLeft: '4px solid #6366f1' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>REVENUE LOSS (USD)</span>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fff', margin: '0.2rem 0' }}>
-                ${Number(prediction?.revenue_loss_usd).toLocaleString()}
-              </div>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Log-transformed regression</span>
-            </div>
-
-            <div className="glass-card" style={{ borderLeft: '4px solid #10b981' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>FULL RECOVERY DAYS</span>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#6ee7b7', margin: '0.2rem 0' }}>
-                {prediction?.full_recovery_days} Days
-              </div>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Partial recovery ≈ {prediction?.partial_recovery_days}d</span>
-            </div>
-
-            <div className="glass-card" style={{ borderLeft: '4px solid #ef4444' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>DISRUPTION RISK PROBABILITY</span>
-              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#fca5a5', margin: '0.2rem 0' }}>
-                {((prediction?.risk_probability || 0) * 100).toFixed(1)}%
-              </div>
-              <span className="badge badge-danger" style={{ fontSize: '0.68rem' }}>
-                Risk Band: {prediction?.risk_level}
-              </span>
-            </div>
+          {/* Output Metric Cards with 80% prediction intervals */}
+          {prediction?.support?.warning && <Callout tone="warning">{prediction.support.warning}</Callout>}
+          {prediction?.support && !prediction.support.warning && (
+            <Callout tone="info">
+              {prediction.support.matching_cases.toLocaleString()} historical cases match this exact profile ({prediction.support.level} support). Bars show the 80% range (P10–P90).
+            </Callout>
+          )}
+          <div className="grid-auto" style={{ '--min': '220px' }}>
+            <Kpi label="Production impact" tone="#f59e0b" value={`${prediction?.production_impact_pct ?? '—'}%`}
+              range={prediction?.ranges && { ...prediction.ranges.production_impact_pct, value: prediction.production_impact_pct }}
+              format={(v) => `${Number(v).toFixed(0)}%`} />
+            <Kpi label="Revenue loss" tone="#1d4ed8" value={fmtUsd(prediction?.revenue_loss_usd)}
+              range={prediction?.ranges && { ...prediction.ranges.revenue_loss_usd, value: prediction.revenue_loss_usd }}
+              format={fmtUsdShort} />
+            <Kpi label="Full recovery" tone="#059669" value={`${prediction?.full_recovery_days ?? '—'} days`}
+              range={prediction?.ranges && { ...prediction.ranges.full_recovery_days, value: prediction.full_recovery_days }}
+              format={(v) => `${Math.round(v)}d`}
+              sub={prediction && `Partial ≈ ${prediction.partial_recovery_days}d (P10–P90 ${prediction.ranges?.partial_recovery_days?.p10}–${prediction.ranges?.partial_recovery_days?.p90}d)`} />
+            <Kpi label="High-impact risk" tone="#dc2626" value={`${((prediction?.risk_probability || 0) * 100).toFixed(1)}%`}
+              sub={<span className="badge badge-danger">Risk band: {prediction?.risk_level}</span>} />
           </div>
 
           {/* Resilience Score Breakdown */}
@@ -260,7 +232,7 @@ export default function TabPredict({ options }) {
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                  <span style={{ fontSize: '1.6rem', fontWeight: 800, color: prediction.resilience_score.score >= 60 ? '#6ee7b7' : '#fcd34d' }}>
+                  <span style={{ fontSize: '1.6rem', fontWeight: 800, color: prediction.resilience_score.score >= 60 ? '#059669' : '#b45309' }}>
                     {prediction.resilience_score.score}
                   </span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/ 100</span>
@@ -276,7 +248,7 @@ export default function TabPredict({ options }) {
                     <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>
                       {comp.replace('_', ' ')}
                     </div>
-                    <strong style={{ fontSize: '0.95rem', color: '#fff' }}>+{val} pts</strong>
+                    <strong style={{ fontSize: '0.95rem', color: 'var(--text-strong)' }}>+{val} pts</strong>
                   </div>
                 ))}
               </div>
@@ -290,7 +262,7 @@ export default function TabPredict({ options }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
             <h3 style={{ fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <BarChart2 size={20} color="#6366f1" />
+              <BarChart2 size={20} color="#2563eb" />
               Explainable AI: Feature Contributions & Global Permutation Importance
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -319,20 +291,20 @@ export default function TabPredict({ options }) {
         </div>
 
         {/* Feature Attribution Chart */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))', gap: '1.5rem' }}>
+        <div className="grid-auto" style={{ '--min': '420px', gap: '1.5rem' }}>
           {/* Local Waterfall / Bar */}
           <div className="glass-card" style={{ padding: '1rem', minHeight: '320px' }}>
-            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: '#f8fafc' }}>
+            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--text-strong)' }}>
               Local Feature Contribution vs Baseline (Delta)
             </h4>
             <div style={{ height: '260px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={localContribs} layout="vertical" margin={{ top: 5, right: 30, left: 70, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.072)" />
                   <XAxis type="number" stroke="#94a3b8" tick={{ fontSize: 11 }} />
                   <YAxis dataKey="name" type="category" stroke="#94a3b8" tick={{ fontSize: 11 }} />
                   <Tooltip
-                    contentStyle={{ background: '#0f1422', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    contentStyle={{ background: '#ffffff', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: '8px' }}
                     formatter={(val, name, props) => [
                       `${val > 0 ? '+' : ''}${val} (Input: ${props.payload.value}, Baseline: ${props.payload.baseline})`,
                       'Contribution'
@@ -350,26 +322,27 @@ export default function TabPredict({ options }) {
 
           {/* Global Permutation Importance */}
           <div className="glass-card" style={{ padding: '1rem', minHeight: '320px' }}>
-            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: '#f8fafc' }}>
+            <h4 style={{ fontSize: '0.9rem', marginBottom: '0.75rem', color: 'var(--text-strong)' }}>
               Global Permutation Feature Importance (100k Dataset)
             </h4>
             <div style={{ height: '260px' }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={globalImportance} layout="vertical" margin={{ top: 5, right: 30, left: 70, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.072)" />
                   <XAxis type="number" stroke="#94a3b8" tick={{ fontSize: 11 }} />
                   <YAxis dataKey="label" type="category" stroke="#94a3b8" tick={{ fontSize: 11 }} />
                   <Tooltip
-                    contentStyle={{ background: '#0f1422', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                    contentStyle={{ background: '#ffffff', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: '8px' }}
                     formatter={(val) => [val, 'Importance Score']}
                   />
-                  <Bar dataKey="importance" fill="#6366f1" radius={[0, 4, 4, 0]} />
+                  <Bar dataKey="importance" fill="#2563eb" radius={[0, 4, 4, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
       </div>
+      <WhatIfPanel incident={params} />
     </div>
   );
 }

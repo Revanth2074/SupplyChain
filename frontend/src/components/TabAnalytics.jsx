@@ -39,7 +39,7 @@ export default function TabAnalytics() {
   if (loading || !data) {
     return (
       <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-        <div className="animate-spin" style={{ width: 28, height: 28, border: '3px solid #6366f1', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 1rem' }} />
+        <div className="animate-spin" style={{ width: 28, height: 28, border: '3px solid #2563eb', borderTopColor: 'transparent', borderRadius: '50%', margin: '0 auto 1rem' }} />
         Aggregating macro intelligence over 100,000 disruption records...
       </div>
     );
@@ -80,7 +80,7 @@ export default function TabAnalytics() {
       {/* Top Banner with 100k Totals */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <BarChart3 size={22} color="#6366f1" />
+          <BarChart3 size={22} color="#2563eb" />
           Global Macro Intelligence (100,000 Historical Cases)
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
@@ -90,15 +90,15 @@ export default function TabAnalytics() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>TOTAL CASES</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-strong)', marginTop: '0.2rem' }}>
               {totals.cases.toLocaleString()}
             </div>
-            <span style={{ fontSize: '0.75rem', color: '#a5b4fc' }}>Full Disruption Dataset</span>
+            <span style={{ fontSize: '0.75rem', color: '#4338ca' }}>Full Disruption Dataset</span>
           </div>
 
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>TOTAL REVENUE IMPACT</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-strong)', marginTop: '0.2rem' }}>
               ${(totals.total_loss / 1e9).toFixed(1)} Billion
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Avg ${(totals.avg_loss / 1e6).toFixed(2)}M / incident</span>
@@ -106,7 +106,7 @@ export default function TabAnalytics() {
 
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>AVG FULL RECOVERY</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#6ee7b7', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#059669', marginTop: '0.2rem' }}>
               {totals.avg_recovery} Days
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Across all response types</span>
@@ -114,7 +114,7 @@ export default function TabAnalytics() {
 
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>BACKUP SUPPLIER ADOPTION</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#67e8f9', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0e7490', marginTop: '0.2rem' }}>
               {(totals.backup_rate * 100).toFixed(1)}%
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Dual-sourced suppliers</span>
@@ -122,7 +122,7 @@ export default function TabAnalytics() {
 
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>PERMANENT SUPPLIER CHANGE</span>
-            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fca5a5', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#dc2626', marginTop: '0.2rem' }}>
               {(totals.change_rate * 100).toFixed(1)}%
             </div>
             <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Post-disruption churn</span>
@@ -143,13 +143,13 @@ export default function TabAnalytics() {
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={typeChart} margin={{ top: 10, right: 30, left: 10, bottom: 25 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.072)" />
                 <XAxis dataKey="name" stroke="#94a3b8" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" />
-                <YAxis yAxisId="left" stroke="#6366f1" tick={{ fontSize: 11 }} label={{ value: 'Loss ($M)', angle: -90, position: 'insideLeft', fill: '#6366f1', fontSize: 11 }} />
+                <YAxis yAxisId="left" stroke="#2563eb" tick={{ fontSize: 11 }} label={{ value: 'Loss ($M)', angle: -90, position: 'insideLeft', fill: '#2563eb', fontSize: 11 }} />
                 <YAxis yAxisId="right" orientation="right" stroke="#10b981" tick={{ fontSize: 11 }} label={{ value: 'Days', angle: 90, position: 'insideRight', fill: '#10b981', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: '#0f1422', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: '8px' }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Bar yAxisId="left" dataKey="lossM" name="Avg Loss ($M)" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                <Bar yAxisId="left" dataKey="lossM" name="Avg Loss ($M)" fill="#2563eb" radius={[4, 4, 0, 0]} />
                 <Bar yAxisId="right" dataKey="recoveryDays" name="Avg Recovery (Days)" fill="#10b981" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -167,10 +167,10 @@ export default function TabAnalytics() {
           <div style={{ height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={backupComparison} margin={{ top: 10, right: 30, left: 10, bottom: 25 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(15, 23, 42, 0.072)" />
                 <XAxis dataKey="type" stroke="#94a3b8" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" />
                 <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} label={{ value: 'Days to Full Recovery', angle: -90, position: 'insideLeft', fill: '#94a3b8', fontSize: 11 }} />
-                <Tooltip contentStyle={{ background: '#0f1422', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} />
+                <Tooltip contentStyle={{ background: '#ffffff', border: '1px solid rgba(15, 23, 42, 0.12)', borderRadius: '8px' }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="withBackup" name="With Backup Supplier (Fast)" fill="#10b981" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="withoutBackup" name="Without Backup (Slow)" fill="#ef4444" radius={[4, 4, 0, 0]} />
@@ -199,11 +199,11 @@ export default function TabAnalytics() {
             <tbody>
               {strategyData.map((s) => (
                 <tr key={s.strategy} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
-                  <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: '#fff' }}>{s.strategy}</td>
+                  <td style={{ padding: '0.75rem 0.5rem', fontWeight: 600, color: 'var(--text-strong)' }}>{s.strategy}</td>
                   <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-secondary)' }}>{s.cases.toLocaleString()}</td>
-                  <td style={{ padding: '0.75rem 0.5rem', color: '#6ee7b7', fontWeight: 600 }}>{s.avgRecovery} days</td>
-                  <td style={{ padding: '0.75rem 0.5rem', color: '#fff' }}>${s.avgLossM}M</td>
-                  <td style={{ padding: '0.75rem 0.5rem', color: Number(s.changeRate) > 25 ? '#fca5a5' : '#6ee7b7' }}>{s.changeRate}%</td>
+                  <td style={{ padding: '0.75rem 0.5rem', color: '#059669', fontWeight: 600 }}>{s.avgRecovery} days</td>
+                  <td style={{ padding: '0.75rem 0.5rem', color: 'var(--text-strong)' }}>${s.avgLossM}M</td>
+                  <td style={{ padding: '0.75rem 0.5rem', color: Number(s.changeRate) > 25 ? '#dc2626' : '#059669' }}>{s.changeRate}%</td>
                 </tr>
               ))}
             </tbody>

@@ -99,7 +99,7 @@ export default function TabSearch({ options }) {
       {/* Top Search Bar & Filters */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <h2 style={{ fontSize: '1.3rem', fontWeight: 700, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-          <Search size={22} color="#6366f1" />
+          <Search size={22} color="#2563eb" />
           Hybrid RAG Historical Precedent Retrieval
         </h2>
         <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '1.25rem' }}>
@@ -156,7 +156,7 @@ export default function TabSearch({ options }) {
                   step="0.05"
                   value={alpha}
                   onChange={(e) => setAlpha(Number(e.target.value))}
-                  style={{ accentColor: '#6366f1', cursor: 'pointer' }}
+                  style={{ accentColor: '#2563eb', cursor: 'pointer' }}
                 />
               </div>
             )}
@@ -196,6 +196,7 @@ export default function TabSearch({ options }) {
                 <option value="1">Tier 1</option>
                 <option value="2">Tier 2</option>
                 <option value="3">Tier 3</option>
+                <option value="4">Tier 4</option>
               </select>
             </div>
 
@@ -227,7 +228,7 @@ export default function TabSearch({ options }) {
         </form>
 
         {searchError && (
-          <div style={{ marginTop: '1rem', color: '#fca5a5', fontSize: '0.85rem' }}>
+          <div style={{ marginTop: '1rem', color: '#dc2626', fontSize: '0.85rem' }}>
             Search Error: {searchError}
           </div>
         )}
@@ -242,7 +243,7 @@ export default function TabSearch({ options }) {
                 Matched Disruption Precedents ({searchResults.count})
               </h3>
               <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                Semantic source: <strong style={{ color: '#a5b4fc' }}>{searchResults.semantic_source || 'local'}</strong> · Latency: {searchResults.latency_ms}ms
+                Semantic source: <strong style={{ color: '#4338ca' }}>{searchResults.semantic_source || 'local'}</strong> · Latency: {searchResults.latency_ms}ms
               </p>
             </div>
             {searchResults.fallback_reason && (
@@ -256,7 +257,7 @@ export default function TabSearch({ options }) {
             {searchResults.results?.map((c) => (
               <div key={c.disruption_id} className="glass-card" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#a5b4fc', fontSize: '0.95rem' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#4338ca', fontSize: '0.95rem' }}>
                     {c.disruption_id}
                   </span>
                   <div style={{ display: 'flex', gap: '0.35rem' }}>
@@ -272,21 +273,21 @@ export default function TabSearch({ options }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '6px', fontSize: '0.72rem' }}>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Impact:</span>
-                    <strong style={{ color: '#fcd34d', display: 'block' }}>{c.production_impact_pct}%</strong>
+                    <strong style={{ color: '#b45309', display: 'block' }}>{c.production_impact_pct}%</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Loss:</span>
-                    <strong style={{ color: '#fff', display: 'block' }}>${Number(c.revenue_loss_usd).toLocaleString()}</strong>
+                    <strong style={{ color: 'var(--text-strong)', display: 'block' }}>${Number(c.revenue_loss_usd).toLocaleString()}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Recovery:</span>
-                    <strong style={{ color: '#6ee7b7', display: 'block' }}>{c.full_recovery_days} days</strong>
+                    <strong style={{ color: '#059669', display: 'block' }}>{c.full_recovery_days} days</strong>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem', marginTop: 'auto' }}>
-                  <span>Strategy: <strong style={{ color: '#fff' }}>{c.response_type}</strong></span>
-                  <span>Supplier kept: <strong style={{ color: c.permanent_supplier_change ? '#fca5a5' : '#6ee7b7' }}>{c.permanent_supplier_change ? 'No (Replaced)' : 'Yes'}</strong></span>
+                  <span>Strategy: <strong style={{ color: 'var(--text-strong)' }}>{c.response_type}</strong></span>
+                  <span>Supplier kept: <strong style={{ color: c.permanent_supplier_change ? '#dc2626' : '#059669' }}>{c.permanent_supplier_change ? 'No (Replaced)' : 'Yes'}</strong></span>
                 </div>
               </div>
             ))}
@@ -295,7 +296,7 @@ export default function TabSearch({ options }) {
       )}
 
       {/* Ask AI Copilot Section */}
-      <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, rgba(22, 28, 46, 0.7) 100%)' }}>
+      <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(180deg, rgba(6, 182, 212, 0.05) 0%, rgba(255, 255, 255, 0.92) 100%)' }}>
         <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
           <Sparkles size={20} color="#06b6d4" />
           Ask AI Disruption Copilot (Synapt Knowledge Graph QA)
@@ -344,7 +345,7 @@ export default function TabSearch({ options }) {
         </div>
 
         {copilotError && (
-          <div style={{ marginTop: '1rem', color: '#fca5a5', fontSize: '0.85rem' }}>
+          <div style={{ marginTop: '1rem', color: '#dc2626', fontSize: '0.85rem' }}>
             Error: {copilotError}
           </div>
         )}
@@ -353,7 +354,7 @@ export default function TabSearch({ options }) {
         {copilotAnswer && (
           <div className="glass-card" style={{ marginTop: '1.25rem', padding: '1.25rem', borderLeft: '4px solid #06b6d4' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#67e8f9' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: '#0e7490' }}>
                 GROUNDED SYNTHESIS ({copilotAnswer.method})
               </span>
               <span className="badge badge-cyan">

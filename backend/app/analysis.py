@@ -34,7 +34,7 @@ KEYWORDS = {
                          "malaysia", "thailand", "australia", "indonesia", "philippines"],
         "Europe": ["europe", "germany", "france", "italy", "uk", "spain", "poland", "netherlands", "eu "],
         "North America": ["north america", "usa", "united states", "us ", "canada", "mexico", "texas", "california"],
-        "Latin America": ["latin", "brazil", "argentina", "chile", "colombia", "peru", "south america"],
+        "South America": ["latin", "brazil", "argentina", "chile", "colombia", "peru", "south america"],
         "Africa/Middle East": ["africa", "middle east", "uae", "saudi", "egypt", "nigeria", "israel", "turkey",
                                "red sea", "suez"],
     },
@@ -58,7 +58,7 @@ def _rule_classify(text: str, opts: dict) -> dict:
         if ind.lower().rstrip("s") in low:
             out["industry"], conf["industry"] = ind, 0.8
             break
-    m = re.search(r"tier[\s-]*([123])", low)
+    m = re.search(r"tier[\s-]*([1234])", low)
     if m:
         out["supplier_tier"], conf["supplier_tier"] = int(m.group(1)), 0.9
     m = re.search(r"severity[^0-9]{0,12}([1-5])", low)
@@ -78,7 +78,7 @@ def _rule_classify(text: str, opts: dict) -> dict:
 CLASSIFY_SYS = """You are a supply-chain disruption classification agent.
 Extract structured attributes from an incident description. Only use the allowed values.
 If a value is not stated or cannot be reasonably inferred, use null.
-Return JSON: {"disruption_type":..,"industry":..,"supplier_tier":1|2|3|null,"supplier_region":..,
+Return JSON: {"disruption_type":..,"industry":..,"supplier_tier":1|2|3|4|null,"supplier_region":..,
 "supplier_size":..,"has_backup_supplier":true|false|null,"disruption_severity":1-5,
 "response_type":..|null,"response_time_days":int|null,
 "confidence":{field:0..1},"rationale":"one sentence","category_summary":"short label"}"""

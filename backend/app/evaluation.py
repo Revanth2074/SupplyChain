@@ -148,6 +148,10 @@ def _run(limit, use_graph, include_feedback):
                 "judge": {"overall": rep["judge"]["overall_score"], "verdict": rep["judge"]["verdict"],
                           "scores": rep["judge"]["scores"]} if rep.get("judge") else None,
                 "metrics": {}, "latency_ms": rep["total_ms"],
+                "synapt": {k: (rep.get("graph") or {}).get("quality", {}).get(k)
+                           for k in ("confidence", "knowledge_confidence", "procedural_confidence",
+                                     "graph_confidence", "degraded")} if (rep.get("graph") or {}).get("quality") else None,
+                "fact_check_passed": (rep.get("fact_check") or {}).get("passed"),
             }
             if model:
                 actual = rep["summary"] + "\n\nPlan: " + json.dumps(rep["plan"], default=str)[:2500]
@@ -170,6 +174,13 @@ def _run(limit, use_graph, include_feedback):
                    for n in names}
         ca = [r["classification_accuracy"] for r in rows if r["classification_accuracy"] is not None]
         js = [r["judge"]["overall"] for r in rows if r.get("judge")]
+        syn_rows = [r["synapt"] for r in rows if r.get("synapt")]
+
+        def syn_avg(k):
+            v = [x[k] for x in syn_rows if isinstance(x.get(k), (int, float))]
+            return round(sum(v) / len(v), 3) if v else None
+
+        fc = [r["fact_check_passed"] for r in rows if r.get("fact_check_passed") is not None]
         out = {
             "ran_at": time.strftime("%Y-%m-%d %H:%M:%S"), "n_cases": len(rows),
             "evaluator_model": settings.JUDGE_MODEL if model else None,
@@ -179,7 +190,13 @@ def _run(limit, use_graph, include_feedback):
                         "retrieval_type_precision": round(sum(r["retrieval_type_precision"] for r in rows) / len(rows), 3),
                         "avg_similarity": round(sum(r["avg_similarity"] for r in rows) / len(rows), 3),
                         "llm_judge_overall": round(sum(js) / len(js), 3) if js else None,
-                        "avg_latency_ms": int(sum(r["latency_ms"] for r in rows) / len(rows))},
+                        "avg_latency_ms": int(sum(r["latency_ms"] for r in rows) / len(rows)),
+                        "fact_check_pass_rate": round(sum(fc) / len(fc), 3) if fc else None,
+                        "synapt": {k: syn_avg(k) for k in ("confidence", "knowledge_confidence",
+                                                           "procedural_confidence", "graph_confidence")} |
+                                  {"degraded_rate": round(sum(bool(x.get("degraded")) for x in syn_rows) /
+                                                          len(syn_rows), 3) if syn_rows else None,
+                                   "n": len(syn_rows)}},
             "rows": rows,
         }
         RESULTS_PATH.write_text(json.dumps(out, indent=1, default=str))

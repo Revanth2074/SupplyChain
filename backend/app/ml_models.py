@@ -38,6 +38,7 @@ TARGETS = {
     "full_recovery_days": {"label": "Full recovery (days)", "log": False},
     "partial_recovery_days": {"label": "Partial recovery (days)", "log": False},
 }
+QUANTILES = (0.1, 0.9)
 MODEL_PATH = settings.ARTIFACT_DIR / "models.joblib"
 META_PATH = settings.ARTIFACT_DIR / "models_meta.json"
 
@@ -73,11 +74,13 @@ class ModelRegistry:
         if MODEL_PATH.exists() and META_PATH.exists():
             try:
                 blob = joblib.load(MODEL_PATH)
-                self.models, self.baseline, self.risk_threshold = blob["models"], blob["baseline"], blob["risk_threshold"]
-                self.meta = json.loads(META_PATH.read_text())
-                self.ready = True
-                log.info("Loaded models from disk")
-                return
+                if all(f"{t}@q{int(q * 100)}" in blob["models"] for t in TARGETS for q in QUANTILES):
+                    self.models, self.baseline, self.risk_threshold = blob["models"], blob["baseline"], blob["risk_threshold"]
+                    self.meta = json.loads(META_PATH.read_text())
+                    self.ready = True
+                    log.info("Loaded models from disk")
+                    return
+                log.info("Saved models predate quantile ranges, retraining")
             except Exception as e:  # noqa: BLE001
                 log.warning("Model load failed, retraining: %s", e)
         self.train()
@@ -111,6 +114,19 @@ class ModelRegistry:
                     "r2": round(float(r2_score(yte, pred)), 4), "importance": imp,
                 }
                 models[tgt] = m
+
+                # P10 / P90 quantile models -> prediction ranges
+                qp = {}
+                for q in QUANTILES:
+                    mq = _pipe(HistGradientBoostingRegressor(loss="quantile", quantile=q, max_iter=200,
+                                                             learning_rate=0.08, max_leaf_nodes=48,
+                                                             categorical_features=_cat_mask(), random_state=42))
+                    mq.fit(Xtr, fit_y)
+                    pq = mq.predict(Xte)
+                    qp[q] = np.expm1(pq) if cfg["log"] else pq
+                    models[f"{tgt}@q{int(q * 100)}"] = mq
+                lo, hi = np.minimum(qp[QUANTILES[0]], qp[QUANTILES[1]]), np.maximum(qp[QUANTILES[0]], qp[QUANTILES[1]])
+                meta["targets"][tgt]["interval_coverage"] = round(float(((yte >= lo) & (yte <= hi)).mean()), 3)
 
             # --- disruption risk: high-impact event (top-quartile loss OR slow recovery OR severe impact)
             thr = {
@@ -169,9 +185,43 @@ class ModelRegistry:
         p = m.predict(X)
         return np.expm1(p) if TARGETS[tgt]["log"] else p
 
+    def _quantile(self, tgt: str, q: float, X: pd.DataFrame) -> np.ndarray:
+        p = self.models[f"{tgt}@q{int(q * 100)}"].predict(X)
+        return np.expm1(p) if TARGETS[tgt]["log"] else p
+
+    def support(self, inc: dict) -> dict:
+        """How many historical cases share this incident's profile -> trust in the prediction."""
+        df = store.df
+        keys = [k for k in ("disruption_type", "industry", "supplier_region", "supplier_tier",
+                            "has_backup_supplier", "disruption_severity") if inc.get(k) not in (None, "")]
+        m = np.ones(len(df), dtype=bool)
+        for k in keys:
+            if k == "has_backup_supplier":
+                v = bool(inc[k])
+            elif k in ("supplier_tier", "disruption_severity"):
+                v = int(inc[k])
+            else:
+                v = inc[k]
+            m &= (df[k] == v).to_numpy()
+        n = int(m.sum())
+        level = "high" if n >= 100 else "medium" if n >= 30 else "low"
+        warning = None
+        if level == "low":
+            warning = (f"Insufficient history: only {n} past case(s) match this exact profile "
+                       f"({', '.join(keys)}). Treat the predictions as indicative and rely on the wider ranges.")
+        return {"matching_cases": n, "level": level, "matched_on": keys, "warning": warning}
+
     def predict(self, inc: dict) -> dict:
         X = self._row(inc)
         out = {t: float(self._pred(t, X)[0]) for t in TARGETS}
+        ranges = {}
+        for t in TARGETS:
+            a, b = (float(self._quantile(t, q, X)[0]) for q in QUANTILES)
+            lo, hi = min(a, b, out[t]), max(a, b, out[t])
+            if t == "production_impact_pct":
+                lo, hi = max(lo, 0), min(hi, 100)
+            nd = 1 if t == "production_impact_pct" else 0
+            ranges[t] = {"p10": round(max(lo, 0), nd), "p90": round(hi, nd)}
         risk = float(self._pred("risk", X)[0])
         out["production_impact_pct"] = round(min(max(out["production_impact_pct"], 0), 100), 1)
         out["revenue_loss_usd"] = round(max(out["revenue_loss_usd"], 0), 0)
@@ -179,9 +229,69 @@ class ModelRegistry:
         out["partial_recovery_days"] = round(max(out["partial_recovery_days"], 1), 0)
         out["risk_probability"] = round(risk, 3)
         out["risk_level"] = "Critical" if risk >= .75 else "High" if risk >= .5 else "Medium" if risk >= .25 else "Low"
+        out["ranges"] = ranges
+        out["support"] = self.support(inc)
         out["resilience_score"] = self.resilience(inc, out)
         out["inputs_used"] = {k: (v.item() if hasattr(v, "item") else v) for k, v in X.iloc[0].to_dict().items()}
         return out
+
+    def predict_batch(self, rows: list[dict]) -> pd.DataFrame:
+        """Vectorised point predictions + risk for many incidents (portfolio scoring)."""
+        X = pd.concat([self._row(r) for r in rows], ignore_index=True)
+        out = pd.DataFrame({t: self._pred(t, X) for t in TARGETS})
+        out["risk_probability"] = self._pred("risk", X)
+        out["production_impact_pct"] = out["production_impact_pct"].clip(0, 100)
+        out["revenue_loss_usd"] = out["revenue_loss_usd"].clip(lower=0)
+        return out
+
+    def whatif(self, inc: dict) -> dict:
+        """Counterfactuals: re-predict with one lever changed and report the deltas vs the base case."""
+        base = self.predict(inc)
+        used = base["inputs_used"]
+        rt = int(used["response_time_days"])
+        cur = used["response_type"]
+        scen = []
+        if not used["has_backup_supplier"]:
+            scen.append(("backup", "Had a qualified backup supplier", {"has_backup_supplier": True}))
+        if rt > 0:
+            d = min(5, rt)
+            scen.append(("faster", f"Responded {d} day{'s' if d > 1 else ''} sooner", {"response_time_days": rt - d}))
+            if rt > d:
+                scen.append(("same_day", "Responded the same day", {"response_time_days": 0}))
+        if int(used["supplier_tier"]) > 1:
+            scen.append(("tier1", "Sourced directly from a Tier 1 supplier", {"supplier_tier": 1}))
+        for st in sorted(store.df["response_type"].unique()):
+            if st != cur:
+                scen.append((f"strategy:{st}", f"Used {st} instead of {cur}", {"response_type": st}))
+
+        def summarise(p):
+            return {"production_impact_pct": p["production_impact_pct"], "revenue_loss_usd": p["revenue_loss_usd"],
+                    "partial_recovery_days": p["partial_recovery_days"], "full_recovery_days": p["full_recovery_days"],
+                    "risk_probability": p["risk_probability"], "resilience": p["resilience_score"]["score"]}
+
+        b = summarise(base)
+
+        def run(key, label, change):
+            p = summarise(self.predict({**inc, **change}))
+            return {"key": key, "label": label, "change": change, "prediction": p,
+                    "delta": {k: round(p[k] - b[k], 3) for k in b}}
+
+        rows = sorted((run(*sc) for sc in scen), key=lambda r: r["delta"]["full_recovery_days"])
+
+        def helps(r):
+            d = r["delta"]
+            return d["full_recovery_days"] < 0 or (d["full_recovery_days"] == 0 and d["revenue_loss_usd"] < 0)
+
+        combo_change, levers = {}, set()
+        for r in rows:  # sorted best-first, so the first helpful lever of each kind wins
+            lever = ("strategy" if r["key"].startswith("strategy:")
+                     else "response" if r["key"] in ("faster", "same_day") else r["key"])
+            if helps(r) and lever not in levers:
+                combo_change.update(r["change"])
+                levers.add(lever)
+        combo = run("combined", "All improvements together", combo_change) if len(combo_change) > 1 else None
+        return {"base": {"inputs": used, "prediction": b, "ranges": base["ranges"], "support": base["support"]},
+                "scenarios": rows, "combined": combo}
 
     def resilience(self, inc: dict, pred: dict) -> dict:
         """0-100 resilience score combining structural and predicted outcome factors."""
@@ -190,7 +300,7 @@ class ModelRegistry:
         size = inc.get("supplier_size") or "Medium"
         comp = {
             "backup_supplier": 25 if backup else 0,
-            "supplier_tier": {1: 10, 2: 15, 3: 20}.get(tier, 15) * 0.75,
+            "supplier_tier": {1: 10, 2: 15, 3: 20, 4: 20}.get(tier, 15) * 0.75,
             "supplier_size": {"Large": 15, "Medium": 10, "Small": 5}.get(size, 10),
             "recovery_speed": max(0.0, 25 * (1 - pred["full_recovery_days"] / 200)),
             "impact_absorption": max(0.0, 20 * (1 - pred["production_impact_pct"] / 100)),

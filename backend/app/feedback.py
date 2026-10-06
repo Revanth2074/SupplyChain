@@ -26,6 +26,9 @@ CREATE TABLE IF NOT EXISTS feedback (
   comment TEXT, actual_production_impact_pct REAL, actual_revenue_loss_usd REAL,
   actual_full_recovery_days REAL, actual_partial_recovery_days REAL, synapt_sent INTEGER DEFAULT 0
 );
+CREATE TABLE IF NOT EXISTS synapt_quality (
+  ts REAL, source TEXT, question TEXT, query_id TEXT, quality TEXT
+);
 """
 
 
@@ -143,6 +146,39 @@ def low_rated_cases(max_rating: int = 2) -> list[dict]:
                 out.append({"input": a["input"].get("description") or "", "incident": a["incident"],
                             "comment": r.get("comment")})
     return out
+
+
+def log_synapt_quality(source: str, question: str, query_id: str | None, quality: dict) -> None:
+    with conn() as c:
+        c.execute("INSERT INTO synapt_quality VALUES (?,?,?,?,?)",
+                  (time.time(), source, (question or "")[:500], query_id, json.dumps(quality, default=str)))
+
+
+def synapt_quality(limit: int = 200) -> dict:
+    """Synapt's own per-answer quality signals (Retrieval Pass Card inputs), aggregated."""
+    with conn() as c:
+        rows = c.execute("SELECT * FROM synapt_quality ORDER BY ts DESC LIMIT ?", (limit,)).fetchall()
+    recs = [{**dict(r), "quality": json.loads(r["quality"] or "{}")} for r in rows]
+
+    def avg(k):
+        v = [r["quality"].get(k) for r in recs if isinstance(r["quality"].get(k), (int, float))]
+        return round(sum(v) / len(v), 3) if v else None
+
+    reasons: dict[str, int] = {}
+    for r in recs:
+        for why in r["quality"].get("degraded_reasons") or []:
+            reasons[why] = reasons.get(why, 0) + 1
+    return {
+        "n": len(recs),
+        "summary": {k: avg(k) for k in ("confidence", "knowledge_confidence", "procedural_confidence",
+                                        "graph_confidence", "traversal_s", "avg_traversal_depth")} |
+                   {"degraded_rate": round(sum(r["quality"].get("degraded", False) for r in recs) / len(recs), 3)
+                    if recs else None, "degraded_reasons": reasons},
+        "recent": [{"ts": r["ts"], "source": r["source"], "question": r["question"], "query_id": r["query_id"],
+                    **{k: r["quality"].get(k) for k in ("confidence", "knowledge_confidence", "procedural_confidence",
+                                                        "graph_confidence", "degraded", "degraded_reasons",
+                                                        "stores_used", "traversal_s")}} for r in recs[:30]],
+    }
 
 
 def stats() -> dict:

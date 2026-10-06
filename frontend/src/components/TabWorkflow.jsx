@@ -3,26 +3,22 @@ import ReactMarkdown from 'react-markdown';
 import {
   Play,
   RotateCcw,
-  CheckCircle,
-  Clock,
-  ShieldAlert,
   AlertCircle,
-  TrendingDown,
-  DollarSign,
-  Calendar,
   Layers,
   ChevronDown,
   ChevronUp,
   Award,
   Send,
   Star,
-  ExternalLink,
   Sparkles,
   ShieldCheck,
   FileText,
   GitBranch
 } from 'lucide-react';
 import { streamAnalyze, submitFeedback } from '../api';
+import WhatIfPanel from './WhatIfPanel';
+import { Callout, Kpi, SynaptPassCard } from './ui';
+import { fmtUsd, fmtUsdShort } from '../format';
 
 const PRESETS = [
   {
@@ -140,13 +136,13 @@ export default function TabWorkflow({ options }) {
   };
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="page">
       {/* Top Banner / Scenario Selector */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.4rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-              <Sparkles size={22} color="#6366f1" />
+              <Sparkles size={22} color="#2563eb" />
               Multi-Agent Supply Chain Disruption Cockpit
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
@@ -227,6 +223,7 @@ export default function TabWorkflow({ options }) {
                   <option value="1">Tier 1 (Direct)</option>
                   <option value="2">Tier 2 (Sub-tier)</option>
                   <option value="3">Tier 3 (Raw materials)</option>
+                  <option value="4">Tier 4 (Upstream)</option>
                 </select>
               </div>
 
@@ -296,7 +293,7 @@ export default function TabWorkflow({ options }) {
         <div className="glass-panel" style={{ padding: '1rem', borderLeft: '4px solid var(--accent-danger)', background: 'rgba(239, 68, 68, 0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <AlertCircle size={20} color="var(--accent-danger)" />
-            <strong style={{ color: '#fca5a5' }}>Workflow Error:</strong>
+            <strong style={{ color: '#dc2626' }}>Workflow Error:</strong>
             <span>{error}</span>
           </div>
         </div>
@@ -324,12 +321,12 @@ export default function TabWorkflow({ options }) {
                     : isDone
                     ? '3px solid var(--accent-success)'
                     : '1px solid var(--border-subtle)',
-                  background: isCurrent ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-surface)',
+                  background: isCurrent ? 'rgba(37, 99, 235, 0.12)' : 'var(--bg-surface)',
                   padding: '0.75rem',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isCurrent ? '#a5b4fc' : isDone ? '#6ee7b7' : 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: isCurrent ? '#4338ca' : isDone ? '#059669' : 'var(--text-muted)' }}>
                     {meta.title.split(' ')[0]}
                   </span>
                   {isCurrent && (
@@ -342,7 +339,7 @@ export default function TabWorkflow({ options }) {
                     <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Waiting</span>
                   )}
                 </div>
-                <div style={{ fontSize: '0.8rem', fontWeight: 500, color: '#fff', marginBottom: '0.2rem' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-strong)', marginBottom: '0.2rem' }}>
                   {meta.title}
                 </div>
                 <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', lineHeight: 1.3 }}>
@@ -357,78 +354,42 @@ export default function TabWorkflow({ options }) {
       {/* Main Results Display */}
       {result && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          {/* Executive KPI Callouts */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-            {/* Priority Card */}
-            <div className="glass-card" style={{ borderTop: '3px solid #ef4444' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PRIORITY LEVEL</span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.3rem' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
-                  {result.impact?.priority?.level}
-                </span>
-                <span style={{ fontSize: '0.85rem', color: '#fca5a5' }}>
-                  Score {result.impact?.priority?.score}/100
-                </span>
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-                SLA: {result.impact?.priority?.action_sla}
-              </p>
-            </div>
-
-            {/* Production Impact */}
-            <div className="glass-card" style={{ borderTop: '3px solid #f59e0b' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>EST. PRODUCTION IMPACT</span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.3rem' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fcd34d' }}>
-                  {result.impact?.prediction?.production_impact_pct}%
-                </span>
-                <TrendingDown size={18} color="#f59e0b" />
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-                Risk Probability: {(result.impact?.prediction?.risk_probability * 100).toFixed(1)}% ({result.impact?.prediction?.risk_level})
-              </p>
-            </div>
-
-            {/* Financial Loss */}
-            <div className="glass-card" style={{ borderTop: '3px solid #6366f1' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>EST. REVENUE LOSS</span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.3rem' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#fff' }}>
-                  ${Number(result.impact?.prediction?.revenue_loss_usd).toLocaleString()}
-                </span>
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-                HistGradientBoosting prediction
-              </p>
-            </div>
-
-            {/* Recovery Time */}
-            <div className="glass-card" style={{ borderTop: '3px solid #10b981' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>RECOVERY HORIZON</span>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginTop: '0.3rem' }}>
-                <span style={{ fontSize: '1.5rem', fontWeight: 700, color: '#6ee7b7' }}>
-                  {result.recovery?.predicted_full_days} Days
-                </span>
-                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                  (Partial ≈{result.recovery?.predicted_partial_days}d)
-                </span>
-              </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-                Resilience: {result.impact?.prediction?.resilience_score?.score}/100 ({result.impact?.prediction?.resilience_score?.band})
-              </p>
-            </div>
+          {/* Executive KPI Callouts (figures match the briefing: predicted with the chosen strategy) */}
+          {result.recovery?.support?.warning && <Callout tone="warning">{result.recovery.support.warning}</Callout>}
+          <div className="grid-auto" style={{ '--min': '220px' }}>
+            <Kpi label="Priority level" tone="#dc2626" value={result.impact?.priority?.level}
+              sub={`Score ${result.impact?.priority?.score}/100 · SLA: ${result.impact?.priority?.action_sla}`} />
+            <Kpi label="Est. production impact" tone="#f59e0b" value={`${result.impact?.prediction?.production_impact_pct}%`}
+              range={result.impact?.prediction?.ranges && { ...result.impact.prediction.ranges.production_impact_pct, value: result.impact.prediction.production_impact_pct }}
+              format={(v) => `${Number(v).toFixed(0)}%`}
+              sub={`High-impact risk ${(result.impact?.prediction?.risk_probability * 100).toFixed(0)}% (${result.impact?.prediction?.risk_level})`} />
+            <Kpi label={`Est. revenue loss · ${result.recovery?.strategy}`} tone="#1d4ed8" value={fmtUsd(result.recovery?.predicted_revenue_loss)}
+              range={result.recovery?.ranges && { ...result.recovery.ranges.revenue_loss_usd, value: result.recovery.predicted_revenue_loss }}
+              format={fmtUsdShort} />
+            <Kpi label="Recovery horizon" tone="#059669" value={`${result.recovery?.predicted_full_days} days`}
+              range={result.recovery?.ranges && { ...result.recovery.ranges.full_recovery_days, value: result.recovery.predicted_full_days }}
+              format={(v) => `${Math.round(v)}d`}
+              sub={`Partial ≈${result.recovery?.predicted_partial_days}d · Resilience ${result.impact?.prediction?.resilience_score?.score}/100 (${result.impact?.prediction?.resilience_score?.band})`} />
           </div>
 
           {/* Section: Executive Briefing & Action Plan */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(460px, 1fr))', gap: '1.5rem' }}>
+          <div className="grid-auto" style={{ '--min': '460px', gap: '1.5rem' }}>
             {/* Executive Briefing */}
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <FileText size={20} color="#6366f1" />
+                  <FileText size={20} color="#2563eb" />
                   Executive Disruption Briefing
                 </h3>
-                <span className="badge badge-purple">Synthesized by Report Agent</span>
+                {result.fact_check?.passed ? (
+                  <span className="badge badge-success" title={result.fact_check.retried ? `Rewritten after: ${result.fact_check.first_pass.join('; ')}` : 'Every case ID, amount and percentage matches the evidence'}>
+                    <ShieldCheck size={12} /> Fact-checked{result.fact_check.retried ? ' (auto-corrected)' : ''}
+                  </span>
+                ) : result.fact_check ? (
+                  <span className="badge badge-warning" title={(result.fact_check.final || []).join('; ')}>
+                    <AlertCircle size={12} /> {result.fact_check.final?.length} unverified figure(s)
+                  </span>
+                ) : <span className="badge badge-purple">Report Agent</span>}
               </div>
               <div className="markdown-body">
                 <ReactMarkdown>{result.summary}</ReactMarkdown>
@@ -447,9 +408,9 @@ export default function TabWorkflow({ options }) {
                 </span>
               </div>
 
-              <div style={{ background: 'rgba(99, 102, 241, 0.08)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                <strong style={{ color: '#a5b4fc', fontSize: '0.85rem' }}>Strategic Rationale:</strong>
-                <p style={{ fontSize: '0.85rem', color: '#e2e8f0', marginTop: '0.3rem' }}>
+              <div style={{ background: 'rgba(37, 99, 235, 0.08)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
+                <strong style={{ color: '#4338ca', fontSize: '0.85rem' }}>Strategic Rationale:</strong>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-body)', marginTop: '0.3rem' }}>
                   {result.plan?.rationale}
                 </p>
                 <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', color: 'var(--text-muted)' }}>
@@ -459,18 +420,18 @@ export default function TabWorkflow({ options }) {
 
               {/* Immediate Actions */}
               <div>
-                <h4 style={{ fontSize: '0.9rem', color: '#f8fafc', marginBottom: '0.5rem' }}>
+                <h4 style={{ fontSize: '0.9rem', color: 'var(--text-strong)', marginBottom: '0.5rem' }}>
                   Immediate Action Items (0-72h):
                 </h4>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                   {result.plan?.immediate_actions?.map((act, i) => (
                     <div key={i} className="glass-card" style={{ padding: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                       <div>
-                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: '#fff' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-strong)' }}>
                           {act.action}
                         </div>
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                          Owner: <strong style={{ color: '#cbd5e1' }}>{act.owner}</strong>
+                          Owner: <strong style={{ color: 'var(--text-body)' }}>{act.owner}</strong>
                         </span>
                       </div>
                       <span className="badge badge-warning" style={{ whiteSpace: 'nowrap' }}>
@@ -481,10 +442,24 @@ export default function TabWorkflow({ options }) {
                 </div>
               </div>
 
+              {/* Synapt playbook the planner followed */}
+              {result.plan?.procedure && (
+                <div>
+                  <h4 style={{ fontSize: '0.9rem', color: 'var(--text-strong)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                    Synapt response playbook
+                    <span className="badge badge-purple" style={{ fontSize: '0.66rem' }}>trident_get_procedures</span>
+                  </h4>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{result.plan.procedure.name}</p>
+                  <ol className="steps">
+                    {result.plan.procedure.steps.map((st) => <li key={st.n}>{st.text}</li>)}
+                  </ol>
+                </div>
+              )}
+
               {/* Risks & Mitigation */}
               {result.plan?.risks?.length > 0 && (
                 <div>
-                  <h4 style={{ fontSize: '0.85rem', color: '#fca5a5', marginBottom: '0.4rem' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: '#dc2626', marginBottom: '0.4rem' }}>
                     Identified Operational Risks:
                   </h4>
                   <ul style={{ paddingLeft: '1.2rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -517,21 +492,27 @@ export default function TabWorkflow({ options }) {
             {/* Subgraph Answer if present */}
             {result.graph?.answer && (
               <div style={{ background: 'rgba(6, 182, 212, 0.08)', padding: '0.85rem', borderRadius: '8px', border: '1px solid rgba(6, 182, 212, 0.25)', marginBottom: '1rem' }}>
-                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#67e8f9' }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#0e7490' }}>
                   SYNAPT TRIDENT GRAPH-RAG DIRECT ANSWER:
                 </span>
-                <p style={{ fontSize: '0.85rem', color: '#e2e8f0', marginTop: '0.35rem' }}>
-                  {result.graph.answer}
-                </p>
+                <div className="markdown-body" style={{ fontSize: '0.85rem', marginTop: '0.35rem' }}>
+                  <ReactMarkdown>{result.graph.answer}</ReactMarkdown>
+                </div>
+              </div>
+            )}
+            {result.graph?.quality && (
+              <div style={{ marginBottom: '1rem' }}>
+                <div className="eyebrow" style={{ marginBottom: '0.4rem' }}>Synapt quality signals for this answer</div>
+                <SynaptPassCard quality={result.graph.quality} />
               </div>
             )}
 
             {/* Case Cards Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.85rem' }}>
+            <div className="grid-auto" style={{ '--min': '320px', gap: '0.85rem' }}>
               {result.cases?.slice(0, 6).map((c) => (
                 <div key={c.disruption_id} className="glass-card" style={{ padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#a5b4fc', fontSize: '0.88rem' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: '#4338ca', fontSize: '0.88rem' }}>
                       {c.disruption_id}
                     </span>
                     <div style={{ display: 'flex', gap: '0.35rem' }}>
@@ -549,8 +530,8 @@ export default function TabWorkflow({ options }) {
                   </p>
 
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.4rem', marginTop: 'auto' }}>
-                    <span>Strategy: <strong style={{ color: '#fff' }}>{c.response_type}</strong></span>
-                    <span>Recovery: <strong style={{ color: '#6ee7b7' }}>{c.full_recovery_days}d</strong></span>
+                    <span>Strategy: <strong style={{ color: 'var(--text-strong)' }}>{c.response_type}</strong></span>
+                    <span>Recovery: <strong style={{ color: '#059669' }}>{c.full_recovery_days}d</strong></span>
                   </div>
                 </div>
               ))}
@@ -574,7 +555,7 @@ export default function TabWorkflow({ options }) {
                   <span className={`badge ${result.judge.verdict === 'approve' ? 'badge-success' : 'badge-warning'}`} style={{ fontSize: '0.85rem', padding: '0.3rem 0.8rem' }}>
                     VERDICT: {result.judge.verdict?.toUpperCase()}
                   </span>
-                  <span style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-strong)' }}>
                     {(result.judge.overall_score * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -585,7 +566,7 @@ export default function TabWorkflow({ options }) {
                 {Object.entries(result.judge.scores || {}).map(([crit, sc]) => (
                   <div key={crit} className="glass-card" style={{ padding: '0.6rem', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'capitalize' }}>{crit}</div>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: sc >= 4 ? '#6ee7b7' : sc === 3 ? '#fcd34d' : '#fca5a5' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 700, color: sc >= 4 ? '#059669' : sc === 3 ? '#b45309' : '#dc2626' }}>
                       {sc} / 5
                     </div>
                   </div>
@@ -598,10 +579,13 @@ export default function TabWorkflow({ options }) {
             </div>
           )}
 
+          <WhatIfPanel incident={{ ...result.incident, response_type: result.plan?.primary_strategy }}
+            title="What-if: how could this disruption have gone better?" />
+
           {/* Section: Continuous Improvement & Feedback Loop */}
-          <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, rgba(22, 28, 46, 0.7) 100%)' }}>
+          <div className="glass-panel" style={{ padding: '1.5rem', background: 'linear-gradient(180deg, rgba(37, 99, 235, 0.05) 0%, rgba(255, 255, 255, 0.92) 100%)' }}>
             <h3 style={{ fontSize: '1.1rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <RotateCcw size={18} color="#6366f1" />
+              <RotateCcw size={18} color="#2563eb" />
               Continuous Improvement Feedback Loop
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
@@ -610,7 +594,7 @@ export default function TabWorkflow({ options }) {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxWidth: '600px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <span style={{ fontSize: '0.85rem', color: '#fff' }}>Rating:</span>
+                <span style={{ fontSize: '0.85rem', color: 'var(--text-strong)' }}>Rating:</span>
                 {[1, 2, 3, 4, 5].map((s) => (
                   <button
                     key={s}
@@ -642,7 +626,7 @@ export default function TabWorkflow({ options }) {
                   {feedbackSent ? 'Feedback Recorded' : 'Submit Feedback to Assistant & Synapt'}
                 </button>
                 {feedbackMsg && (
-                  <span style={{ fontSize: '0.8rem', color: '#6ee7b7' }}>{feedbackMsg}</span>
+                  <span style={{ fontSize: '0.8rem', color: '#059669' }}>{feedbackMsg}</span>
                 )}
               </div>
             </div>

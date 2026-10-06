@@ -1,0 +1,10 @@
+{
+ "supply_chain_disruptions": {
+  "[LOCATION_149de1169d61]/[LOCATION_2e00a44bfcb9]": "Africa/Middle East",
+  "[LOCATION_38042ba5c94b]": "Asia-Pacific",
+  "[LOCATION_540508078fee]": "North America",
+  "[LOCATION_770355625198]": "South America",
+  "[LOCATION_7d3e23c6a8cd]": "Europe",
+  "[LOCATION_c24d92cc444f]": "Africa/Middle East"
+ }
+}

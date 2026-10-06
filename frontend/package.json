@@ -7,14 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:traffic": "node scripts/check-traffic.mjs"
   },
   "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.1",
     "lucide-react": "^1.52.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-markdown": "^10.1.0",
-    "recharts": "^3.10.1"
+    "recharts": "^3.10.1",
+    "three": "^0.180.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.18",

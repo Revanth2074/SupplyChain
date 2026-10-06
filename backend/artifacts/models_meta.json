@@ -1,5 +1,5 @@
 {
- "trained_at": "2026-10-06 12:18:55",
+ "trained_at": "2026-10-06 17:37:24",
  "n_rows": 100000,
  "targets": {
   "production_impact_pct": {
@@ -16,7 +16,8 @@
     "has_backup_supplier": -7e-05,
     "disruption_severity": 1.19205,
     "response_time_days": 6e-05
-   }
+   },
+   "interval_coverage": 0.796
   },
   "revenue_loss_usd": {
    "label": "Revenue loss (USD)",
@@ -32,7 +33,8 @@
     "has_backup_supplier": 2e-05,
     "disruption_severity": 0.26616,
     "response_time_days": 0.00021
-   }
+   },
+   "interval_coverage": 0.788
   },
   "full_recovery_days": {
    "label": "Full recovery (days)",
@@ -48,7 +50,8 @@
     "has_backup_supplier": 0.06708,
     "disruption_severity": 0.69347,
     "response_time_days": -0.00193
-   }
+   },
+   "interval_coverage": 0.797
   },
   "partial_recovery_days": {
    "label": "Partial recovery (days)",
@@ -64,7 +67,8 @@
     "has_backup_supplier": -6e-05,
     "disruption_severity": 0.45169,
     "response_time_days": -0.00323
-   }
+   },
+   "interval_coverage": 0.777
   },
   "risk": {
    "label": "High-impact disruption risk",
@@ -88,5 +92,5 @@
    }
   }
  },
- "train_seconds": 7.1
+ "train_seconds": 12.3
 }

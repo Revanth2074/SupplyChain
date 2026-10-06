@@ -155,11 +155,11 @@ export default function TabPrioritize({ options }) {
       {/* Ranked Queue Table & Cards */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <ArrowUpDown size={18} color="#6366f1" />
+          <ArrowUpDown size={18} color="#2563eb" />
           Active Incident Priority Queue ({rankedList?.length || 0} Incidents Evaluated)
         </h3>
 
-        {error && <div style={{ color: '#fca5a5', marginBottom: '1rem' }}>Error: {error}</div>}
+        {error && <div style={{ color: '#dc2626', marginBottom: '1rem' }}>Error: {error}</div>}
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
           {rankedList?.map((item) => {
@@ -177,7 +177,7 @@ export default function TabPrioritize({ options }) {
                   flexDirection: 'column',
                   gap: '0.75rem',
                   borderLeft: `4px solid ${
-                    p.level?.includes('P1') ? '#ef4444' : p.level?.includes('P2') ? '#f59e0b' : p.level?.includes('P3') ? '#06b6d4' : '#6366f1'
+                    p.level?.includes('P1') ? '#ef4444' : p.level?.includes('P2') ? '#f59e0b' : p.level?.includes('P3') ? '#06b6d4' : '#2563eb'
                   }`
                 }}
               >
@@ -187,7 +187,7 @@ export default function TabPrioritize({ options }) {
                       width: '28px',
                       height: '28px',
                       borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.08)',
+                      background: 'rgba(15, 23, 42, 0.096)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -196,7 +196,7 @@ export default function TabPrioritize({ options }) {
                     }}>
                       #{item.rank}
                     </span>
-                    <strong style={{ fontSize: '1rem', color: '#fff' }}>{item.label}</strong>
+                    <strong style={{ fontSize: '1rem', color: 'var(--text-strong)' }}>{item.label}</strong>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -214,33 +214,33 @@ export default function TabPrioritize({ options }) {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', background: 'rgba(0,0,0,0.25)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.8rem' }}>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Disruption Type:</span>
-                    <strong style={{ display: 'block', color: '#fff' }}>{inc.disruption_type}</strong>
+                    <strong style={{ display: 'block', color: 'var(--text-strong)' }}>{inc.disruption_type}</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Severity:</span>
-                    <strong style={{ display: 'block', color: '#fcd34d' }}>Level {inc.disruption_severity} / 5</strong>
+                    <strong style={{ display: 'block', color: '#b45309' }}>Level {inc.disruption_severity} / 5</strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Est. Production Impact:</span>
-                    <strong style={{ display: 'block', color: '#fca5a5' }}>
+                    <strong style={{ display: 'block', color: '#dc2626' }}>
                       {pred.production_impact_pct}%
                     </strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Est. Revenue Loss:</span>
-                    <strong style={{ display: 'block', color: '#fff' }}>
+                    <strong style={{ display: 'block', color: 'var(--text-strong)' }}>
                       ${Number(pred.revenue_loss_usd).toLocaleString()}
                     </strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Est. Full Recovery:</span>
-                    <strong style={{ display: 'block', color: '#6ee7b7' }}>
+                    <strong style={{ display: 'block', color: '#059669' }}>
                       {pred.full_recovery_days} days
                     </strong>
                   </div>
                   <div>
                     <span style={{ color: 'var(--text-muted)' }}>Backup Supplier:</span>
-                    <strong style={{ display: 'block', color: inc.has_backup_supplier ? '#6ee7b7' : '#fca5a5' }}>
+                    <strong style={{ display: 'block', color: inc.has_backup_supplier ? '#059669' : '#dc2626' }}>
                       {inc.has_backup_supplier ? 'Yes (Dual Sourced)' : 'No (Single Sourced)'}
                     </strong>
                   </div>
@@ -249,10 +249,10 @@ export default function TabPrioritize({ options }) {
                 {/* Weighted Score Breakdown */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.72rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
                   <span>Formula Contribution:</span>
-                  <span>Severity: <strong style={{ color: '#fff' }}>{p.components.severity}%</strong></span>
-                  <span>Impact: <strong style={{ color: '#fff' }}>{p.components.production_impact}%</strong></span>
-                  <span>Financial Loss: <strong style={{ color: '#fff' }}>{p.components.financial_loss}%</strong></span>
-                  <span>Risk Prob: <strong style={{ color: '#fff' }}>{p.components.risk}%</strong></span>
+                  <span>Severity: <strong style={{ color: 'var(--text-strong)' }}>{p.components.severity}%</strong></span>
+                  <span>Impact: <strong style={{ color: 'var(--text-strong)' }}>{p.components.production_impact}%</strong></span>
+                  <span>Financial Loss: <strong style={{ color: 'var(--text-strong)' }}>{p.components.financial_loss}%</strong></span>
+                  <span>Risk Prob: <strong style={{ color: 'var(--text-strong)' }}>{p.components.risk}%</strong></span>
                 </div>
               </div>
             );

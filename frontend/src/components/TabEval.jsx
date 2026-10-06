@@ -16,8 +16,10 @@ import {
   fetchEvalResults,
   runEvaluation,
   fetchFeedbackStats,
-  triggerRetrain
+  triggerRetrain,
+  fetchSynaptQuality
 } from '../api';
+import { Section, SynaptPassCard } from './ui';
 
 export default function TabEval() {
   const [evalStatus, setEvalStatus] = useState(null);
@@ -26,6 +28,12 @@ export default function TabEval() {
   const [running, setRunning] = useState(false);
   const [retraining, setRetraining] = useState(false);
   const [retrainMsg, setRetrainMsg] = useState(null);
+  const [useGraph, setUseGraph] = useState(true);
+  const [synQuality, setSynQuality] = useState(null);
+
+  useEffect(() => {
+    fetchSynaptQuality().then(setSynQuality).catch(() => {});
+  }, [evalResults]);
 
   const loadData = async () => {
     try {
@@ -68,7 +76,7 @@ export default function TabEval() {
   const handleStartEval = async () => {
     setRunning(true);
     try {
-      await runEvaluation({ limit: 4, use_graph: false, include_feedback: true });
+      await runEvaluation({ limit: 4, use_graph: useGraph, include_feedback: true });
     } catch (err) {
       alert(`Eval launch error: ${err.message}`);
       setRunning(false);
@@ -89,7 +97,7 @@ export default function TabEval() {
   };
 
   return (
-    <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+    <div className="page">
       {/* Header */}
       <div className="glass-panel" style={{ padding: '1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
@@ -103,7 +111,12 @@ export default function TabEval() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', gap: '0.35rem', alignItems: 'center' }}
+              title="Adds Synapt graph-RAG to each test case (about 40s per case) so Synapt's own quality scores are recorded next to DeepEval.">
+              <input type="checkbox" checked={useGraph} onChange={(e) => setUseGraph(e.target.checked)} disabled={running} />
+              Include Synapt graph-RAG
+            </label>
             <button
               onClick={handleStartEval}
               disabled={running}
@@ -127,20 +140,20 @@ export default function TabEval() {
 
       {/* DeepEval Summary Scores */}
       {evalResults?.summary && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+        <div className="grid-auto" style={{ '--min': '200px' }}>
           {/* Classification Accuracy */}
-          <div className="glass-card" style={{ borderLeft: '4px solid #6366f1' }}>
+          <div className="glass-card" style={{ borderLeft: '4px solid #2563eb' }}>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>CLASSIFICATION ACCURACY</span>
-            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#fff', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: 'var(--text-strong)', marginTop: '0.2rem' }}>
               {evalResults.summary.classification_accuracy ? `${(evalResults.summary.classification_accuracy * 100).toFixed(1)}%` : 'N/A'}
             </div>
-            <span style={{ fontSize: '0.72rem', color: '#a5b4fc' }}>Golden Disruption Cases</span>
+            <span style={{ fontSize: '0.72rem', color: '#4338ca' }}>Golden Disruption Cases</span>
           </div>
 
           {/* Retrieval Precision */}
           <div className="glass-card" style={{ borderLeft: '4px solid #06b6d4' }}>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>RETRIEVAL TYPE PRECISION</span>
-            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#67e8f9', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#0e7490', marginTop: '0.2rem' }}>
               {evalResults.summary.retrieval_type_precision ? `${(evalResults.summary.retrieval_type_precision * 100).toFixed(1)}%` : 'N/A'}
             </div>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Synapt + BM25 Precision</span>
@@ -149,7 +162,7 @@ export default function TabEval() {
           {/* LLM Judge Score */}
           <div className="glass-card" style={{ borderLeft: '4px solid #10b981' }}>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>LLM-AS-JUDGE OVERALL</span>
-            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#6ee7b7', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#059669', marginTop: '0.2rem' }}>
               {evalResults.summary.llm_judge_overall ? `${(evalResults.summary.llm_judge_overall * 100).toFixed(1)}%` : 'N/A'}
             </div>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>6-criteria rubric audit</span>
@@ -161,7 +174,7 @@ export default function TabEval() {
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
                 {metric.replace(/([A-Z])/g, ' $1').trim()}
               </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#c4b5fd', marginTop: '0.2rem' }}>
+              <div style={{ fontSize: '1.6rem', fontWeight: 700, color: '#7c3aed', marginTop: '0.2rem' }}>
                 {score !== null ? `${(score * 100).toFixed(0)}%` : 'Pending'}
               </div>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>DeepEval 4.x Evaluator</span>
@@ -169,6 +182,53 @@ export default function TabEval() {
           ))}
         </div>
       )}
+
+      {/* Synapt's own quality signals next to DeepEval */}
+      <Section
+        icon={ShieldCheck}
+        iconColor="#0e7490"
+        title="Synapt answer quality (alongside DeepEval)"
+        subtitle={`Synapt scores every graph-RAG answer itself (knowledge, procedure and graph confidence plus a trust signal). Averages over the last ${synQuality?.n ?? 0} Synapt queries made by the app.`}
+      >
+        {synQuality?.n ? (
+          <>
+            <SynaptPassCard quality={{
+              ...synQuality.summary,
+              degraded: (synQuality.summary.degraded_rate ?? 0) > 0.5,
+              degraded_reasons: Object.keys(synQuality.summary.degraded_reasons || {}),
+              traversal_s: synQuality.summary.traversal_s,
+            }} />
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+              <span>Trust degraded on <strong style={{ color: '#b45309' }}>{Math.round((synQuality.summary.degraded_rate ?? 0) * 100)}%</strong> of answers</span>
+              {evalResults?.summary?.fact_check_pass_rate != null && (
+                <span>· Briefing fact-check pass rate in the last eval: <strong style={{ color: '#059669' }}>{Math.round(evalResults.summary.fact_check_pass_rate * 100)}%</strong></span>
+              )}
+              {evalResults?.summary?.synapt?.n > 0 && (
+                <span>· Eval run Synapt confidence: <strong style={{ color: '#0e7490' }}>{Math.round((evalResults.summary.synapt.confidence ?? 0) * 100)}</strong> over {evalResults.summary.synapt.n} cases</span>
+              )}
+            </div>
+            <div className="table-wrap" style={{ marginTop: '0.9rem', maxHeight: 280, overflowY: 'auto' }}>
+              <table className="table">
+                <thead><tr><th>Source</th><th>Question</th><th>Overall</th><th>Knowledge</th><th>Procedure</th><th>Graph</th><th>Trust</th></tr></thead>
+                <tbody>
+                  {synQuality.recent.map((r) => (
+                    <tr key={r.ts}>
+                      <td><span className="badge badge-primary">{r.source}</span></td>
+                      <td style={{ maxWidth: 420 }}>{r.question?.slice(0, 120)}</td>
+                      {['confidence', 'knowledge_confidence', 'procedural_confidence', 'graph_confidence'].map((k) => (
+                        <td key={k} className="num">{r[k] == null ? '—' : Math.round(r[k] * 100)}</td>
+                      ))}
+                      <td>{r.degraded ? <span className="badge badge-warning">degraded</span> : <span className="badge badge-success">ok</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <p className="section-sub">No Synapt graph queries recorded yet. Run an analysis in the cockpit or a question in the Knowledge Graph tab.</p>
+        )}
+      </Section>
 
       {/* Evaluated Test Cases Table */}
       {evalResults?.rows && (
@@ -182,7 +242,7 @@ export default function TabEval() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span className="badge badge-primary">{row.id}</span>
-                    <strong style={{ fontSize: '0.9rem', color: '#fff' }}>
+                    <strong style={{ fontSize: '0.9rem', color: 'var(--text-strong)' }}>
                       {row.classification?.disruption_type} ({row.classification?.industry || 'General'})
                     </strong>
                     {row.source === 'feedback-regression' && (
@@ -226,7 +286,7 @@ export default function TabEval() {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <RotateCcw size={18} color="#6366f1" />
+              <RotateCcw size={18} color="#2563eb" />
               Continuous Learning Telemetry & Active Model Retraining
             </h3>
             <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -249,7 +309,7 @@ export default function TabEval() {
         </div>
 
         {retrainMsg && (
-          <div style={{ padding: '0.75rem', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#6ee7b7', fontSize: '0.85rem' }}>
+          <div style={{ padding: '0.75rem', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#059669', fontSize: '0.85rem' }}>
             {retrainMsg}
           </div>
         )}
@@ -258,28 +318,28 @@ export default function TabEval() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.85rem' }}>
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>FEEDBACK ENTRIES</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-strong)' }}>
               {feedbackStats?.total || 0} Submitted
             </div>
           </div>
 
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>AVERAGE USER RATING</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fcd34d', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-              {feedbackStats?.avg_rating || '5.0'} <Star size={16} fill="#fcd34d" />
+            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#b45309', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              {feedbackStats?.avg_rating || '5.0'} <Star size={16} fill="#b45309" />
             </div>
           </div>
 
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>SYNAPT FORWARDED</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#67e8f9' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#0e7490' }}>
               {feedbackStats?.sent_to_synapt || 0} trident_feedback
             </div>
           </div>
 
           <div className="glass-card">
             <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>STRATEGY BOOSTS</span>
-            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#6ee7b7' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#059669' }}>
               {feedbackStats?.boosts?.length || 0} Multipliers
             </div>
           </div>

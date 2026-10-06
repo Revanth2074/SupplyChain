@@ -176,3 +176,44 @@ export async function runEvaluation(params = {}) {
     body: JSON.stringify(params),
   }));
 }
+
+// ---------------------------------------------------------------- what-if, portfolio, Synapt knowledge
+const postJson = async (path, body) => handleResponse(await fetch(`${BASE_URL}${path}`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(body),
+}));
+
+export const fetchWhatIf = (incident) => postJson('/whatif', incident);
+
+export const scorePortfolio = (csv, severity = 3) => postJson('/portfolio', { csv, severity });
+
+export async function fetchPortfolioSample() {
+  const res = await fetch(`${BASE_URL}/portfolio/sample`);
+  if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+  return res.text();
+}
+
+export async function fetchSynaptKnowledge() {
+  return handleResponse(await fetch(`${BASE_URL}/synapt/knowledge`));
+}
+
+export async function fetchSynaptInsight(key) {
+  return handleResponse(await fetch(`${BASE_URL}/synapt/insights/${encodeURIComponent(key)}`));
+}
+
+export const querySynaptGraph = (question, hops = null) => postJson('/synapt/graph', { question, hops });
+
+export async function fetchSynaptProcedures(query) {
+  return handleResponse(await fetch(`${BASE_URL}/synapt/procedures?query=${encodeURIComponent(query)}`));
+}
+
+export async function fetchSynaptEpisodes(query = '', top_k = 5) {
+  return handleResponse(await fetch(`${BASE_URL}/synapt/episodes?query=${encodeURIComponent(query)}&top_k=${top_k}`));
+}
+
+export const labelWithSynapt = (description) => postJson('/synapt/label', { description });
+
+export async function fetchSynaptQuality() {
+  return handleResponse(await fetch(`${BASE_URL}/synapt/quality`));
+}

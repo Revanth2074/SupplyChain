@@ -18,7 +18,7 @@ The **AI-Powered Supply Chain Disruption Assistant** unites:
 ## 2. Core Design Principles
 
 ### 2.1 Hybrid Knowledge Substrate (Synapt + Local Store)
-- **Primary Retrieval**: Dense semantic similarity search and Neo4j graph traversal via Synapt's Streamable HTTP MCP tools (`trident_get_chunks`, `trident_query`, `trident_search`).
+- **Primary Retrieval**: Dense semantic similarity search and Neo4j graph traversal via Synapt's Streamable HTTP MCP tools (`trident_get_chunks`, `trident_query`). Synapt holds a 4,000-case text sample (`synapt_ingest/cases_*.md`) plus statistics computed over all 100,000 cases (`aggregate_stats.md`, `profiles.md`) and 6 response-playbook SOPs (`response_playbooks.md`). BM25 keyword search and the ML models run over the full 100,000-row CSV, and every Synapt hit is joined back to its CSV row by `DIS-` id. Synapt's PII masking turns supplier regions in ingested text into stable `[LOCATION_<hash>]` tokens. `synapt_service.regions` learns token → region from retrieved cases (seeded in `artifacts/synapt_region_tokens.json`), adds the token to region mentions in queries, and turns tokens back into region names in answers and graph nodes.
 - **Local Fallback & Enrichment**: Local TF-IDF/TruncatedSVD LSA semantic indexing and BM25Okapi inverted index over the 100,000 cases CSV (`supply_chain_disruption_recovery.csv`). If Synapt experiences connectivity or latency spikes, a resilient circuit breaker switches transparently to local search.
 - **Entity & Metadata Hydration**: Case IDs matched via Synapt (e.g. `DIS-079895`) are immediately re-hydrated against the dataset master store to restore de-anonymized metadata and enable exact faceted filtering.
 

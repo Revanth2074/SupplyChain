@@ -74,8 +74,8 @@ def validate_incident(inc: dict, options: dict) -> list[str]:
         v = inc.get(col)
         if v and v not in options.get(col, []):
             raise HTTPException(422, f"Invalid {col} '{v}'. Allowed: {options.get(col)}")
-    if inc.get("supplier_tier") is not None and int(inc["supplier_tier"]) not in (1, 2, 3):
-        raise HTTPException(422, "supplier_tier must be 1, 2 or 3")
+    if inc.get("supplier_tier") is not None and int(inc["supplier_tier"]) not in (1, 2, 3, 4):
+        raise HTTPException(422, "supplier_tier must be 1, 2, 3 or 4")
     if inc.get("disruption_severity") is not None and not 1 <= int(inc["disruption_severity"]) <= 5:
         raise HTTPException(422, "disruption_severity must be between 1 and 5")
     if inc.get("production_impact_pct") is not None and not 0 <= float(inc["production_impact_pct"]) <= 100:

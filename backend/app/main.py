@@ -10,17 +10,17 @@ from typing import Any, Literal, Optional
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import agents, analysis, evaluation, feedback, llm
+from . import agents, analysis, evaluation, feedback, llm, portfolio
 from . import synapt_service as syn
 from .config import settings
 from .data_store import store
 from .guardrails import validate_incident, validate_text
 from .judge import judge
 from .ml_models import registry
-from .retrieval import hybrid_search
+from .retrieval import hybrid_search, synapt_label
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 log = logging.getLogger("api")
@@ -73,7 +73,7 @@ class Filters(BaseModel):
 class Incident(BaseModel):
     disruption_type: Optional[str] = None
     industry: Optional[str] = None
-    supplier_tier: Optional[int] = Field(None, ge=1, le=3)
+    supplier_tier: Optional[int] = Field(None, ge=1, le=4)
     supplier_region: Optional[str] = None
     supplier_size: Optional[str] = None
     has_backup_supplier: Optional[bool] = None
@@ -135,6 +135,23 @@ class FeedbackReq(BaseModel):
     actual_partial_recovery_days: Optional[float] = Field(None, ge=0, le=1000)
 
 
+class PortfolioReq(BaseModel):
+    suppliers: Optional[list[dict[str, Any]]] = Field(None, max_length=500)
+    csv: Optional[str] = Field(None, max_length=500_000)
+    severity: int = Field(3, ge=1, le=5)
+
+
+class GraphReq(BaseModel):
+    question: str
+    hops: Optional[int] = Field(None, ge=0, le=4)
+    top_k: int = Field(5, ge=1, le=20)
+
+
+class LabelReq(BaseModel):
+    description: str
+    incident: Optional[Incident] = None
+
+
 class EvalReq(BaseModel):
     limit: Optional[int] = Field(None, ge=1, le=20)
     use_graph: bool = False
@@ -167,6 +184,109 @@ def synapt_ping():
         return {"ok": True, "latency_ms": int((time.time() - t0) * 1000), "stats": s}
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": str(e), "latency_ms": int((time.time() - t0) * 1000)}
+
+
+@app.get("/api/synapt/knowledge")
+def synapt_knowledge():
+    """What the Synapt provider holds (stats), whether it has a ticket store, and episodic memory."""
+    out: dict[str, Any] = {"provider_id": settings.SYNAPT_PROVIDER_ID}
+    for key, fn in (("stats", syn.stats), ("episodes", lambda: syn.episodes())):
+        try:
+            out[key] = fn()
+        except Exception as e:  # noqa: BLE001
+            out[key] = {"error": str(e)[:200]}
+    out["has_ticket_store"] = bool((out.get("stats") or {}).get("has_ticket_store"))
+    out["insights"] = [{"key": k, "title": t, "description": d} for k, (t, d, _) in syn.GRAPH_INSIGHTS.items()]
+    return out
+
+
+@app.get("/api/synapt/insights/{key}")
+def synapt_insight(key: str):
+    """Provider-scoped read-only graph query from a fixed template (no free-form Cypher)."""
+    if key not in syn.GRAPH_INSIGHTS:
+        raise HTTPException(404, f"unknown insight; choose one of {list(syn.GRAPH_INSIGHTS)}")
+    try:
+        return syn.graph_insight(key)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Synapt graph query failed: {e}") from e
+
+
+@app.post("/api/synapt/graph")
+def synapt_graph(req: GraphReq):
+    """Graph-RAG answer with the reasoning subgraph Synapt traversed (for the graph explorer)."""
+    q = validate_text(req.question, "question")
+    try:
+        return syn.graph_query(q["text"], req.top_k, req.hops, 90, "explorer")
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Synapt query failed: {e}") from e
+
+
+@app.get("/api/synapt/procedures")
+def synapt_procedures(query: str = "disruption response playbook"):
+    validate_text(query, "query", require_domain=False)
+    try:
+        return {"procedures": syn.procedures(query)}
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Synapt procedures failed: {e}") from e
+
+
+@app.get("/api/synapt/episodes")
+def synapt_episodes(query: str = "", top_k: int = 5):
+    if query:
+        validate_text(query, "query", require_domain=False)
+    try:
+        return syn.episodes(query, max(1, min(top_k, 20)))
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Synapt episodes failed: {e}") from e
+
+
+@app.post("/api/synapt/label")
+def synapt_label_ep(req: LabelReq):
+    """Synapt-native labelling (ticket store if present, else Synapt semantic kNN) compared
+    with the app's classifier and the ML/statistics strategy recommendation."""
+    _ready()
+    v = validate_text(req.description, "description")
+    cls = analysis.classify(v["text"])
+    inc = {**cls["fields"], **(_f(req.incident) or {})}
+    synapt_out: dict[str, Any]
+    try:
+        # semantic nearest-case vote covers every field; the ticket store (if any) adds its own labels
+        synapt_out = synapt_label(f"{v['text']} {agents._describe(inc)}")
+        synapt_out["note"] = "Labels vote over the nearest Synapt-retrieved historical cases."
+        if (syn.stats() or {}).get("has_ticket_store"):
+            try:
+                tl = syn.label_ticket({"title": agents._describe(inc), "description": v["text"]})
+                for f, d in tl["fields"].items():
+                    synapt_out["fields"][f] = d["labels"]
+                synapt_out["ticket_store"] = {"fields": list(tl["fields"]), "neighbours": tl["neighbours"],
+                                              "reliability": {f: d["reliability"] for f, d in tl["fields"].items()}}
+                synapt_out["method"] = "ticket-store + semantic kNN"
+                synapt_out["note"] = ("recovery_outcome comes from the Synapt ticket store "
+                                      "(trident_label_ticket); other fields vote over the nearest cases.")
+            except Exception as e:  # noqa: BLE001
+                synapt_out["ticket_store_error"] = str(e)[:200]
+    except Exception as e:  # noqa: BLE001
+        synapt_out = {"method": "unavailable", "error": str(e)[:200], "fields": {}}
+    strat = analysis.strategy_table(inc)["strategies"] if inc.get("disruption_type") else []
+    best = strat[0]["strategy"] if strat else None
+    app_view = {**{k: inc.get(k) for k in ("disruption_type", "industry", "supplier_region")}, "response_type": best}
+    if inc.get("disruption_type"):
+        days = registry.predict({**inc, **({"response_type": best} if best else {})})["full_recovery_days"]
+        app_view["recovery_outcome"] = ("Fast" if days <= 30 else "Normal" if days <= 60 else
+                                        "Slow" if days <= 120 else "Very Slow")
+        app_view["predicted_full_recovery_days"] = days
+    agree = {}
+    for f, cands in (synapt_out.get("fields") or {}).items():
+        if cands and app_view.get(f):
+            agree[f] = cands[0]["value"] == app_view[f]
+    return {"synapt": synapt_out, "app": {"classification": cls, "recommended_strategy": app_view["response_type"],
+                                          "fields": app_view}, "agreement": agree}
+
+
+@app.get("/api/synapt/quality")
+def synapt_quality():
+    """Synapt's own confidence / trust signals for every graph query the app has made."""
+    return feedback.synapt_quality()
 
 
 @app.get("/api/meta")
@@ -233,7 +353,7 @@ def ask(req: AskReq):
     _ready()
     q = validate_text(req.question, "question")
     filters = _f(req.filters)
-    gfut = _pool.submit(syn.graph_query, q["text"], req.top_k, None, 75) if (req.use_graph and syn.configured()) else None
+    gfut = _pool.submit(syn.graph_query, q["text"], req.top_k, None, 75, "ask") if (req.use_graph and syn.configured()) else None
     sres = hybrid_search(q["text"], filters, req.top_k)
     graph = None
     if gfut:
@@ -290,6 +410,34 @@ def explain(inc: Incident):
     d = {k: v for k, v in inc.model_dump().items() if v is not None}
     validate_incident(d, store.options())
     return {"incident": d, "explanation": registry.explain(d)}
+
+
+@app.post("/api/whatif")
+def whatif(inc: Incident):
+    """Counterfactual analysis: how outcomes change if one lever (backup, response speed, tier,
+    strategy) had been different."""
+    _ready()
+    d = {k: v for k, v in inc.model_dump().items() if v is not None}
+    validate_incident(d, store.options())
+    if not d.get("disruption_type"):
+        raise HTTPException(422, "disruption_type is required")
+    return {"incident": d, **registry.whatif(d)}
+
+
+@app.get("/api/portfolio/sample", response_class=PlainTextResponse)
+def portfolio_sample():
+    return portfolio.sample_csv()
+
+
+@app.post("/api/portfolio")
+def portfolio_score(req: PortfolioReq):
+    """Score a supplier portfolio across all disruption types -> heatmap + ranked risk list."""
+    _ready()
+    try:
+        rows = portfolio.parse_csv(req.csv) if req.csv else (req.suppliers or [])
+        return portfolio.score(rows, req.severity)
+    except ValueError as e:
+        raise HTTPException(422, str(e)) from e
 
 
 @app.get("/api/models")

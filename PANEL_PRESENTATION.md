@@ -52,7 +52,8 @@
   - Integrates four core Synapt tools:
     - `trident_get_chunks`: Vector semantic retrieval across ingested case narratives.
     - `trident_query`: Tri-store Graph-RAG executing Neo4j BFS graph traversal to surface entity connections and recovery provenances.
-    - `trident_search`: Disruption episode and business process entity resolution.
+    - `trident_ingest`: Loads 100k-case profiles and 6 response-playbook SOPs; the 4k-case text sample covers semantic recall while BM25 + ML cover all 100k rows.
+    - Region masking bridge: Synapt masks regions as `[LOCATION_x]` tokens; the service maps them back so region search still works.
     - `trident_feedback`: Closing the loop by returning operational deflected/non-deflected verdicts directly to the knowledge graph.
   - Features an automated **Circuit Breaker Pattern** ensuring 100% enterprise uptime through graceful local LSA and BM25 fallback if external endpoints experience latency.
 

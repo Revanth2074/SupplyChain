@@ -44,7 +44,7 @@ flowchart TB
         AUTH["Bearer Auth Service (/auth_service)"]
         T_CHUNK["trident_get_chunks (Semantic Vectors)"]
         T_QUERY["trident_query (Graph-RAG Subgraph)"]
-        T_SEARCH["trident_search (Entity Resolution)"]
+        T_SEARCH["trident_ingest (Profiles + Playbooks)"]
         T_FEEDBACK["trident_feedback (Continuous Learning)"]
 
         MCP --> AUTH
@@ -88,7 +88,9 @@ flowchart TB
 - **Exposed Tools Utilized**:
   - `trident_get_chunks`: Dense semantic retrieval over ingested case documents.
   - `trident_query`: Tri-store grounded Graph-RAG query returning answers, reasoning subgraphs, and node provenance.
-  - `trident_search`: Entity search across business processes and disruption episodes.
+  - `trident_ingest`: Loads the profile and response-playbook documents (`scripts/synapt_knowledge.py`).
+- **Knowledge coverage**: Synapt holds a 4,000-case text sample (`synapt_ingest/cases_*.md`) plus statistics computed over all 100,000 cases (`aggregate_stats.md`, `profiles.md`) and 6 response-playbook SOPs (`response_playbooks.md`). BM25 keyword search and the ML models run over the full 100,000-row CSV, and every Synapt hit is joined back to its CSV row by `DIS-` id.
+- **Region masking bridge**: Synapt's PII masking turns supplier regions in ingested text into stable `[LOCATION_<hash>]` tokens. `synapt_service.regions` learns token → region from retrieved cases (seeded in `artifacts/synapt_region_tokens.json`), adds the token to region mentions in queries, and turns tokens back into region names in answers and graph nodes.
   - `trident_feedback`: Forwarding user operational ratings (`deflected`, `partial`, `not_deflected`) for knowledge-graph reinforcement.
 - **Resilience**: Integrated circuit breaker pattern (opens after consecutive failures, auto-cooldown) with transparent fallback to local semantic and keyword indexes.
 
