@@ -9,11 +9,10 @@ import time
 from typing import Any, Literal, Optional
 
 from fastapi import BackgroundTasks, FastAPI, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import agents, analysis, decision, evaluation, feedback, llm, network, ops, portfolio, risk_watch
+from . import agents, analysis, decision, evaluation, feedback, llm, network, ops, portfolio, risk_watch, webapp
 from . import synapt_service as syn
 from .config import settings
 from .data_store import store
@@ -27,7 +26,7 @@ log = logging.getLogger("api")
 
 app = FastAPI(title="Supply Chain Disruption Assistant", version="1.0.0",
               description="Synapt-powered hybrid RAG, multi-agent analysis, prediction & evaluation.")
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+webapp.install(app)  # password gate (APP_PASSWORD) + CORS (CORS_ORIGINS)
 _pool = cf.ThreadPoolExecutor(max_workers=4)
 _boot = {"stage": "starting", "error": None}
 
@@ -786,3 +785,7 @@ def eval_results():
     if not r:
         raise HTTPException(404, "No evaluation results yet")
     return r
+
+
+# must stay last: serves the built UI and falls back to index.html for client-side routes
+webapp.serve_frontend(app)

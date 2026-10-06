@@ -3,6 +3,11 @@
 const BASE_URL = '/api';
 
 async function handleResponse(res) {
+  if (res.status === 401) {
+    // deployed with a password gate: session missing or expired
+    window.location.href = '/login';
+    throw new Error('Sign in required');
+  }
   if (!res.ok) {
     let msg = `HTTP error ${res.status}`;
     try {
@@ -88,6 +93,7 @@ export async function streamAnalyze(payload, onEvent, onError, onComplete) {
       body: JSON.stringify(payload),
     });
 
+    if (res.status === 401) { window.location.href = '/login'; return; }
     if (!res.ok) {
       let errText = `HTTP ${res.status}`;
       try {

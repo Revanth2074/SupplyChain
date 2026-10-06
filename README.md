@@ -119,6 +119,24 @@ Then, in the Synapt console, upload `synapt_ingest/disruption_tickets.xlsx` unde
 
 ---
 
+## Deploy for free (Hugging Face Spaces)
+One Docker container serves the UI and the API on one URL; the ML models are trained while the image builds.
+
+1. Create a free account at huggingface.co and a **write** token (Settings → Access Tokens).
+2. From the repo root:
+   ```bash
+   backend/.venv/Scripts/python -m pip install huggingface_hub
+   backend/.venv/Scripts/python deploy/hf_deploy.py <your-hf-username>/supply-chain-assistant
+   ```
+   The script asks for the token and for an **access password** (what people type to open the app), shows what it will
+   store, then creates the Space, stores your `backend/.env` values as Space **secrets** (never as files) and uploads the code.
+3. Wait for the build (about 8-12 minutes the first time), then open `https://<username>-supply-chain-assistant.hf.space`.
+
+Notes: free Spaces sleep after about 48 hours without visitors and wake on the next visit (about a minute). Their disk is
+not persistent, so incidents, alerts and feedback reset on restart. Production settings: `APP_PASSWORD` (login gate),
+`FRONTEND_DIST` (serve the built UI), `CORS_ORIGINS` (only if another site must call the API). Any Docker host works:
+`docker build -t sc-assistant . && docker run -p 7860:7860 --env-file backend/.env -e APP_PASSWORD=... sc-assistant`.
+
 ## API
 
 | Endpoint | Purpose |
