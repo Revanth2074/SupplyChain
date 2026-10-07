@@ -343,14 +343,14 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
 
 <section id="deploy">
   <h2>Deployment</h2>
-  <p class="sub">One Docker image, one port. Runs locally with two dev servers, or on any Docker host (free on Hugging Face Spaces).</p>
+  <p class="sub">One Docker image, one port. Runs locally with two dev servers, or on any Docker host (free on Render with render.yaml).</p>
   <div class="grid g3">
     <div class="card comp"><div class="hd"><div class="ic" style="background:var(--blue-soft)">🧱</div><h3>Build</h3></div>
       <p>Stage 1 builds the React app with Node 20. Stage 2 installs the pinned Python stack and copies the built UI.</p><span class="file">Dockerfile · constraints.txt</span></div>
     <div class="card comp"><div class="hd"><div class="ic" style="background:var(--green-soft)">🧠</div><h3>Train at build</h3></div>
       <p>Models are trained once while the image builds, so the container starts in under a minute.</p><span class="file">registry.train()</span></div>
     <div class="card comp"><div class="hd"><div class="ic" style="background:var(--amber-soft)">🔐</div><h3>Run</h3></div>
-      <p>Secrets come from environment variables (Space secrets), never files. <code>APP_PASSWORD</code> turns on the sign-in gate; CORS is closed unless allow-listed.</p><span class="file">webapp.py · deploy/hf_deploy.py</span></div>
+      <p>Secrets come from environment variables (Render or Space secrets), never files. <code>APP_PASSWORD</code> turns on the sign-in gate; CORS is closed unless allow-listed.</p><span class="file">webapp.py · deploy/hf_deploy.py</span></div>
   </div>
 </section>
 </main>

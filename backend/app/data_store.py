@@ -3,6 +3,7 @@ LSA semantic index (used for hybrid search + fallback when Synapt is down)."""
 from __future__ import annotations
 
 import logging
+import os
 import re
 import threading
 from typing import Any
@@ -65,7 +66,9 @@ class DataStore:
     """Loads the full dataset; builds indexes over a stratified index sample to
     keep startup fast while the full frame is used for stats & ML."""
 
-    INDEX_SIZE = 100000  # index every historical case for keyword + local semantic search
+    # Cases in the local keyword + LSA index (all 100k by default, ~960 MB RAM). Free hosts with 512 MB use
+    # INDEX_SIZE=15000 (~370 MB); stats, the profile leg and the ML models still use every row.
+    INDEX_SIZE = int(os.getenv("INDEX_SIZE", "100000"))
 
     def __init__(self) -> None:
         self.df: pd.DataFrame | None = None

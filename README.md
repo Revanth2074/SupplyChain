@@ -151,23 +151,29 @@ Then, in the Synapt console, upload `synapt_ingest/disruption_tickets.xlsx` unde
 
 ---
 
-## Deploy for free (Hugging Face Spaces)
+## Deploy for free (Render)
 One Docker container serves the UI and the API on one URL; the ML models are trained while the image builds.
+Render's free web service needs no credit card and builds straight from this GitHub repo using [`render.yaml`](render.yaml).
 
-1. Create a free account at huggingface.co and a **write** token (Settings → Access Tokens).
-2. From the repo root:
-   ```bash
-   backend/.venv/Scripts/python -m pip install huggingface_hub
-   backend/.venv/Scripts/python deploy/hf_deploy.py <your-hf-username>/supply-chain-assistant
-   ```
-   The script asks for the token and for an **access password** (what people type to open the app), shows what it will
-   store, then creates the Space, stores your `backend/.env` values as Space **secrets** (never as files) and uploads the code.
-3. Wait for the build (about 8-12 minutes the first time), then open `https://<username>-supply-chain-assistant.hf.space`.
+1. Push the repo to GitHub (secrets stay out: `.env` is git-ignored).
+2. Sign in at [render.com](https://render.com) with GitHub → **New → Blueprint** → pick this repository → **Connect**.
+3. Render asks for the values marked `sync: false`: `APP_PASSWORD` (what people type to open the app), `SYNAPT_USERNAME`,
+   `SYNAPT_PASSWORD`, `SYNAPT_PROVIDER_ID`, `LLM_API_KEY`. Copy them from `backend/.env` → **Apply**.
+4. Wait for the first build (about 10 minutes), then open `https://supply-chain-assistant.onrender.com` (or the URL Render shows).
 
-Notes: free Spaces sleep after about 48 hours without visitors and wake on the next visit (about a minute). Their disk is
-not persistent, so incidents, alerts and feedback reset on restart. Production settings: `APP_PASSWORD` (login gate),
-`FRONTEND_DIST` (serve the built UI), `CORS_ORIGINS` (only if another site must call the API), `ENABLE_FALLBACK_LAB=0` (lock the outage switches). Any Docker host works:
-`docker build -t sc-assistant . && docker run -p 7860:7860 --env-file backend/.env -e APP_PASSWORD=... sc-assistant`.
+**Memory:** the full 100k-case local index needs about 960 MB RAM; the free instance has 512 MB, so `render.yaml` sets
+`INDEX_SIZE=15000` (about 370 MB, self-test 9/9). Only the local keyword/LSA index is sampled; Synapt search, the profile
+leg over all 100k cases, statistics and the ML models still use every row. On a host with 1 GB+ RAM, remove `INDEX_SIZE`.
+
+**Free-tier behaviour:** the service sleeps after 15 minutes without traffic and takes about a minute to wake (open it
+before a demo). The disk is not persistent, so incidents, alerts and feedback reset on restart.
+
+Settings: `APP_PASSWORD` (login gate), `INDEX_SIZE` (local index size), `FRONTEND_DIST` (serve the built UI, set in the
+Dockerfile), `CORS_ORIGINS` (only if another site must call the API), `ENABLE_FALLBACK_LAB=0` (lock the outage switches).
+Any Docker host works: `docker build -t sc-assistant . && docker run -p 7860:7860 --env-file backend/.env -e APP_PASSWORD=... sc-assistant`.
+
+*Hugging Face Spaces:* Docker Spaces now require a PRO subscription. With PRO, `deploy/hf_deploy.py <user>/<space>`
+creates the Space, stores `backend/.env` values as secrets and uploads the code.
 
 ## API
 
@@ -209,5 +215,5 @@ backend/scripts/    synapt_knowledge · smoke_test · probe_synapt · discover_s
 frontend/src/       App · api · format · guide (page guides + glossary) · index.css + theme-light.css + app-shell.css · components/ (ControlTower.jsx, logistics3d.jsx, logistics/{paths,world}.js + aircraft.jsx, Tab*.jsx, ui.jsx, WhatIfPanel.jsx)
 synapt_ingest/      Synapt documents + disruption_tickets.xlsx
 docs/               how-it-works.html (deck) · architecture.html · design.html · synapt-modes.html
-deploy/             hf_deploy.py · SPACE_README.md   (free Hugging Face Spaces deploy)
+deploy/             hf_deploy.py · SPACE_README.md   (Hugging Face Spaces, needs PRO) · render.yaml at the root (free Render deploy)
 ```

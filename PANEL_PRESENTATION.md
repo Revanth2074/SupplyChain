@@ -102,7 +102,7 @@ Read the DeepEval numbers from the slide (8 full-LLM golden cases: relevancy 0.9
 
 ### 11 · Coverage + thanks (30 s)
 - Every Requirement 1 and Requirement 2 item is delivered; all four deliverables (architecture, design, code, presentation) are in the repo.
-- One Docker image; deployable for free on Hugging Face Spaces behind a password.
+- One Docker image; deployed for free on Render behind a password.
 
 ---
 

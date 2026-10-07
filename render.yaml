@@ -1,0 +1,31 @@
+# Render Blueprint: free web service built from the Dockerfile.
+# Render dashboard -> New -> Blueprint -> pick this repo. You are asked for every `sync: false` value.
+services:
+  - type: web
+    name: supply-chain-assistant
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: INDEX_SIZE          # fits the free 512 MB instance (all 100k rows still used for stats + ML)
+        value: "15000"
+      - key: APP_PASSWORD        # the password people type to open the app
+        sync: false
+      - key: SYNAPT_USERNAME
+        sync: false
+      - key: SYNAPT_PASSWORD
+        sync: false
+      - key: SYNAPT_PROVIDER_ID
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: SYNAPT_MCP_URL
+        value: https://beta.synapt.ai/tristore/mcp/
+      - key: SYNAPT_AUTH_BASE
+        value: https://beta.synapt.ai/auth_service/api/v1/auth/token
+      - key: LLM_BASE_URL
+        value: https://aicredits.in/v1
+      - key: LLM_MODEL
+        value: gpt-4o-mini
