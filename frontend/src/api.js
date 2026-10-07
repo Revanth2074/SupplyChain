@@ -248,3 +248,12 @@ export const seedIncidents = () => postJson('/incidents/seed-demo', {});
 export const patchIncident = (id, body) => patchJson(`/incidents/${id}`, body);
 export const addIncidentAction = (id, body) => postJson(`/incidents/${id}/actions`, body);
 export const patchAction = (id, body) => patchJson(`/actions/${id}`, body);
+
+// ---------------------------------------------------------------- fallback lab (simulated outages)
+const putJson = async (path, body) => handleResponse(await fetch(`${BASE_URL}${path}`, {
+  method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+}));
+export const fetchFallbackLab = () => getJson('/fallback-lab');
+export const setFallbackSwitch = (name, enabled, minutes = 30) => putJson(`/fallback-lab/${name}`, { enabled, minutes });
+export const resetFallbackLab = () => postJson('/fallback-lab/reset', {});
+export const runFallbackSelfTest = (full_workflow = true) => postJson('/fallback-lab/selftest', { full_workflow });

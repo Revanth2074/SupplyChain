@@ -372,6 +372,9 @@ export default function TabWorkflow({ options, onOpen }) {
           </div>
 
           {/* Executive KPI Callouts (figures match the briefing: predicted with the chosen strategy) */}
+          {result.impact?.prediction?.method === 'cohort-statistics' && (
+            <Callout tone="warning">Prediction models are switched off: these figures are the median and P10–P90 of {result.impact.prediction.cohort?.cases} similar historical cases (cohort statistics fallback).</Callout>
+          )}
           {result.recovery?.support?.warning && <Callout tone="warning">{result.recovery.support.warning}</Callout>}
           <div className="grid-auto" style={{ '--min': '220px' }}>
             <Kpi label="Priority level" tone="#dc2626" value={result.impact?.priority?.level}

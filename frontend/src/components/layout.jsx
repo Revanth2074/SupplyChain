@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Activity, AlertOctagon, BarChart3, BookOpen, Box, Briefcase, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList,
+  Activity, AlertOctagon, BarChart3, BookOpen, Box, Briefcase, CheckCircle2, ChevronLeft, ChevronRight, ClipboardList, FlaskConical,
   GitBranch, Home, Info, Menu, Network, Radar, Scale, Search, Share2, Sliders, Workflow, X, Zap,
 } from 'lucide-react';
 import { ENGINES, GLOSSARY, PAGES, STAGES } from '../guide';
@@ -13,6 +13,7 @@ export const NAV = [
   { group: 'Predict & explain', stage: 'predict', items: [{ id: 'predict', icon: Sliders }, { id: 'rootcause', icon: GitBranch }] },
   { group: 'Decide', stage: 'decide', items: [{ id: 'decision', icon: Scale }, { id: 'portfolio', icon: Briefcase }, { id: 'network', icon: Share2 }, { id: 'prioritize', icon: AlertOctagon }] },
   { group: 'Act & learn', stage: 'act', items: [{ id: 'incidents', icon: ClipboardList }, { id: 'eval', icon: CheckCircle2 }, { id: 'analytics', icon: BarChart3 }] },
+  { group: 'System', items: [{ id: 'lab', icon: FlaskConical }] },
 ];
 const stageColor = (id) => STAGES.find((s) => s.id === id)?.color || '#2563eb';
 
@@ -77,16 +78,19 @@ function StatusDot({ ok, label, value, warn }) {
   );
 }
 
-export function TopBar({ page, health, onInfo, onMenu }) {
+export function TopBar({ page, health, onInfo, onMenu, onOpen }) {
   const info = PAGES[page];
   const stage = STAGES.find((s) => s.id === info.stage);
   const synaptOk = health?.synapt?.configured && !health?.synapt?.circuit_open;
+  const sim = health?.simulated_outages || [];
+  const llmOff = sim.includes('llm');
+  const mlOff = health?.models?.fallback;
   return (
     <header className="topbar">
       <button className="tb-menu" onClick={onMenu} aria-label="Open menu"><Menu size={20} /></button>
       <div className="tb-title">
         <div className="tb-crumbs">
-          {stage ? <span className="tb-stage" style={{ color: stage.color, background: `${stage.color}14` }}>{stage.label}</span> : <span className="tb-stage">Overview</span>}
+          {stage ? <span className="tb-stage" style={{ color: stage.color, background: `${stage.color}14` }}>{stage.label}</span> : <span className="tb-stage">{page === 'lab' ? 'System' : 'Overview'}</span>}
         </div>
         <AnimatePresence mode="wait">
           <motion.div key={page} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18 }}>
@@ -96,9 +100,14 @@ export function TopBar({ page, health, onInfo, onMenu }) {
         </AnimatePresence>
       </div>
       <div className="tb-right">
+        {sim.length > 0 && (
+          <button className="tb-test" onClick={() => onOpen?.('lab')} title={`Simulated outage: ${sim.join(', ')}`}>
+            <i /> Test mode · {sim.length} off
+          </button>
+        )}
         <StatusDot ok={synaptOk} label="Synapt" value={synaptOk ? 'Connected' : 'Fallback'} />
-        <StatusDot ok={health?.models?.ready} warn label="Models" value={health?.models?.ready ? 'Ready' : 'Training'} />
-        <StatusDot ok={health?.llm?.configured} warn label="AI" value={health?.llm?.model || '—'} />
+        <StatusDot ok={health?.models?.ready && !mlOff} warn label="Models" value={mlOff ? 'Cohort stats' : health?.models?.ready ? 'Ready' : 'Training'} />
+        <StatusDot ok={health?.llm?.configured && !llmOff} warn label="AI" value={llmOff ? 'Fallback' : health?.llm?.model || '—'} />
         <button className="tb-info" onClick={onInfo} aria-label="How this page works">
           <Info size={17} /> <span>How it works</span>
         </button>

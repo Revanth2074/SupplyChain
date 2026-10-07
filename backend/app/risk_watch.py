@@ -22,7 +22,7 @@ import xml.etree.ElementTree as ET
 
 import httpx
 
-from . import analysis, feedback
+from . import analysis, faults, feedback
 from . import synapt_service as syn
 from .data_store import store
 from .guardrails import validate_text
@@ -140,6 +140,7 @@ GDACS_TYPES = {"EQ": "earthquake", "TC": "tropical cyclone", "FL": "flood", "VO"
 
 def fetch_gdacs(limit: int = 15) -> dict:
     """Pull current orange/red natural-disaster alerts from GDACS (public RSS)."""
+    faults.check("live_feed")
     r = httpx.get(GDACS_URL, timeout=20, follow_redirects=True, headers={"User-Agent": "supplychain-assistant/1.0"})
     r.raise_for_status()
     root = ET.fromstring(r.content)

@@ -198,6 +198,23 @@ export const PAGES = {
     read: ['Scores near 100% are best.', 'Faithfulness = the answer only says what the evidence supports.'],
     engines: ['llm', 'synapt', 'ml'],
   },
+  lab: {
+    title: 'Fallback Lab', stage: null,
+    plain: 'Switch parts of the system off on purpose and check the assistant keeps working on its backups.',
+    why: 'Real outages happen on the worst day. This proves, live, that losing Synapt, the AI writer or the prediction models lowers quality instead of breaking the app.',
+    how: [
+      'Each switch makes one dependency fail at its lowest level (Synapt, only its graph, only its playbooks, the LLM, the ML models, the live hazard feed).',
+      'Every page then uses its fallback automatically: local search instead of Synapt, rules and templates instead of the LLM, historical cohort statistics instead of the models.',
+      'The self-test calls every feature once and checks it answered through the engine it should, given the switches.',
+      'Switches affect everyone using the app and restore themselves after the chosen time.',
+    ],
+    read: [
+      'Green = normal engine answered. Amber = the fallback took over, as designed.',
+      'Red = something used an unexpected path or crashed; the hint explains the likely cause (for example a real outage or exhausted credits).',
+    ],
+    engines: ['synapt', 'llm', 'ml', 'rules'],
+    caveat: 'Switches are global, so turn them back on before others use the app. The circuit breaker resets the moment a Synapt switch is restored.',
+  },
   analytics: {
     title: 'Analytics', stage: 'act',
     plain: 'Big-picture patterns across all 100,000 historical disruptions.',
@@ -232,5 +249,8 @@ export const GLOSSARY = {
   Faithfulness: 'Does the answer only state things the retrieved evidence supports? 1.0 = fully faithful.',
   'Fact-check': 'Code that checks every amount, percentage and case ID in a briefing against the evidence.',
   Signal: 'An external alert (news, weather, port, geopolitical) that could disrupt suppliers.',
+  Fallback: 'A simpler backup path used automatically when a dependency is down, so the feature still answers.',
+  'Circuit breaker': 'After 3 failed calls to a Synapt tool, the app stops calling it for 60 seconds and uses the fallback straight away.',
+  'Cohort statistics': 'The backup for the prediction models: the median and P10/P90 of the most similar historical cases.',
   'Episodic memory': 'Synapt\'s memory of past situations it has handled, recalled when similar ones appear.',
 };

@@ -1,163 +1,117 @@
-# 10-Minute Panel Presentation Guide
-## AI-Powered Supply Chain Disruption Assistant with Synapt MCP
+# 10-Minute Panel Presentation
+## AI-Powered Supply-Chain Disruption Assistant, built on Synapt
+
+Slides: open [`docs/how-it-works.html`](docs/how-it-works.html) in a browser and press **F** for full screen; use ← → to move.
+Back-up pages for questions: [`docs/architecture.html`](docs/architecture.html), [`docs/design.html`](docs/design.html), [`docs/synapt-modes.html`](docs/synapt-modes.html).
+Preparation and likely questions: [`STUDY_GUIDE.md`](STUDY_GUIDE.md).
+
+Every number in this script is real: from `backend/artifacts/models_meta.json`, `backend/artifacts/eval_results.json`, or measured on the 25-case golden set. Do not add numbers you cannot show.
 
 ---
 
-## Presentation Overview & Timing Matrix
-| Slide | Topic | Focus Area | Target Time |
-| :---: | :--- | :--- | :---: |
-| **1** | Title & Value Proposition | Problem introduction & solution innovation | 0:00 – 1:00 |
-| **2** | Supply Chain Crisis Dynamics | The cost of manual disruption triage | 1:00 – 2:00 |
-| **3** | System Architecture & Synapt MCP | Tri-store knowledge substrate & protocol design | 2:00 – 3:00 |
-| **4** | Hybrid Retrieval (RRF + Metadata) | Dense vector + sparse BM25 fusion | 3:00 – 4:00 |
-| **5** | 7-Agent Autonomous Workflow | Live SSE multi-agent investigation pipeline | 4:00 – 5:15 |
-| **6** | Machine Learning & Explainable AI | HistGradientBoosting, XAI waterfall, resilience | 5:15 – 6:30 |
-| **7** | Dynamic Incident Prioritization | P1–P4 triage matrix and SLA playbooks | 6:30 – 7:30 |
-| **8** | DeepEval & LLM-as-Judge Audit | Rigorous QA, Faithfulness & G-Eval rubrics | 7:30 – 8:30 |
-| **9** | Continuous Improvement & Feedback | Strategy multipliers, retraining & Synapt feedback | 8:30 – 9:15 |
-| **10**| Business ROI & Live Demo Summary | Tangible enterprise impact & wrap-up | 9:15 – 10:00 |
+## Timing
+
+| # | Slide | Time | Goal |
+|:-:|---|:-:|---|
+| 1 | Title | 0:00–0:40 | One sentence on what it does |
+| 2 | The problem | 0:40–1:20 | The three questions from the brief |
+| 3 | The loop | 1:20–2:00 | Detect → Investigate → Predict → Decide → Act → Learn |
+| 4 | Synapt at the core | 2:00–2:50 | Tri-store + MCP, why it is more than a vector DB |
+| 5 | Hybrid search | 2:50–3:30 | Three legs, RRF, 14% → 83% |
+| 6 | Seven agents | 3:30–4:10 | One job each, streamed live |
+| — | **Live demo** | 4:10–7:10 | Cockpit → Decision Studio → Incident Desk |
+| 7 | Predict & explain | 7:10–7:40 | Ranges, honest R², drivers |
+| 8 | Decide & act | (skip if demo covered it) | Priority, money, SLA |
+| 9 | Trust | 7:40–8:30 | DeepEval + fact-check + fallback numbers |
+| 10 | What I found in Synapt | 8:30–9:30 | Product feedback |
+| 11 | Coverage + thanks | 9:30–10:00 | Every requirement, one image |
+
+If time is short, drop slide 8 (the demo already shows it) and shorten slide 7.
 
 ---
 
-## Slide 1: Title & Value Proposition (1:00)
-- **Slide Title**: *AI-Powered Supply Chain Disruption Assistant*
-- **Subtitle**: *Autonomous Disruption Investigation, Impact Forecasting & Recovery Governance using Synapt MCP Knowledge Substrate*
-- **Key Talking Points**:
-  - Global supply chains lose over $250 Billion annually to unexpected disruptions: cyberattacks, port congestion, supplier insolvency, and labor strikes.
-  - Operations teams spend days manually sifting through post-mortems and disconnected ERP logs, leading to inconsistent response strategies and prolonged downtime.
-  - **Our Solution**: An intelligent microservice and executive cockpit connecting directly to **Synapt's Knowledge Substrate via MCP**, pairing 100,000 historical precedent records with machine learning forecasts and an autonomous 7-agent recovery workflow.
+## Script
+
+### 1 · Title (40 s)
+> "Supply-chain teams lose days answering three questions every time a supplier goes down. I built an assistant on Synapt that answers them in about twenty seconds, grounded in 100,000 historical disruptions, with every number predicted by a model and every claim checked against evidence."
+
+### 2 · The problem (40 s)
+- The three questions come straight from the brief: *has this happened before and how was it resolved; what drives impact and loss; which response worked and how fast.*
+- Today's failure modes: manual search, keyword search that misses meaning, gut-feel estimates, and chatbots that invent numbers.
+
+### 3 · The loop (40 s)
+- One product, six stages; the console's sidebar is organised the same way so a non-expert can follow it.
+- Detect (early warning) → Investigate (cockpit, search, graph) → Predict (simulator, root cause) → Decide (decision studio, portfolio, triage) → Act (incident desk) → Learn (quality, feedback).
+
+### 4 · Synapt at the core (50 s)
+- "Synapt is the organisation's memory, not a vector index. It has four stores: knowledge chunks, a graph, procedures, and episodes."
+- What I loaded: 43 Markdown files (4,000 case narratives, compact profiles of all 100,000 cases, aggregate statistics), six response playbooks as procedures, and 5,000 labelled tickets as `.xlsx`.
+- I talk to it over MCP (JSON-RPC over HTTP) using 15 tools. The core path uses four: `trident_get_chunks`, `trident_query`, `trident_get_procedures`, `trident_feedback`.
+- "Every answer comes back with knowledge, procedural and graph confidence. I log those next to DeepEval, so retrieval quality is measurable in production, not just in tests."
+
+### 5 · Hybrid search (40 s)
+- Three ranked lists: Synapt semantic (meaning), BM25 (exact words), and a profile match over all 100k cases (same attributes).
+- Fused by **Reciprocal Rank Fusion**: score = Σ w / (60 + rank). Fusing by rank avoids calibrating scores that use different scales.
+- "Adding the profile leg raised exact-profile matches in the top results from 14% to 83%."
+
+### 6 · Seven agents (40 s)
+- Intake → Investigator → Impact → Planner → Recovery → Report → Judge. Each has one job, a typed output, and a fallback.
+- Synapt calls start in parallel at intake, so they overlap with the local work. Results stream to the UI over Server-Sent Events.
+
+### Live demo (3 min)
+Have the app open and **warmed up** (first request after start-up takes ~30 s while indexes build). Use the Home page's sample incident or type:
+
+> *Ransomware attack on our Tier 2 electronics supplier in Asia-Pacific has halted their ERP and shipments. No backup supplier is qualified. Severity 4.*
+
+1. **Incident Cockpit** → Analyse. Narrate the agents as they light up. Point at:
+   - classified fields + confidence;
+   - similar cases with **"via Synapt"** badges and the Synapt confidence chip;
+   - P10–P90 ranges and the priority badge;
+   - the Synapt playbook steps next to the plan;
+   - the **fact-check passed** badge and the judge verdict.
+2. Click **What-if → add backup supplier**: recovery drops; "this is the model, not the LLM."
+3. **Decision Studio**: same incident. "Releasing the buffer is recommended: +$390k net benefit vs doing nothing, 18 days sooner. A qualified backup would be worth +$537k, which is the business case for dual-sourcing."
+4. **Open incident & track actions** → Incident Desk: SLA clock, escalation chain; close an action with a real outcome → "this becomes training data and a `trident_feedback` verdict."
+5. **Fallback Lab** (30 s, strong for this panel): switch **Synapt (all tools)** off → **Run self-test** → every check still passes, amber badges show the local fallbacks. Switch it back on. "This is the circuit breaker and fallback design, proven live rather than claimed."
+6. (If time) **Knowledge Graph**: the reasoning subgraph Synapt walked.
+
+Backup plan if the network fails: say "this is exactly the fallback case," open the Fallback Lab and run the self-test: it will show which engines are down and that every feature still answered.
+
+### 7 · Predict & explain (30 s)
+- Models: HistGradientBoosting on all 100,000 rows, 80/20 split.
+- Honest numbers: production impact R² 0.70; full recovery R² 0.40; revenue R² 0.33; risk AUC 0.87.
+- "That is why every prediction is a P10–P90 range. On held-out data the range contains the real value about 79% of the time, against an 80% target."
+- Drivers: severity dominates; a backup supplier saves about 26 days on average (90 → 64). Disruption type matters mostly *through* severity.
+
+### 8 · Decide & act (optional, 30 s)
+- Priority = 35% severity + 30% impact + 25% loss (log scale) + 10% risk → P1–P4 with SLAs of 4 h / 24 h / 3 days / weekly.
+- Decision engine compares options in money, scaled by outage days; cost assumptions are editable.
+
+### 9 · Trust (50 s)
+Read the DeepEval numbers from the slide (8 full-LLM golden cases: relevancy 0.98, faithfulness 0.92, contextual relevancy 0.89, impact 0.78, recommendation 0.74; judge 0.98; classification 96.9%). Be upfront: "the LLM budget ran out after 8 of 25 cases; the other 17 kept running on fallbacks, with 98.5% rule-classifier accuracy and every briefing passing fact-check, which is a live test of no-LLM mode." Then:
+- Fact-check pass rate and guardrail suite: both on the slide.
+- "If Synapt is down, a circuit breaker opens after three failures and search switches to a local index. On the golden set, Synapt's semantic search finds the right disruption type 87% of the time versus 68.5% for the fallback. With all three legs fused, both reach 100%, so the app degrades instead of breaking."
+
+### 10 · What I found in Synapt (60 s): the slide that matters most to this panel
+- `trident_create_entity` / `create_concept` fail with `index_node() missing 'neo4j_id'`. Few typed entities → graph confidence ~0.57, and every eval answer was flagged **degraded**. Worked around with an ontology document.
+- `trident_cypher` is not tenant-scoped, so I only send six fixed templates pinned to our `provider_id`.
+- PII masking turns regions into `[LOCATION_x]` tokens; I built a token ↔ region bridge.
+- Ticket mining accepts `.xlsx` only, and `trident_label_ticket` needs a JSON string; both undocumented.
+- Suggestion: per-hop graph-confidence breakdown and a tenant-scoped, read-only Cypher endpoint.
+> "I used every part of the product, found its edges, and worked around each one without hiding it. That is how I would work on the team."
+
+### 11 · Coverage + thanks (30 s)
+- Every Requirement 1 and Requirement 2 item is delivered; all four deliverables (architecture, design, code, presentation) are in the repo.
+- One Docker image; deployable for free on Hugging Face Spaces behind a password.
 
 ---
 
-## Slide 2: Industry Problem Statement & Supply Chain Challenges (1:00)
-- **Slide Title**: *The Operational Void in Disruption Management*
-- **Key Visual**: Comparison table of *Manual Legacy Response* vs. *Autonomous AI Assistant*.
-- **Key Talking Points**:
-  - **Three Critical Questions Operations Teams Face**:
-    1. *Has a similar disruption occurred previously, and how was it resolved?*
-    2. *What factors drive catastrophic production impact or financial loss?*
-    3. *Which response strategy recovers operations the fastest with the lowest supplier churn?*
-  - **The Three Failures of Traditional Search**:
-    - Keyword search misses semantic nuances (e.g. ransomware vs. IT outage).
-    - Pure LLMs hallucinate recovery timelines and lack real grounded figures.
-    - Isolated ML models lack explainability and operational actionability.
-
----
-
-## Slide 3: Architecture & Synapt MCP Knowledge Substrate (1:00)
-- **Slide Title**: *Architectural Foundation: Synapt MCP Tri-Store Integration*
-- **Key Visual**: Microservice block diagram showing Streamable HTTP MCP, FastAPI backend, and React UI.
-- **Key Talking Points**:
-  - Built natively around the **Model Context Protocol (MCP)** using Streamable HTTP (JSON-RPC 2.0).
-  - Integrates four core Synapt tools:
-    - `trident_get_chunks`: Vector semantic retrieval across ingested case narratives.
-    - `trident_query`: Tri-store Graph-RAG executing Neo4j BFS graph traversal to surface entity connections and recovery provenances.
-    - `trident_ingest`: Loads 100k-case profiles and 6 response-playbook SOPs; the 4k-case text sample covers semantic recall while BM25 + ML cover all 100k rows.
-    - Region masking bridge: Synapt masks regions as `[LOCATION_x]` tokens; the service maps them back so region search still works.
-    - `trident_feedback`: Closing the loop by returning operational deflected/non-deflected verdicts directly to the knowledge graph.
-  - Features an automated **Circuit Breaker Pattern** ensuring 100% enterprise uptime through graceful local LSA and BM25 fallback if external endpoints experience latency.
-
----
-
-## Slide 4: Hybrid Retrieval Engine (RRF & Faceted Filtering) (1:00)
-- **Slide Title**: *Hybrid RAG: Dense Semantic + Sparse Keyword Precision*
-- **Key Visual**: Diagram showing Reciprocal Rank Fusion (RRF) math ($k=60$) and metadata filter pipeline.
-- **Key Talking Points**:
-  - Dense semantic retrieval captures conceptual intent; BM25 keyword matching captures exact identifiers, parts, and supplier tiers.
-  - **Reciprocal Rank Fusion**: Dynamically balances vector semantic confidence ($\alpha = 0.60$) and sparse keyword scores, eliminating score distribution biases.
-  - **Strict Faceted Metadata Filtering**: Instant multi-attribute filtering across Disruption Type, Industry, Supplier Tier (1–3), Region, Severity, and Backup status.
-  - **Attribute-Similarity Reranking**: Re-orders precedents based on weighted feature matches against the live incident.
-
----
-
-## Slide 5: Autonomous Multi-Agent Disruption Workflow (1:15)
-- **Slide Title**: *The 7-Agent Disruption Response Workflow*
-- **Key Visual**: Real-time agent pipeline stepper with SSE latency tags.
-- **Key Talking Points**:
-  - **Agent 1 (Intake & Classifier)**: Scans input guardrails (redacts PII, blocks prompt injections) and extracts structured attributes.
-  - **Agent 2 (Investigator)**: Queries Synapt MCP and BM25 concurrently, pulling top precedent cases and knowledge subgraphs.
-  - **Agent 3 (Impact Assessor)**: Evaluates ML prediction regressors and assigns priority levels.
-  - **Agent 4 (Response Planner)**: Ranks response strategies by empirical effectiveness and outlines immediate (0–72h), short-term, and long-term actions.
-  - **Agent 5 (Recovery Analyst)**: Computes cohort P10–P90 recovery percentiles and milestones.
-  - **Agent 6 (Report Agent)**: Generates an executive briefing in Markdown for leadership.
-  - **Agent 7 (LLM-as-Judge)**: Audits the briefing for hallucinations, ensuring every case ID and metric is grounded in evidence.
-  - Delivered via **Server-Sent Events (SSE)** in under 16 seconds total execution time!
-
----
-
-## Slide 6: Machine Learning Models & Explainable AI (1:15)
-- **Slide Title**: *Predictive Intelligence & Explainability (XAI)*
-- **Key Visual**: Recharts local waterfall contribution chart and permutation importance bars.
-- **Key Talking Points**:
-  - **Models Trained on 100,000 Cases**: `HistGradientBoosting` native categorical regressors and classifiers ($R^2 \approx 0.70$ on production impact).
-  - **Five Predictive Targets**: Production Impact %, Revenue Loss USD, Full Recovery Days, Partial Recovery Days, and High-Impact Disruption Risk Probability.
-  - **Supply Chain Resilience Score (0–100)**: Composite index factoring in dual-sourcing, tier visibility, supplier size, impact absorption, and recovery velocity.
-  - **Explainability (XAI)**:
-    - *Local Waterfall*: Shows exactly how much each feature (e.g. lack of backup supplier adding +34 days) pushed the prediction above baseline.
-    - *Global Permutation Importance*: Demonstrates that Disruption Severity and Supplier Tier are the leading global drivers of operational downtime.
-
----
-
-## Slide 7: Incident Prioritization Matrix (1:00)
-- **Slide Title**: *Dynamic Multi-Incident Triage & SLAs*
-- **Key Visual**: Prioritization Queue table with P1–P4 badges and SLA countdown tags.
-- **Key Talking Points**:
-  - In a regional crisis, operations leaders face dozens of concurrent disruptions.
-  - Our weighted prioritization formula:
-    $$\text{Score} = 35\% \text{ Severity} + 30\% \text{ Impact \%} + 25\% \text{ Financial Loss} + 10\% \text{ Risk Prob}$$
-  - **Clear Operational SLAs**:
-    - **P1 Critical**: Mobilise executive war-room within 4 hours.
-    - **P2 High**: Finalize response plan within 24 hours.
-    - **P3 Medium**: Tactical operational review within 3 days.
-    - **P4 Low**: Routine weekly monitoring.
-
----
-
-## Slide 8: DeepEval Suite & LLM-as-Judge Audit (1:00)
-- **Slide Title**: *Evaluation Rigor: DeepEval 4.x & Rubric Auditing*
-- **Key Visual**: DeepEval radar/card metrics and LLM-as-Judge scorecard.
-- **Key Talking Points**:
-  - Enterprise systems cannot rely on subjective vibes; rigorous evaluation is required.
-  - **DeepEval 4.x Metrics**:
-    - *Faithfulness Metric*: Confirms zero hallucination against retrieved context.
-    - *Answer Relevancy Metric*: Ensures tactical alignment with operational questions.
-    - *Contextual Relevancy Metric*: Validates precedent retrieval quality.
-    - *G-Eval Rubrics*: Scores Recommendation Quality and Impact Analysis Correctness.
-  - **LLM-as-Judge**: Independent senior auditor persona scoring Groundedness, Relevance, Actionability, Completeness, Consistency, and Safety, returning an explicit *Approve/Revise* verdict.
-
----
-
-## Slide 9: Continuous Improvement & Feedback Loop (0:45)
-- **Slide Title**: *Continuous Learning & Knowledge Graph Reinforcement*
-- **Key Visual**: Feedback submission flow and strategy boost factor table.
-- **Key Talking Points**:
-  - **Operational Feedback**: Users submit 1–5 star ratings and confirm strategy selection.
-  - **Strategy Boosts**: User ratings adjust mathematical recommendation multipliers ($0.85 \times$ to $1.15 \times$) for future disruption inquiries.
-  - **Model Retraining**: Real-world reported recovery times and actual losses are captured in `feedback.db` and fed directly into incremental model retraining.
-  - **Synapt MCP Sync**: Verdicts and task feedback are dispatched to `trident_feedback`, enriching the underlying knowledge substrate.
-
----
-
-## Slide 10: Business ROI & Live Demonstration Summary (0:45)
-- **Slide Title**: *Enterprise Value Delivery & Summary*
-- **Key Visual**: Executive Cockpit screenshot and business ROI metrics.
-- **Key Talking Points**:
-  - **Measurable Business Impact**:
-    - **90% Reduction in Triage Time**: From 2–3 days of manual investigation down to 15 seconds.
-    - **25–30% Faster Full Recovery**: Identifying optimal strategies (e.g. Alternative Supplier vs. Customer Delay) slashes weeks off recovery.
-    - **Complete Transparency**: Full explainability, zero-hallucination guardrails, and audit logging.
-  - **Delivered System**: Fully operational microservice with FastAPI, Synapt MCP client, DeepEval evaluation suite, and Vite + React executive dashboard.
-  - *Thank you, and we welcome your questions!*
-
----
-
-## Anticipated Panel Questions & Answers (FAQ)
-
-### Q1: Why did you use Synapt via MCP rather than just querying a local vector database?
-**Answer**: *Synapt provides a multi-modal knowledge substrate: it doesn't just store flat vector embeddings; it manages a tri-store integrating knowledge chunks, procedural SOPs, and Neo4j graph entities. Through the Model Context Protocol (MCP), our assistant queries dense vectors (`trident_get_chunks`), runs multi-hop graph BFS reasoning (`trident_query`), and writes back operational feedback (`trident_feedback`) using open standards without vendor lock-in. Furthermore, our architecture includes a local LSA/BM25 circuit breaker so the enterprise remains 100% operational even during external network outages.*
-
-### Q2: How does the system prevent LLM hallucinations in high-stakes supply chain decisions?
-**Answer**: *We enforce a four-tier defense: (1) Input validation guardrails block prompt injection and enforce domain vocabulary constraints; (2) The prompt contracts strictly forbid external fact creation and require case citations (DIS-xxxxxx); (3) DeepEval Faithfulness Metric measures retrieval grounding; (4) The LLM-as-Judge agent acts as an independent auditor, verifying that every cited number and case ID exists in the evidence package before approving the briefing.*
-
-### Q3: What is the benefit of combining ML regression models with LLM reasoning?
-**Answer**: *LLMs excel at qualitative reasoning, scenario synthesis, and tactical communication, but are notoriously unreliable at calibrated numerical regression and non-linear mathematical modeling. Conversely, our HistGradientBoosting models trained on 100,000 cases provide precise, mathematically sound predictions of revenue loss and recovery days along with local feature attribution waterfalls. The LLM then contextualizes these predictions into an actionable operational response plan.*
+## Claims to avoid
+| Don't say | Say instead |
+|---|---|
+| "Zero hallucination" | "Fact-checked: pass rate X% on the golden set; unknown IDs and numbers are rejected and rewritten" |
+| "100% uptime" | "Degrades gracefully: circuit breaker + local fallback" |
+| "90% faster triage", "$250B industry loss" | Nothing; there is no source |
+| "R² 0.70" (alone) | "0.70 for production impact; 0.27–0.40 for recovery and revenue, so we show ranges" |
+| "Synapt knows all 100k cases" | "Full narratives for 4k, compact profiles for all 100k; local search covers every row" |
+| "The graph proves causality" | "The graph shows the reasoning path; the models give correlations; root-cause chains are templates filled with model outputs" |

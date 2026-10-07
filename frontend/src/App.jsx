@@ -14,6 +14,7 @@ import TabPrioritize from './components/TabPrioritize';
 import TabIncidents from './components/TabIncidents';
 import TabEval from './components/TabEval';
 import TabAnalytics from './components/TabAnalytics';
+import TabFallbackLab from './components/TabFallbackLab';
 import { InfoDrawer, Sidebar, TopBar } from './components/layout';
 import { fetchHealth, fetchMeta, fetchOverview } from './api';
 
@@ -82,6 +83,7 @@ export default function App() {
     incidents: () => <TabIncidents onOpen={open} />,
     eval: () => <TabEval />,
     analytics: () => <TabAnalytics />,
+    lab: () => <TabFallbackLab />,
   };
   const page = panes[active] ? active : 'home';
 
@@ -90,7 +92,7 @@ export default function App() {
       <Sidebar active={page} onOpen={open} collapsed={collapsed} setCollapsed={setCollapsed}
         mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} badges={badges} />
       <div className="shell-main">
-        <TopBar page={page} health={health} onInfo={() => setInfo(true)} onMenu={() => setMobileOpen(true)} />
+        <TopBar page={page} health={health} onInfo={() => setInfo(true)} onMenu={() => setMobileOpen(true)} onOpen={open} />
         <main className={`shell-content ${page === 'tower' ? 'full' : ''}`}>
           {Object.entries(panes).map(([id, render]) => visited.has(id) && (
             // visited pages stay mounted so their results survive navigation

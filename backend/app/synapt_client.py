@@ -13,6 +13,7 @@ from typing import Any
 
 import httpx
 
+from . import faults
 from .config import settings
 
 log = logging.getLogger("synapt")
@@ -154,6 +155,10 @@ class SynaptMCPClient:
         return self._tools
 
     def call_tool(self, name: str, arguments: dict) -> Any:
+        try:
+            faults.check_synapt(name)
+        except faults.SimulatedOutage as e:
+            raise SynaptError(str(e)) from e
         self._ensure()
         res = self._rpc("tools/call", {"name": name, "arguments": arguments}) or {}
         if res.get("isError"):

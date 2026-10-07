@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>System Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8fb;--surface:#fff;--surface-2:#f1f5f9;--ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;--line:#e2e8f0;
+  --blue:#2563eb;--blue-soft:#dbeafe;--cyan:#0891b2;--cyan-soft:#cffafe;--violet:#7c3aed;--violet-soft:#ede9fe;
+  --green:#16a34a;--green-soft:#dcfce7;--amber:#d97706;--amber-soft:#fef3c7;--red:#dc2626;--red-soft:#fee2e2;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1120;--surface:#111827;--surface-2:#1e293b;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#64748b;--line:#1f2a3d;
+  --blue:#60a5fa;--blue-soft:#172554;--cyan:#22d3ee;--cyan-soft:#083344;--violet:#a78bfa;--violet-soft:#2e1065;
+  --green:#4ade80;--green-soft:#052e16;--amber:#fbbf24;--amber-soft:#451a03;--red:#f87171;--red-soft:#450a0a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);}}
+:root[data-theme="dark"]{
+  --bg:#0b1120;--surface:#111827;--surface-2:#1e293b;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#64748b;--line:#1f2a3d;
+  --blue:#60a5fa;--blue-soft:#172554;--cyan:#22d3ee;--cyan-soft:#083344;--violet:#a78bfa;--violet-soft:#2e1065;
+  --green:#4ade80;--green-soft:#052e16;--amber:#fbbf24;--amber-soft:#451a03;--red:#f87171;--red-soft:#450a0a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.84em}
+code{background:var(--surface-2);padding:1px 6px;border-radius:6px}
+.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:16px;align-items:center;overflow-x:auto}
+.brand{font-weight:800;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.logo{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--violet),var(--blue))}
+.top nav{display:flex;gap:4px}
+.top nav a{white-space:nowrap;color:var(--ink-2);text-decoration:none;font-size:.84rem;padding:6px 10px;border-radius:8px}
+.top nav a:hover{background:var(--surface-2);color:var(--ink)}
+.theme{margin-left:auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit;font-size:.8rem}
+main{max-width:1180px;margin:0 auto;padding:0 16px 80px}
+.hero{padding:56px 0 20px}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--violet);font-weight:700}
+h1{font-size:clamp(1.9rem,4vw,2.7rem);line-height:1.15;margin:.3em 0 .4em;letter-spacing:-.02em}
+h2{font-size:1.5rem;letter-spacing:-.01em;margin:0 0 .3em}
+h3{font-size:1.02rem;margin:0 0 .4em}
+.lead{color:var(--ink-2);font-size:1.06rem;max-width:780px}
+section{padding:40px 0 6px;scroll-margin-top:60px}
+.sub{color:var(--ink-2);margin:0 0 20px;max-width:800px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px;min-width:0}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
+.muted{color:var(--ink-2)}
+.small{font-size:.85rem}
+.chip{display:inline-block;font-family:"JetBrains Mono",monospace;font-size:.74rem;padding:3px 8px;border-radius:7px;background:var(--surface-2);margin:2px}
+.chip.k{background:var(--blue-soft);color:var(--blue)}.chip.t{background:var(--green-soft);color:var(--green)}
+.callout{border-left:3px solid var(--blue);background:var(--blue-soft);padding:12px 14px;border-radius:0 10px 10px 0;font-size:.9rem;margin-top:12px}
+.callout.a{border-color:var(--amber);background:var(--amber-soft)}
+.callout.g{border-color:var(--green);background:var(--green-soft)}
+/* bar chart */
+.hbar .row{display:grid;grid-template-columns:150px 1fr 70px;gap:10px;align-items:center;margin:7px 0;font-size:.84rem}
+.hbar .track{height:16px;background:var(--surface-2);border-radius:6px;overflow:hidden}
+.hbar .fill{height:100%;border-radius:6px;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.hbar .v{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.vbars{display:flex;align-items:flex-end;gap:12px;height:180px;padding-top:10px}
+.vbars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end}
+.vbars .b{width:100%;max-width:56px;border-radius:8px 8px 3px 3px;height:0;transition:height 1s cubic-bezier(.2,.8,.2,1)}
+.vbars .l{font-size:.75rem;color:var(--ink-2);text-align:center}
+.vbars .n{font-size:.78rem;font-weight:600}
+/* formulas & calculators */
+.formula{font-family:"JetBrains Mono",monospace;background:var(--surface-2);border-radius:10px;padding:12px 14px;font-size:.8rem;line-height:1.7}
+.slider{display:grid;grid-template-columns:150px 1fr 50px;gap:10px;align-items:center;margin:8px 0;font-size:.85rem}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.gauge{display:flex;align-items:center;gap:16px;margin-top:10px}
+.big{font-size:2.2rem;font-weight:800;letter-spacing:-.02em}
+.stack{display:flex;height:18px;border-radius:8px;overflow:hidden;background:var(--surface-2);margin-top:8px}
+.stack div{transition:width .4s}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;padding:5px 12px;font:inherit;font-size:.82rem;cursor:pointer}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.87rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:700}
+tr:last-child td{border-bottom:0}
+.num{font-variant-numeric:tabular-nums;text-align:right}
+/* rrf */
+.rrf{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.rrf ol{margin:0;padding-left:20px;font-family:"JetBrains Mono",monospace;font-size:.78rem}
+.rrf li{padding:2px 0}
+.hl{background:var(--amber-soft);border-radius:4px;padding:0 3px}
+/* agents */
+.agents{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;counter-reset:a}
+.ag{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);position:relative}
+.ag:before{counter-increment:a;content:counter(a);position:absolute;top:10px;right:12px;font-weight:800;color:var(--ink-3)}
+.ag b{display:block;margin-bottom:4px}
+.ag .io{font-size:.76rem;color:var(--ink-2)}
+.ag .io i{font-style:normal;color:var(--ink-3);font-weight:600}
+/* stages */
+.stages{display:flex;gap:8px;flex-wrap:wrap}
+.stg{flex:1;min-width:150px;border-radius:12px;padding:12px;color:#fff}
+.stg b{display:block}
+.stg span{font-size:.78rem;opacity:.9}
+.ring{width:96px;height:96px}
+footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
+@media (max-width:640px){.rrf{grid-template-columns:1fr}.hbar .row{grid-template-columns:100px 1fr 60px}.slider{grid-template-columns:110px 1fr 42px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="brand"><span class="logo"></span>Design</div>
+  <nav><a href="#principles">Principles</a><a href="#data">Data</a><a href="#retrieval">Retrieval</a><a href="#priority">Priority</a><a href="#models">Models</a><a href="#agents">Agents</a><a href="#quality">Quality</a><a href="#storage">Storage</a><a href="#ui">UI</a><a href="#decisions">Decisions</a></nav>
+  <button class="theme" id="themeBtn">Theme</button>
+</div></header>
+<main>
+<div class="hero">
+  <div class="eyebrow">System design specification</div>
+  <h1>Numbers from models, knowledge from Synapt, words from the LLM.</h1>
+  <p class="lead">This page explains <em>how</em> each part is designed: the data, the formulas, the models, the agent contracts,
+  how quality is measured and why each trade-off was made. Every chart uses real numbers from the 100,000-case dataset or the trained models.</p>
+</div>
+
+<section id="principles">
+  <h2>Design principles</h2>
+  <div class="grid g3" id="princ"></div>
+</section>
+
+<section id="data">
+  <h2>The data, and what it tells us</h2>
+  <p class="sub">Supply Chain Disruption and Recovery dataset: 100,000 rows, one per historical disruption.</p>
+  <div class="card" style="margin-bottom:14px">
+    <h3>Fields</h3>
+    <div><span class="pill">inputs (known at incident time)</span><br>
+      <span class="chip k">disruption_type</span><span class="chip k">industry</span><span class="chip k">supplier_tier</span><span class="chip k">supplier_region</span><span class="chip k">supplier_size</span><span class="chip k">has_backup_supplier</span><span class="chip k">disruption_severity</span><span class="chip k">response_type</span><span class="chip k">response_time_days</span></div>
+    <div style="margin-top:8px"><span class="pill">outcomes (what we predict)</span><br>
+      <span class="chip t">production_impact_pct</span><span class="chip t">revenue_loss_usd</span><span class="chip t">partial_recovery_days</span><span class="chip t">full_recovery_days</span><span class="chip t">permanent_supplier_change</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Severity drives everything</h3><p class="muted small" style="margin:0">Average full recovery (days) by severity 1–5</p><div class="vbars" id="vSev"></div>
+      <p class="callout small">Each severity step adds about <b>30 days</b> of recovery, <b>12 points</b> of production impact and <b>$1M</b> of loss.</p></div>
+    <div class="card"><h3>A backup supplier saves ~26 days</h3><p class="muted small" style="margin:0">Average full recovery (days)</p><div class="hbar" id="hBackup"></div>
+      <h3 style="margin-top:16px">Response strategy vs. recovery</h3><div class="hbar" id="hResp"></div></div>
+    <div class="card"><h3>Disruption types</h3><p class="muted small" style="margin:0">Count and average full recovery</p><div class="hbar" id="hType"></div>
+      <p class="callout a small">Types differ in average recovery (59–100 days), yet the models give type almost <b>zero importance</b>. Type mostly acts <em>through</em> severity: once severity is known, type adds little. An honest finding worth stating.</p></div>
+    <div class="card"><h3>Supplier size drives the money</h3><p class="muted small" style="margin:0">Average revenue loss (USD)</p><div class="hbar" id="hSize"></div>
+      <h3 style="margin-top:16px">Deeper tiers recover slower, hit less</h3><div class="hbar" id="hTier"></div></div>
+  </div>
+</section>
+
+<section id="retrieval">
+  <h2>Hybrid retrieval: Reciprocal Rank Fusion</h2>
+  <p class="sub">Three ranked lists are merged by rank, not by score, so scores on different scales never need calibrating.</p>
+  <div class="formula">score(case) = Σ<sub>legs</sub> w<sub>leg</sub> / (60 + rank<sub>leg</sub>) &nbsp;&nbsp;·&nbsp;&nbsp; w<sub>semantic</sub> = 0.6, w<sub>keyword</sub> = 0.4, w<sub>profile</sub> = 0.6 &nbsp;&nbsp;→&nbsp;&nbsp; final = 0.5 · fused + 0.5 · attribute similarity</div>
+  <div class="card" style="margin-top:14px">
+    <div class="rrf">
+      <div><h3 style="color:var(--cyan)">Synapt semantic</h3><ol id="l1"></ol></div>
+      <div><h3 style="color:var(--blue)">BM25 keyword</h3><ol id="l2"></ol></div>
+      <div><h3 style="color:var(--green)">Profile match (100k)</h3><ol id="l3"></ol></div>
+    </div>
+    <h3 style="margin-top:16px">Fused result (hover a case to highlight it)</h3>
+    <div class="hbar" id="fused"></div>
+    <p class="callout g small">A case that ranks well in <b>several</b> lists beats a case that ranks first in only one. That is why exact-profile matches rose from <b>14% to 83%</b> after adding the profile leg.</p>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><h3>Attribute similarity weights</h3><div class="hbar" id="hSim"></div></div>
+    <div class="card"><h3>Faceted filters</h3><p class="muted small">Applied to every leg <em>before</em> fusion: disruption type, industry, supplier tier, supplier region, severity, backup supplier, response strategy.
+      Synapt returns masked regions, so the region bridge unmasks them before filtering.</p>
+      <h3>Strategy effectiveness</h3><div class="formula" style="white-space:normal">eff = (0.35·fast full recovery + 0.25·predicted recovery + 0.25·low loss + 0.15·fast partial recovery) × confidence(n cases) × feedback boost (0.85–1.15)</div></div>
+  </div>
+</section>
+
+<section id="priority">
+  <h2>Prioritisation and resilience</h2>
+  <p class="sub">Move the sliders. These are the exact formulas in <code>analysis.priority</code> and <code>ml_models.resilience</code>.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Priority score → P1–P4</h3>
+      <div class="formula">35% severity + 30% production impact + 25% financial loss (log scale) + 10% risk probability</div>
+      <div class="slider"><span>Severity</span><input type="range" id="pSev" min="1" max="5" value="4"><b id="pSevV"></b></div>
+      <div class="slider"><span>Production impact %</span><input type="range" id="pImp" min="0" max="100" value="45"><b id="pImpV"></b></div>
+      <div class="slider"><span>Revenue loss</span><input type="range" id="pLoss" min="4" max="8" step="0.1" value="6.5"><b id="pLossV"></b></div>
+      <div class="slider"><span>Risk probability</span><input type="range" id="pRisk" min="0" max="100" value="60"><b id="pRiskV"></b></div>
+      <div class="gauge"><div class="big" id="pScore"></div><div><div id="pLevel" style="font-weight:700"></div><div class="muted small" id="pSla"></div></div></div>
+      <div class="stack" id="pStack"></div>
+    </div>
+    <div class="card">
+      <h3>Resilience score (0–100)</h3>
+      <div class="formula">backup 25 + tier ≤15 + size ≤15 + recovery speed ≤25 + impact absorption ≤20</div>
+      <div class="slider"><span>Backup supplier</span><input type="range" id="rB" min="0" max="1" value="0"><b id="rBV"></b></div>
+      <div class="slider"><span>Supplier tier</span><input type="range" id="rT" min="1" max="4" value="2"><b id="rTV"></b></div>
+      <div class="slider"><span>Supplier size</span><input type="range" id="rS" min="0" max="2" value="1"><b id="rSV"></b></div>
+      <div class="slider"><span>Pred. full recovery (d)</span><input type="range" id="rR" min="10" max="200" value="90"><b id="rRV"></b></div>
+      <div class="slider"><span>Pred. impact %</span><input type="range" id="rI" min="0" max="100" value="38"><b id="rIV"></b></div>
+      <div class="gauge"><svg class="ring" viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface-2)" stroke-width="10"/><circle id="rRing" cx="50" cy="50" r="42" fill="none" stroke="var(--green)" stroke-width="10" stroke-linecap="round" transform="rotate(-90 50 50)" stroke-dasharray="264" stroke-dashoffset="264" style="transition:.4s"/><text x="50" y="56" text-anchor="middle" font-size="22" font-weight="800" fill="var(--ink)" id="rTxt"></text></svg>
+        <div><div id="rBand" style="font-weight:700"></div><div class="muted small">Strong ≥ 70 · Moderate ≥ 50 · Weak &lt; 50</div></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="models">
+  <h2>Prediction models</h2>
+  <p class="sub">Scikit-learn <code>HistGradientBoosting</code> with native categorical support, trained on all 100,000 rows (80/20 split). Each regression target also has P10 and P90 quantile models for an 80% range.</p>
+  <div class="grid g2">
+    <div class="card">
+      <h3>Model card</h3>
+      <div class="tw"><table><thead><tr><th>Target</th><th class="num">R² / AUC</th><th class="num">MAE</th><th class="num">P10–P90 coverage</th></tr></thead><tbody id="mTable"></tbody></table></div>
+      <p class="callout a small"><b>Read honestly:</b> production impact is predictable (R² 0.70). Revenue and recovery are noisier (R² 0.27–0.40), which is why every prediction shows a P10–P90 range and an "insufficient history" warning instead of a single number.</p>
+    </div>
+    <div class="card">
+      <h3>What drives each prediction (permutation importance)</h3>
+      <div class="tabs" id="impTabs"></div>
+      <div class="hbar" id="impBars"></div>
+      <p class="muted small" style="margin:6px 0 0">Local explanations use the same idea per incident: prediction with the real value minus prediction with that feature reset to the baseline.</p>
+    </div>
+  </div>
+</section>
+
+<section id="agents">
+  <h2>Agent contracts</h2>
+  <p class="sub">Seven agents, each with one job, a typed input and output, and a deterministic fallback. Streamed to the UI over Server-Sent Events.</p>
+  <div class="agents" id="agentGrid"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>The anti-hallucination chain</h3>
+    <div class="grid g3">
+      <div><span class="pill" style="background:var(--red-soft);color:var(--red)">1 · before</span><p class="small muted">Guardrails block injection and off-topic input, redact PII and validate fields against the dataset vocabulary.</p></div>
+      <div><span class="pill" style="background:var(--amber-soft);color:var(--amber)">2 · during</span><p class="small muted">The LLM receives exact figures and case IDs as JSON evidence; it is told it may not invent numbers or attach case IDs to the new incident. Strategy names outside the allowed list are replaced.</p></div>
+      <div><span class="pill" style="background:var(--green-soft);color:var(--green)">3 · after</span><p class="small muted">A deterministic fact-check rejects unknown case IDs, placeholders and amounts / percentages not in the evidence, and triggers one rewrite. Then the LLM judge scores six criteria.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="quality">
+  <h2>How quality is measured</h2>
+  <p class="sub" id="evalSub"></p>
+  <div class="grid g2">
+    <div class="card"><h3>DeepEval metrics</h3><div class="hbar" id="evalBars"></div></div>
+    <div class="card"><h3>Deterministic &amp; Synapt signals</h3><div class="hbar" id="evalDet"></div></div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>The feedback loop</h3>
+    <div class="grid g3 small">
+      <div><b>Rating</b><p class="muted">1–5 stars + chosen strategy → strategy boost per (type, strategy), clamped to ×0.85–1.15 so a few votes cannot flip the ranking.</p></div>
+      <div><b>Outcome</b><p class="muted">Real recovery days and loss reported on the Incident Desk → stored as training rows → models retrain on demand.</p></div>
+      <div><b>Synapt</b><p class="muted">Every verdict is sent to <code>trident_feedback</code>; low-rated inputs are replayed as regression cases in the next evaluation.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="storage">
+  <h2>Storage</h2>
+  <div class="grid g3" id="storeGrid"></div>
+</section>
+
+<section id="ui">
+  <h2>UI design</h2>
+  <p class="sub">Pages are grouped by the stage of the job, not by technology, so a non-expert can follow the story left to right. Every page has an ⓘ drawer that explains what it shows and how to read it.</p>
+  <div class="stages" id="stages"></div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card small"><h3>Plain language first</h3><p class="muted">Jargon terms are underlined; hovering shows a one-line glossary definition. Numbers come with their range and what they mean.</p></div>
+    <div class="card small"><h3>Motion with meaning</h3><p class="muted">Animations show something real: agents lighting up as they finish, numbers counting to their value, flights following real taxi / take-off / landing phases.</p></div>
+    <div class="card small"><h3>Light, calm palette</h3><p class="muted">One accent colour per stage; red is reserved for P1 and breaches. Works at phone width; the 3D view is lazy-loaded.</p></div>
+  </div>
+</section>
+
+<section id="decisions">
+  <h2>Decision log</h2>
+  <div class="card tw"><table><thead><tr><th>Decision</th><th>Why</th><th>Trade-off accepted</th></tr></thead><tbody id="dec"></tbody></table></div>
+</section>
+</main>
+<footer>AI-Powered Supply-Chain Disruption Assistant · Design · data from supply_chain_disruption_recovery.csv and artifacts/models_meta.json</footer>
+
+<script>
+const DATA={
+ sev:[[1,30.4,13.3],[2,61.1,25.1],[3,91.1,37.5],[4,120.7,50.1],[5,152.2,62.2]],
+ backup:[["No backup",90.3],["Backup supplier",64.3]],
+ resp:[["Alternative Supplier",62.8],["Inventory Buffer",68.0],["Customer Delay",80.3],["Production Reroute",88.9],["Combined Strategy",108.1]],
+ type:[["Port Congestion",25118,59.1],["Geopolitical",18084,81.2],["Labor Strike",15017,62.8],["Natural Disaster",15016,90.6],["Cyber Attack",14887,99.6],["Factory Incident",11878,71.3]],
+ size:[["Large",6260370],["Medium",1775818],["Small",528281]],
+ tier:[["Tier 1",72.3,37.4],["Tier 2",75.3,32.0],["Tier 3",79.3,26.5],["Tier 4",81.0,21.0]],
+};
+const MODELS=[
+ ["Production impact %","0.70","7.8 pts","79.6%",{severity:1.192,tier:.227,region:.001,size:0,type:0,backup:0,industry:0,strategy:0}],
+ ["Revenue loss","0.33","$1.59M","78.8%",{size:.640,severity:.266,industry:.218,tier:.036,strategy:.001,type:0,region:0,backup:0}],
+ ["Full recovery days","0.40","31 d","79.7%",{severity:.693,backup:.067,strategy:.028,tier:.010,size:.001,type:0,region:0,industry:0}],
+ ["Partial recovery days","0.27","15 d","77.7%",{severity:.452,strategy:.125,tier:.034,type:0,industry:0,size:0,region:0,backup:0}],
+ ["High-impact risk","AUC 0.87","—","—",{severity:.275,size:.074,industry:.029,tier:.009,backup:.006,strategy:.003,type:0,region:0}],
+];
+// EVAL: from backend/artifacts/eval_results.json
+const EVAL={n:8,total:25,ran:"2026-10-07",deep:{"Answer relevancy":.978,"Faithfulness":.922,"Contextual relevancy":.89,"Impact analysis correctness":.775,"Recommendation quality":.738},
+ det:{"Classification accuracy":.969,"LLM-as-Judge":.983,"Fact-check pass rate":1.0,"Guardrail suite (10 cases)":1.0,"Synapt answer confidence (25)":.755,"Synapt graph confidence (25)":.575},
+ fallback:{n:17,cls:.985,judge:.867,fc:1.0}};
+const PRINC=[
+ ["🎯","Right tool for each job","Synapt for knowledge, ML for numbers, LLM for language. The LLM never produces a number on its own."],
+ ["🧾","Evidence or it didn't happen","Every recommendation cites real case IDs; a fact-checker rejects anything not in the evidence."],
+ ["🪂","Degrade, don't break","Every external call has a timeout, a circuit breaker and a local fallback; results say which path was used."],
+ ["📏","Measure everything","DeepEval, LLM-as-Judge, fact-check rate, guardrail suite and Synapt confidence are tracked together."],
+ ["🔁","Learn from use","Ratings re-weight strategies, real outcomes retrain models, verdicts go back to Synapt."],
+ ["🧭","Explain to a non-expert","Ranges instead of point guesses, plain-language drawers, and 'insufficient history' when data is thin."],
+];
+const AGENTS=[
+ ["Intake","free text / fields","structured incident + confidence","LLM + rules → rules"],
+ ["Investigator","incident","similar cases + graph answer","Synapt + BM25 → LSA + BM25"],
+ ["Impact","incident","predictions, P10–P90, priority, explanation","local only"],
+ ["Planner","cases + stats + playbook","primary / secondary strategy, actions","LLM → template"],
+ ["Recovery","plan","counterfactual timeline, milestones","local only"],
+ ["Report","everything above","executive briefing (fact-checked)","LLM → template"],
+ ["Judge","briefing + evidence","6 scores + approve / revise","LLM → heuristic"],
+];
+const STORES=[
+ ["Synapt (remote)","Case narratives (4k), profiles (100k), aggregate stats, 6 playbooks, ontology doc, 5,000 tickets (.xlsx), feedback episodes."],
+ ["In-memory (pandas + indexes)","All 100k cases, BM25 index, LSA matrix (96 dims), profile arrays for vectorised matching. Built at start-up (~30 s)."],
+ ["SQLite artifacts/feedback.db","Tables: analyses, feedback, synapt_quality, incidents, actions, signals. Small, file-based, no server to run."],
+ ["artifacts/models.joblib","13 trained models (4 regression targets × point + P10 + P90, plus the risk classifier) with metadata and metrics in models_meta.json."],
+ ["artifacts/synapt_region_tokens.json","Learned map from Synapt's masked [LOCATION_x] tokens back to region names."],
+ ["artifacts/eval_results.json","Last evaluation run: per-case scores, reasons, Synapt signals, guardrail results."],
+];
+const STAGES=[["Detect","#ef4444","Early Warning"],["Investigate","#f59e0b","Cockpit · Search · Graph"],["Predict & explain","#0891b2","Simulator · Root Cause"],["Decide","#2563eb","Decision Studio · Portfolio · Network · Triage"],["Act & learn","#16a34a","Incident Desk · Quality · Analytics"]];
+const DEC=[
+ ["Synapt as the knowledge layer, local BM25 + ML alongside","Synapt gives graph reasoning, playbooks and memory; local indexes cover all 100k rows cheaply and keep working offline.","Two sources to keep in sync; we fuse by rank to avoid score calibration."],
+ ["RRF instead of weighted score blending","Rank-based fusion is robust when legs score on different scales.","Loses the magnitude of very confident hits."],
+ ["Gradient boosting, not deep learning","Tabular data, 100k rows, categorical features: GBMs are accurate, fast to train and explainable.","Lower ceiling on noisy targets (revenue R² 0.33)."],
+ ["Quantile ranges on every prediction","Point estimates hide uncertainty; operators plan with ranges.","Two more models per target; ~79% coverage vs 80% target."],
+ ["Fixed Cypher templates only","trident_cypher is not tenant-scoped on the server.","Less flexible analytics than free-form queries."],
+ ["SSE streaming for the workflow","Users see progress in seconds while the LLM steps finish.","One long-lived connection per analysis."],
+ ["SQLite for operational state","Zero-ops, enough for a single-node microservice.","Not for multi-instance deployments; swap for Postgres there."],
+ ["4k narratives + 100k profiles in Synapt","Full narratives for all rows would be slow and costly to ingest.","Synapt's semantic leg sees fewer full stories; the profile leg compensates."],
+];
+const $=id=>document.getElementById(id);
+const fmt$=v=>v>=1e6?`$${(v/1e6).toFixed(2)}M`:`$${Math.round(v/1e3)}k`;
+function hbar(el,rows,color,fmt=v=>v){const mx=Math.max(...rows.map(r=>r[1]));
+ $(el).innerHTML=rows.map(r=>`<div class="row"><span>${r[0]}</span><div class="track"><div class="fill" style="background:${r[2]||color}" data-w="${r[1]/mx*100}"></div></div><span class="v">${fmt(r[1])}</span></div>`).join('')}
+$('princ').innerHTML=PRINC.map(p=>`<div class="card"><div style="font-size:1.4rem">${p[0]}</div><h3>${p[1]}</h3><p class="muted small" style="margin:0">${p[2]}</p></div>`).join('');
+$('vSev').innerHTML=DATA.sev.map(s=>`<div class="col"><span class="n">${s[1]}d</span><div class="b" style="background:linear-gradient(var(--red),var(--amber))" data-h="${s[1]/160*100}"></div><span class="l">Sev ${s[0]}<br>${s[2]}% impact</span></div>`).join('');
+hbar('hBackup',DATA.backup,'var(--green)',v=>v+' d');
+hbar('hResp',DATA.resp,'var(--blue)',v=>v+' d');
+hbar('hType',DATA.type.map(t=>[`${t[0]} · ${(t[1]/1000).toFixed(1)}k`,t[2]]),'var(--violet)',v=>v+' d');
+hbar('hSize',DATA.size,'var(--amber)',fmt$);
+hbar('hTier',DATA.tier.map(t=>[`${t[0]} · ${t[2]}% impact`,t[1]]),'var(--cyan)',v=>v+' d');
+hbar('hSim',[["Disruption type",3],["Industry",2],["Severity",2],["Backup supplier",1.5],["Tier",1],["Region",1],["Size",1]],'var(--cyan)',v=>'×'+v);
+// RRF demo
+const L1=["DIS-004211","DIS-018930","DIS-077102","DIS-050331","DIS-009914"],L2=["DIS-018930","DIS-061220","DIS-004211","DIS-033871","DIS-077102"],L3=["DIS-033871","DIS-018930","DIS-090017","DIS-004211","DIS-061220"];
+const W=[.6,.4,.6];const sc={};[L1,L2,L3].forEach((l,i)=>l.forEach((c,r)=>sc[c]=(sc[c]||0)+W[i]/(60+r+1)));
+['l1','l2','l3'].forEach((id,i)=>$(id).innerHTML=[L1,L2,L3][i].map(c=>`<li data-c="${c}">${c}</li>`).join(''));
+const fr=Object.entries(sc).sort((a,b)=>b[1]-a[1]).map(([c,s])=>[c,+(s*1000).toFixed(2)]);
+hbar('fused',fr,'var(--amber)',v=>v.toFixed(1));
+document.querySelectorAll('#fused .row').forEach(r=>{const c=r.firstChild.textContent;r.onmouseenter=()=>document.querySelectorAll(`li[data-c="${c}"]`).forEach(x=>x.classList.add('hl'));r.onmouseleave=()=>document.querySelectorAll('li.hl').forEach(x=>x.classList.remove('hl'))});
+// priority
+function prio(){const sev=+$('pSev').value,imp=+$('pImp').value,lg=+$('pLoss').value,risk=+$('pRisk').value/100;
+ const loss=10**lg,cap=5e7;const sS=(sev-1)/4,sI=imp/100,sL=Math.min(1,Math.log10(Math.max(loss,1e4)/1e4)/Math.log10(cap/1e4));
+ const parts=[.35*sS,.30*sI,.25*sL,.10*risk];const s=Math.round(parts.reduce((a,b)=>a+b)*1000)/10;
+ const lv=s>=70?['P1 · Critical','var(--red)','War-room within 4 h']:s>=50?['P2 · High','var(--amber)','Response plan within 24 h']:s>=30?['P3 · Medium','var(--blue)','Review within 3 days']:['P4 · Low','var(--green)','Monitor weekly'];
+ $('pSevV').textContent=sev;$('pImpV').textContent=imp+'%';$('pLossV').textContent=fmt$(loss);$('pRiskV').textContent=Math.round(risk*100)+'%';
+ $('pScore').textContent=s;$('pScore').style.color=lv[1];$('pLevel').textContent=lv[0];$('pLevel').style.color=lv[1];$('pSla').textContent=lv[2];
+ const cols=['var(--red)','var(--amber)','var(--violet)','var(--cyan)'];$('pStack').innerHTML=parts.map((p,i)=>`<div style="width:${p*100}%;background:${cols[i]}" title="${['severity','impact','loss','risk'][i]}"></div>`).join('')}
+['pSev','pImp','pLoss','pRisk'].forEach(i=>$(i).oninput=prio);prio();
+// resilience
+function res(){const b=+$('rB').value,t=+$('rT').value,sz=['Small','Medium','Large'][+$('rS').value],r=+$('rR').value,im=+$('rI').value;
+ const c=(b?25:0)+({1:10,2:15,3:20,4:20}[t])*.75+({Large:15,Medium:10,Small:5}[sz])+Math.max(0,25*(1-r/200))+Math.max(0,20*(1-im/100));const s=Math.round(c*10)/10;
+ $('rBV').textContent=b?'yes':'no';$('rTV').textContent=t;$('rSV').textContent=sz;$('rRV').textContent=r;$('rIV').textContent=im+'%';
+ $('rTxt').textContent=Math.round(s);$('rRing').style.strokeDashoffset=264*(1-s/100);const col=s>=70?'var(--green)':s>=50?'var(--amber)':'var(--red)';$('rRing').style.stroke=col;
+ $('rBand').textContent=s>=70?'Strong':s>=50?'Moderate':'Weak';$('rBand').style.color=col}
+['rB','rT','rS','rR','rI'].forEach(i=>$(i).oninput=res);res();
+// models
+$('mTable').innerHTML=MODELS.map(m=>`<tr><td>${m[0]}</td><td class="num"><b>${m[1]}</b></td><td class="num">${m[2]}</td><td class="num">${m[3]}</td></tr>`).join('');
+function imp(i){document.querySelectorAll('#impTabs button').forEach((b,j)=>b.classList.toggle('on',i===j));
+ const rows=Object.entries(MODELS[i][4]).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,v]);hbar('impBars',rows,'var(--violet)',v=>v.toFixed(3));grow()}
+$('impTabs').innerHTML=MODELS.map((m,i)=>`<button>${m[0].replace(' days','').replace('High-impact ','')}</button>`).join('');
+document.querySelectorAll('#impTabs button').forEach((b,i)=>b.onclick=()=>imp(i));
+$('agentGrid').innerHTML=AGENTS.map(a=>`<div class="ag"><b>${a[0]}</b><div class="io"><i>in</i> ${a[1]}</div><div class="io"><i>out</i> ${a[2]}</div><div class="io" style="margin-top:6px"><span class="pill">${a[3]}</span></div></div>`).join('');
+$('evalSub').innerHTML=`Golden set of <b>${EVAL.total} incidents</b> covering every type, industry and region (${EVAL.ran}). DeepEval and the LLM judge are averaged over the <b>${EVAL.n} cases that ran the full LLM path</b>; the gateway budget ran out after that, so the other ${EVAL.fallback.n} ran in no-LLM fallback mode (rule classifier ${Math.round(EVAL.fallback.cls*1000)/10}% accurate, heuristic judge ${EVAL.fallback.judge}, fact-check ${EVAL.fallback.fc*100}%). Thresholds: 0.6 for relevancy, faithfulness and the G-Eval rubrics; 0.4 for contextual relevancy.`;
+hbar('evalBars',Object.entries(EVAL.deep).map(([k,v])=>[k,v,v>=.8?'var(--green)':v>=.6?'var(--amber)':'var(--red)']),'',v=>(v*100).toFixed(1)+'%');
+hbar('evalDet',Object.entries(EVAL.det).map(([k,v])=>[k,v,k.startsWith('Synapt')?'var(--cyan)':'var(--blue)']),'',v=>(v*100).toFixed(1)+'%');
+$('storeGrid').innerHTML=STORES.map(s=>`<div class="card small"><h3 class="mono" style="font-size:.85rem">${s[0]}</h3><p class="muted" style="margin:0">${s[1]}</p></div>`).join('');
+$('stages').innerHTML=STAGES.map(s=>`<div class="stg" style="background:${s[1]}"><b>${s[0]}</b><span>${s[2]}</span></div>`).join('');
+$('dec').innerHTML=DEC.map(d=>`<tr><td><b>${d[0]}</b></td><td class="muted">${d[1]}</td><td class="muted">${d[2]}</td></tr>`).join('');
+function grow(){document.querySelectorAll('.fill').forEach(f=>{if(f.closest('.seen')||f.closest('#impBars'))f.style.width=f.dataset.w+'%'});document.querySelectorAll('.seen .b').forEach(b=>b.style.height=b.dataset.h+'%')}
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('seen');grow()}}),{threshold:.15});
+document.querySelectorAll('.card').forEach(c=>io.observe(c));
+imp(0);
+$('themeBtn').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark'};
+</script>
+</body>
+</html>

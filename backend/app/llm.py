@@ -9,6 +9,7 @@ from typing import Any
 
 from openai import OpenAI
 
+from . import faults
 from .config import settings
 
 log = logging.getLogger("llm")
@@ -32,6 +33,7 @@ def chat(messages: list[dict], model: str | None = None, temperature: float = 0.
          max_tokens: int = 1200) -> str:
     if not available():
         raise RuntimeError("LLM not configured")
+    faults.check("llm")
     r = client().chat.completions.create(
         model=model or settings.LLM_MODEL, messages=messages,
         temperature=temperature, max_tokens=max_tokens,

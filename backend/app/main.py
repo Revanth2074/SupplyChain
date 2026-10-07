@@ -12,7 +12,8 @@ from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import PlainTextResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from . import agents, analysis, decision, evaluation, feedback, llm, network, ops, portfolio, risk_watch, webapp
+from . import (agents, analysis, decision, evaluation, fallback_lab, faults, feedback, llm, network, ops, portfolio,
+               risk_watch, webapp)
 from . import synapt_service as syn
 from .config import settings
 from .data_store import store
@@ -200,6 +201,15 @@ class ActionPatch(BaseModel):
     notes: Optional[str] = Field(None, max_length=500)
 
 
+class SwitchReq(BaseModel):
+    enabled: bool
+    minutes: float = Field(30, ge=1, le=faults.MAX_MINUTES)
+
+
+class SelfTestReq(BaseModel):
+    full_workflow: bool = True
+
+
 class EvalReq(BaseModel):
     limit: Optional[int] = Field(None, ge=1, le=20)
     use_graph: bool = False
@@ -221,7 +231,8 @@ def health():
                     "judge_model": settings.JUDGE_MODEL},
             "data": {"ready": store.ready, "rows": int(len(store.df)) if store.df is not None else 0},
             "models": {"ready": registry.ready, "training": registry.training,
-                       "trained_at": registry.meta.get("trained_at")}}
+                       "trained_at": registry.meta.get("trained_at"), "fallback": registry.fallback()},
+            "simulated_outages": faults.active_list()}
 
 
 @app.get("/api/synapt/ping")
@@ -788,4 +799,37 @@ def eval_results():
 
 
 # must stay last: serves the built UI and falls back to index.html for client-side routes
+# ------------------------------------------------------------------ fallback lab
+@app.get("/api/fallback-lab")
+def fallback_lab_status():
+    """Outage switches (with what fails and what takes over) and the current Synapt breaker state."""
+    return {**faults.status(), "synapt": syn.status(), "llm_configured": llm.available(),
+            "models_fallback": registry.fallback()}
+
+
+@app.put("/api/fallback-lab/{name}")
+def fallback_lab_switch(name: str, req: SwitchReq):
+    """Simulate an outage of one dependency (enabled=true) or restore it. Restores itself after `minutes`."""
+    try:
+        faults.set_switch(name, req.enabled, req.minutes)
+    except KeyError as e:
+        raise HTTPException(404, f"Unknown switch '{name}'. Options: {list(faults.SWITCHES)}") from e
+    except PermissionError as e:
+        raise HTTPException(403, str(e)) from e
+    return fallback_lab_status()
+
+
+@app.post("/api/fallback-lab/reset")
+def fallback_lab_reset():
+    faults.reset()
+    return fallback_lab_status()
+
+
+@app.post("/api/fallback-lab/selftest")
+def fallback_lab_selftest(req: SelfTestReq):
+    """Run every feature once; each check passes when it answered via the expected engine."""
+    _ready()
+    return fallback_lab.run(req.full_workflow)
+
+
 webapp.serve_frontend(app)

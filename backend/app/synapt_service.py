@@ -10,6 +10,7 @@ import threading
 import time
 from typing import Any
 
+from . import faults
 from .config import settings
 from .synapt_client import SynaptError, get_client
 
@@ -37,7 +38,26 @@ class _Breaker:
             self.opened = time.time()
 
 
-breaker = _Breaker()
+_breakers: dict[str, _Breaker] = {}
+
+
+def breaker_for(tool: str) -> _Breaker:
+    """One breaker per tool, so a slow graph-RAG call cannot switch off case search."""
+    return _breakers.setdefault(tool, _Breaker())
+
+
+def reset_breakers() -> None:
+    for b in _breakers.values():
+        b.ok()
+        b.opened = 0.0
+
+
+def _on_fault_change(name: str, enabled: bool) -> None:
+    if not enabled and name.startswith("synapt"):
+        reset_breakers()  # restoring a simulated outage takes effect immediately
+
+
+faults.on_change(_on_fault_change)
 
 
 class _RegionMap:
@@ -116,8 +136,9 @@ def _unwrap(r: Any) -> Any:
 def _call(tool: str, args: dict, timeout: float) -> Any:
     if not configured():
         raise SynaptError("Synapt not configured")
+    breaker = breaker_for(tool)
     if not breaker.allow():
-        raise SynaptError(f"Synapt circuit open: {breaker.last_error}")
+        raise SynaptError(f"Synapt circuit open for {tool}: {breaker.last_error}")
     args = {"provider_id": settings.SYNAPT_PROVIDER_ID, **args}
     fut = _pool.submit(get_client().call_tool, tool, args)
     try:
@@ -351,7 +372,12 @@ def stats(timeout: float = 15) -> dict:
 
 
 def status() -> dict:
-    return {"configured": configured(), "circuit_open": not breaker.allow(),
-            "consecutive_failures": breaker.fails, "last_error": breaker.last_error,
+    open_tools = [t for t, b in _breakers.items() if not b.allow()]
+    errs = [b.last_error for b in _breakers.values() if b.last_error]
+    simulated = [n for n in faults.active_list() if n.startswith("synapt")]
+    return {"configured": configured(), "circuit_open": bool(open_tools) or "synapt" in simulated,
+            "open_tools": open_tools, "simulated_outage": simulated,
+            "consecutive_failures": max((b.fails for b in _breakers.values()), default=0),
+            "last_error": errs[-1] if errs else "",
             "provider_id": settings.SYNAPT_PROVIDER_ID, "mcp_url": settings.SYNAPT_MCP_URL,
             "region_tokens_learned": len(regions.tokens)}

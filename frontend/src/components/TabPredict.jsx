@@ -200,6 +200,9 @@ export default function TabPredict({ options }) {
         {/* Right Column: Model Predictions & Resilience Score */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {/* Output Metric Cards with 80% prediction intervals */}
+          {prediction?.method === 'cohort-statistics' && (
+            <Callout tone="warning">Prediction models are switched off: these figures are the median and P10–P90 of {prediction.cohort?.cases} similar historical cases (cohort statistics fallback).</Callout>
+          )}
           {prediction?.support?.warning && <Callout tone="warning">{prediction.support.warning}</Callout>}
           {prediction?.support && !prediction.support.warning && (
             <Callout tone="info">

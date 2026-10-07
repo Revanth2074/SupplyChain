@@ -1,6 +1,8 @@
 # Architecture & System Design
 ## AI-Powered Supply Chain Disruption Assistant with Synapt MCP
 
+> Interactive version with diagrams and animations: [`docs/architecture.html`](docs/architecture.html). How the system behaves without Synapt or the LLM: [`docs/synapt-modes.html`](docs/synapt-modes.html).
+
 This document provides the complete architectural blueprint and design specification for the **AI-Powered Supply Chain Disruption Assistant**, built on top of the **Synapt Knowledge Substrate (MCP Connector)** and 100,000 historical disruption precedents.
 
 ---

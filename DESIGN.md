@@ -1,6 +1,8 @@
 # System Design Specification
 ## AI-Powered Supply Chain Disruption Assistant with Synapt MCP
 
+> Interactive version with real-data charts and calculators: [`docs/design.html`](docs/design.html).
+
 ---
 
 ## 1. Executive Overview & Problem Context

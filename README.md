@@ -59,6 +59,11 @@ Retrieve similar historical disruptions, predict their impact, plan the response
 
 Operational supplier fields (`inventory_days`, `dependency_pct`, `on_time_rate`, `recent_disruptions`, `annual_spend_usd`, `products`) are optional portfolio columns; the bundled sample uses demo values. Products, lines and order volumes in the network view are a sample bill of materials.
 
+### Fallback Lab (test the fallbacks live)
+The **Fallback Lab** page (sidebar → System) has switches that simulate an outage of one dependency at a time: **Synapt (all tools)**, **Synapt graph-RAG only**, **Synapt playbooks only**, the **LLM gateway**, the **prediction models**, and the **live hazard feed**. A switch makes that dependency fail at its lowest level (the MCP client, the LLM wrapper, the model registry, the feed fetch), so the real error handling runs. Every page then uses its fallback: local LSA search, skipped graph/playbook steps, rule classifier, template plan and briefing, heuristic judge, and **cohort statistics** in place of the models (median and P10/P90 of the most similar historical cases). Pages say when they are on a fallback, and the top bar shows **Test mode**.
+
+**Run self-test** calls every feature once (optionally the full 7-agent workflow) and checks each answered through the engine it should, given the switches: green = normal engine, amber = fallback took over as designed, red = unexpected path or crash (with a hint, e.g. a real outage or exhausted LLM credits). Switches are global, restore themselves after 5–120 minutes, and restoring a Synapt switch resets its circuit breaker immediately. Each Synapt tool now has its own circuit breaker, so a failing graph-RAG call cannot switch off case search. Set `ENABLE_FALLBACK_LAB=0` to lock the switches on a shared deployment.
+
 **Known Synapt limitation:** `trident_create_entity` / `trident_create_concept` fail server-side (`index_node() missing 'neo4j_id'`), and document extraction does not create the requested typed entities (an explicit ontology document, `python -m scripts.synapt_knowledge ontology`, was ingested as a workaround: it adds searchable definitions but no new typed nodes). Graph-RAG, procedures, episodes and the ticket store all work.
 
 ## Architecture
@@ -73,12 +78,39 @@ React console ──/api──▶ FastAPI ──▶ Synapt MCP (beta.synapt.ai)
                           └──▶ SQLite            (analyses, feedback, Synapt quality log)
 ```
 
-See [ARCHITECTURE.md](ARCHITECTURE.md), [DESIGN.md](DESIGN.md) and [PANEL_PRESENTATION.md](PANEL_PRESENTATION.md).
+See [ARCHITECTURE.md](ARCHITECTURE.md), [DESIGN.md](DESIGN.md) and the visual pages below.
 
 ### What lives in Synapt
 - 4,000-case text sample (`synapt_ingest/cases_*.md`), statistics for all 100,000 cases (`aggregate_stats.md`, `profiles.md`) and six response playbooks (`response_playbooks.md`).
 - BM25, the ML models and strategy statistics run over the **full 100,000 rows**; every Synapt hit is joined back to its CSV row by `DIS-` id.
 - **Region masking bridge:** Synapt's PII masking rewrites supplier regions in ingested text to `[LOCATION_<hash>]` tokens. `synapt_service.regions` learns token → region from retrieved cases (seeded in `backend/artifacts/synapt_region_tokens.json`), adds the token to region mentions in queries, and restores real names in answers.
+
+
+## Presentation & documentation
+
+Open these directly in a browser (no server needed; they work offline except for the web font):
+
+| File | What it is |
+|---|---|
+| [`docs/how-it-works.html`](docs/how-it-works.html) | **11-slide presentation deck** (← → to move, **F** for full screen) with animated retrieval, agent and loop visuals |
+| [`docs/architecture.html`](docs/architecture.html) | System diagram, what every component does, **how Synapt works** (tri-store, graph-RAG flow), every Synapt tool used, advantages, limitations and workarounds, request lifecycle, deployment |
+| [`docs/design.html`](docs/design.html) | Design principles, dataset insights (real charts), RRF demo, interactive priority and resilience calculators, model card, agent contracts, evaluation results, storage, UI, decision log |
+| [`docs/synapt-modes.html`](docs/synapt-modes.html) | **With vs. without Synapt (and without the LLM)**: four operating modes, capability matrix, measured retrieval comparison, interactive circuit breaker, LLM fallbacks |
+| [PANEL_PRESENTATION.md](PANEL_PRESENTATION.md) | 10-minute talk script with timings, demo steps and claims to avoid |
+| [STUDY_GUIDE.md](STUDY_GUIDE.md) | Concepts in plain words, code reading order, numbers to know, 36-question mock Q&A |
+
+## Results at a glance
+
+| Area | Result |
+|---|---|
+| Prediction models (held-out 20%) | production impact R² 0.70 · full recovery R² 0.40 · revenue R² 0.33 · partial recovery R² 0.27 · risk AUC 0.87 · P10–P90 coverage 78–80% |
+| Retrieval (25 golden cases, top 8) | hybrid type precision 100% · Synapt semantic leg 87% vs local LSA fallback 68.5% · profile leg raised exact-profile matches 14% → 83% |
+| DeepEval (8 full-LLM golden cases) | answer relevancy 0.98 · faithfulness 0.92 · contextual relevancy 0.89 · impact correctness 0.78 · recommendation quality 0.74 |
+| Checks | classification accuracy 96.9% · LLM judge 0.98 · fact-check 100% (25/25) · guardrail suite 10/10 |
+| No-LLM fallback (17 cases) | rule classifier 98.5% · heuristic judge 0.87 · fact-check 100% |
+| Synapt quality (25 cases) | answer confidence 0.755 · knowledge 0.89 · procedural 0.80 · graph 0.575 · flagged degraded 100% (see the known limitation above) |
+
+The last evaluation run hit the LLM gateway's budget after 8 of 25 cases; the remaining 17 completed on the fallbacks and are reported separately (`n_llm_cases` / `n_fallback_cases` in `eval_results.json`). Re-run the full suite from the Quality page once credits are available.
 
 ---
 
@@ -134,7 +166,7 @@ One Docker container serves the UI and the API on one URL; the ML models are tra
 
 Notes: free Spaces sleep after about 48 hours without visitors and wake on the next visit (about a minute). Their disk is
 not persistent, so incidents, alerts and feedback reset on restart. Production settings: `APP_PASSWORD` (login gate),
-`FRONTEND_DIST` (serve the built UI), `CORS_ORIGINS` (only if another site must call the API). Any Docker host works:
+`FRONTEND_DIST` (serve the built UI), `CORS_ORIGINS` (only if another site must call the API), `ENABLE_FALLBACK_LAB=0` (lock the outage switches). Any Docker host works:
 `docker build -t sc-assistant . && docker run -p 7860:7860 --env-file backend/.env -e APP_PASSWORD=... sc-assistant`.
 
 ## API
@@ -153,6 +185,7 @@ not persistent, so incidents, alerts and feedback reset on restart. Production s
 | `POST /api/decision`, `/api/rootcause`, `/api/rootcause/synapt` | Scenario comparison with ROI; root cause |
 | `POST /api/network`, `/api/network/offline` | Supplier dependency graph and outage simulation |
 | `GET/POST /api/incidents`, `POST /api/incidents/seed-demo`, `PATCH /api/incidents/{id}`, `POST /api/incidents/{id}/actions`, `PATCH /api/actions/{id}` | Incident desk, SLA, escalation, action tracking |
+| `GET /api/fallback-lab`, `PUT /api/fallback-lab/{switch}`, `POST /api/fallback-lab/reset`, `POST /api/fallback-lab/selftest` | Simulated outages and the fallback self-test |
 | `GET /api/health`, `/api/meta`, `/api/insights`, `/api/models` | System |
 
 ---
@@ -165,12 +198,16 @@ cd ..\frontend
 npm run build
 ```
 
+Evaluation suite (`backend/app/evaluation.py`): 25 golden incidents covering every disruption type, industry and region; a deterministic 10-case guardrail suite (injection, secrets, script tags, off-topic, PII redaction, valid inputs); and up to 3 low-rated feedback inputs replayed as regression cases. Rows record whether they ran on the LLM path (`llm_used`); DeepEval and judge averages use only those rows. Run it from the Quality page or `POST /api/evaluate`.
+
 ## Repository layout
 ```
-backend/app/        main · agents · analysis · retrieval · portfolio · ml_models · evaluation · judge
+backend/app/        main · agents · analysis · retrieval · portfolio · ml_models · evaluation · judge · faults · fallback_lab
                     decision · risk_watch · network · ops
                     synapt_client · synapt_service · feedback · guardrails · data_store · llm · config
 backend/scripts/    synapt_knowledge · smoke_test · probe_synapt · discover_synapt
 frontend/src/       App · api · format · guide (page guides + glossary) · index.css + theme-light.css + app-shell.css · components/ (ControlTower.jsx, logistics3d.jsx, logistics/{paths,world}.js + aircraft.jsx, Tab*.jsx, ui.jsx, WhatIfPanel.jsx)
 synapt_ingest/      Synapt documents + disruption_tickets.xlsx
+docs/               how-it-works.html (deck) · architecture.html · design.html · synapt-modes.html
+deploy/             hf_deploy.py · SPACE_README.md   (free Hugging Face Spaces deploy)
 ```

@@ -138,6 +138,20 @@ export default function TabEval() {
         </div>
       </div>
 
+      {evalResults?.n_fallback_cases > 0 && (
+        <div className="glass-card" style={{ borderLeft: '4px solid #d97706', fontSize: '0.86rem' }}>
+          <strong>{evalResults.n_fallback_cases} of {evalResults.n_cases} cases ran in no-LLM fallback mode</strong>
+          {' '}(the LLM gateway was unavailable). DeepEval and the LLM judge are averaged over the {evalResults.n_llm_cases} full-LLM cases only.
+          {evalResults.summary.fallback_mode && (
+            <span style={{ color: 'var(--text-muted)' }}>
+              {' '}Fallback cases: rule classifier {(evalResults.summary.fallback_mode.classification_accuracy * 100).toFixed(1)}% accurate,
+              heuristic judge {(evalResults.summary.fallback_mode.llm_judge_overall * 100).toFixed(0)}%,
+              fact-check {(evalResults.summary.fallback_mode.fact_check_pass_rate * 100).toFixed(0)}%.
+            </span>
+          )}
+        </div>
+      )}
+
       {/* DeepEval Summary Scores */}
       {evalResults?.summary && (
         <div className="grid-auto" style={{ '--min': '200px' }}>
@@ -265,8 +279,11 @@ export default function TabEval() {
                   "{row.input}"
                 </p>
 
+                {row.llm_used === false && (
+                  <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>No-LLM fallback run · DeepEval skipped</span>
+                )}
                 {/* DeepEval metric chips */}
-                {row.metrics && Object.keys(row.metrics).length > 0 && (
+                {row.llm_used !== false && row.metrics && Object.keys(row.metrics).length > 0 && (
                   <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.5rem' }}>
                     {Object.entries(row.metrics).map(([mName, mVal]) => (
                       <span key={mName} className={`badge ${mVal.passed ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '0.72rem' }}>

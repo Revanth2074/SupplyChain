@@ -18,6 +18,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
+from . import faults
 from .config import settings
 from .data_store import store
 
@@ -39,6 +40,11 @@ TARGETS = {
     "partial_recovery_days": {"label": "Partial recovery (days)", "log": False},
 }
 QUANTILES = (0.1, 0.9)
+# Fallback when the models are unavailable: statistics of the most similar historical cohort.
+# Keys are dropped from the end (least important first) until the cohort has MIN_COHORT cases.
+COHORT_KEYS = ("disruption_severity", "supplier_tier", "has_backup_supplier", "supplier_size",
+               "response_type", "industry", "disruption_type", "supplier_region")
+MIN_COHORT = 30
 MODEL_PATH = settings.ARTIFACT_DIR / "models.joblib"
 META_PATH = settings.ARTIFACT_DIR / "models_meta.json"
 
@@ -178,7 +184,52 @@ class ModelRegistry:
         r["response_time_days"] = int(r["response_time_days"])
         return pd.DataFrame([r])[FEATURES]
 
+    # ---------------- cohort-statistics fallback ----------------
+    def fallback(self) -> bool:
+        return faults.active("ml") or not self.models
+
+    def _cohort(self, row: tuple) -> dict:
+        """Median, P10/P90 and high-impact share of the closest historical cohort for one feature row."""
+        cache = self.__dict__.setdefault("_cohort_cache", {})
+        if row in cache:
+            return cache[row]
+        df = store.df
+        cols = self.__dict__.setdefault("_cohort_cols", {})
+        vals = dict(zip(FEATURES, row))
+        keys = list(COHORT_KEYS)
+        while True:
+            m = np.ones(len(df), dtype=bool)
+            for k in keys:
+                if k not in cols:
+                    cols[k] = df[k].astype(int).to_numpy() if k == "has_backup_supplier" else df[k].to_numpy()
+                m &= cols[k] == vals[k]
+            if m.sum() >= MIN_COHORT or not keys:
+                break
+            keys.pop()
+        sub = df[m]
+        out = {"_n": int(len(sub)), "_matched_on": keys}
+        for t in TARGETS:
+            col = sub[t].astype(float)
+            out[t] = float(col.median())
+            for q in QUANTILES:
+                out[f"{t}@q{int(q * 100)}"] = float(col.quantile(q))
+        thr = self.risk_threshold or {"revenue_loss_usd": float(df["revenue_loss_usd"].quantile(.75)),
+                                      "full_recovery_days": float(df["full_recovery_days"].quantile(.75)),
+                                      "production_impact_pct": 50.0}
+        out["risk"] = float(((sub["revenue_loss_usd"] >= thr["revenue_loss_usd"]) |
+                             (sub["full_recovery_days"] >= thr["full_recovery_days"]) |
+                             (sub["production_impact_pct"] >= thr["production_impact_pct"])).mean())
+        if len(cache) > 5000:
+            cache.clear()
+        cache[row] = out
+        return out
+
+    def _cohort_rows(self, X: pd.DataFrame, key: str) -> np.ndarray:
+        return np.array([self._cohort(tuple(_py(v) for v in r))[key] for r in X[FEATURES].itertuples(index=False)])
+
     def _pred(self, tgt: str, X: pd.DataFrame) -> np.ndarray:
+        if self.fallback():
+            return self._cohort_rows(X, tgt)
         m = self.models[tgt]
         if tgt == "risk":
             return m.predict_proba(X)[:, 1]
@@ -186,6 +237,8 @@ class ModelRegistry:
         return np.expm1(p) if TARGETS[tgt]["log"] else p
 
     def _quantile(self, tgt: str, q: float, X: pd.DataFrame) -> np.ndarray:
+        if self.fallback():
+            return self._cohort_rows(X, f"{tgt}@q{int(q * 100)}")
         p = self.models[f"{tgt}@q{int(q * 100)}"].predict(X)
         return np.expm1(p) if TARGETS[tgt]["log"] else p
 
@@ -233,6 +286,14 @@ class ModelRegistry:
         out["support"] = self.support(inc)
         out["resilience_score"] = self.resilience(inc, out)
         out["inputs_used"] = {k: (v.item() if hasattr(v, "item") else v) for k, v in X.iloc[0].to_dict().items()}
+        if self.fallback():
+            c = self._cohort(tuple(_py(v) for v in X.iloc[0][FEATURES]))
+            out["method"] = "cohort-statistics"
+            out["cohort"] = {"cases": c["_n"], "matched_on": c["_matched_on"],
+                             "note": "Prediction models unavailable: median and P10/P90 of the most similar "
+                                     "historical cases."}
+        else:
+            out["method"] = "model"
         return out
 
     def predict_batch(self, rows: list[dict]) -> pd.DataFrame:

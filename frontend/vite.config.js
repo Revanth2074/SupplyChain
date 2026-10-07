@@ -8,7 +8,8 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8000',
+        // API_PORT lets a second backend run elsewhere (e.g. when 8000 is busy)
+        target: `http://127.0.0.1:${process.env.API_PORT || 8000}`,
         changeOrigin: true,
       },
     },
