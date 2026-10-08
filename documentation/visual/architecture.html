@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>System Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8fb;--surface:#fff;--surface-2:#f1f5f9;--ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;--line:#e2e8f0;
+  --blue:#2563eb;--blue-soft:#dbeafe;--cyan:#0891b2;--cyan-soft:#cffafe;--violet:#7c3aed;--violet-soft:#ede9fe;
+  --green:#16a34a;--green-soft:#dcfce7;--amber:#d97706;--amber-soft:#fef3c7;--red:#dc2626;--red-soft:#fee2e2;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1120;--surface:#111827;--surface-2:#1e293b;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#64748b;--line:#1f2a3d;
+  --blue:#60a5fa;--blue-soft:#172554;--cyan:#22d3ee;--cyan-soft:#083344;--violet:#a78bfa;--violet-soft:#2e1065;
+  --green:#4ade80;--green-soft:#052e16;--amber:#fbbf24;--amber-soft:#451a03;--red:#f87171;--red-soft:#450a0a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);}}
+:root[data-theme="dark"]{
+  --bg:#0b1120;--surface:#111827;--surface-2:#1e293b;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#64748b;--line:#1f2a3d;
+  --blue:#60a5fa;--blue-soft:#172554;--cyan:#22d3ee;--cyan-soft:#083344;--violet:#a78bfa;--violet-soft:#2e1065;
+  --green:#4ade80;--green-soft:#052e16;--amber:#fbbf24;--amber-soft:#451a03;--red:#f87171;--red-soft:#450a0a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+code,.mono{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.86em}
+code{background:var(--surface-2);padding:1px 6px;border-radius:6px}
+a{color:var(--blue)}
+.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:16px;align-items:center;overflow-x:auto}
+.brand{font-weight:800;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.logo{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--blue),var(--cyan))}
+.top nav{display:flex;gap:4px}
+.top nav a{white-space:nowrap;color:var(--ink-2);text-decoration:none;font-size:.84rem;padding:6px 10px;border-radius:8px}
+.top nav a:hover{background:var(--surface-2);color:var(--ink)}
+.theme{margin-left:auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit;font-size:.8rem}
+main{max-width:1180px;margin:0 auto;padding:0 16px 80px}
+.hero{padding:56px 0 28px}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--blue);font-weight:700}
+h1{font-size:clamp(1.9rem,4vw,2.8rem);line-height:1.15;margin:.3em 0 .4em;letter-spacing:-.02em}
+h2{font-size:1.55rem;letter-spacing:-.01em;margin:0 0 .3em}
+h3{font-size:1.05rem;margin:0 0 .3em}
+.lead{color:var(--ink-2);font-size:1.08rem;max-width:760px}
+section{padding:44px 0 8px;scroll-margin-top:60px}
+.sub{color:var(--ink-2);margin:0 0 22px;max-width:780px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
+.pill.b{background:var(--blue-soft);color:var(--blue)}.pill.c{background:var(--cyan-soft);color:var(--cyan)}
+.pill.v{background:var(--violet-soft);color:var(--violet)}.pill.g{background:var(--green-soft);color:var(--green)}
+.pill.a{background:var(--amber-soft);color:var(--amber)}.pill.r{background:var(--red-soft);color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:26px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.stat b{display:block;font-size:1.55rem;letter-spacing:-.02em}
+.stat span{color:var(--ink-2);font-size:.82rem}
+/* diagram */
+.diagram{overflow-x:auto}
+.diagram svg{display:block;min-width:900px;width:100%;height:auto}
+.dg-box{fill:var(--surface);stroke:var(--line);stroke-width:1.2}
+.dg-t{fill:var(--ink);font:600 13px Inter,sans-serif}
+.dg-s{fill:var(--ink-2);font:400 11px Inter,sans-serif}
+.dg-lab{fill:var(--ink-3);font:600 10.5px Inter,sans-serif;letter-spacing:.08em}
+.flow{stroke:var(--blue);stroke-width:1.6;fill:none;stroke-dasharray:5 6;animation:dash 1.4s linear infinite}
+.flow.c{stroke:var(--cyan)}.flow.v{stroke:var(--violet)}.flow.g{stroke:var(--green)}
+@keyframes dash{to{stroke-dashoffset:-22}}
+@media (prefers-reduced-motion:reduce){.flow{animation:none}}
+/* component list */
+.comp{display:flex;flex-direction:column;gap:8px}
+.comp .hd{display:flex;align-items:center;gap:10px}
+.ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
+.comp p{margin:0;color:var(--ink-2);font-size:.9rem}
+.comp ul{margin:2px 0 0;padding-left:18px;color:var(--ink-2);font-size:.86rem}
+.comp .file{font-family:"JetBrains Mono",monospace;font-size:.74rem;color:var(--ink-3)}
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{border:1px solid var(--line);background:var(--surface);color:var(--ink-2);border-radius:999px;padding:6px 14px;font:inherit;font-size:.85rem;cursor:pointer}
+.tabs button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* table */
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.74rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:700}
+tr:last-child td{border-bottom:0}
+.tw{overflow-x:auto}
+/* sequence */
+.seq{position:relative;padding-left:26px}
+.seq:before{content:"";position:absolute;left:10px;top:6px;bottom:6px;width:2px;background:var(--line)}
+.step{position:relative;margin-bottom:12px;opacity:.35;transition:opacity .4s}
+.step.on{opacity:1}
+.step:before{content:"";position:absolute;left:-21px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--ink-3)}
+.step.on:before{border-color:var(--blue);background:var(--blue)}
+.step .who{font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:7px 14px;font:inherit;font-size:.85rem;cursor:pointer}
+.btn.p{background:var(--blue);border-color:var(--blue);color:#fff}
+.callout{border-left:3px solid var(--amber);background:var(--amber-soft);padding:12px 14px;border-radius:0 10px 10px 0;font-size:.9rem}
+.callout.g{border-color:var(--green);background:var(--green-soft)}
+.callout.b{border-color:var(--blue);background:var(--blue-soft)}
+.tri svg{width:100%;height:auto;max-width:520px;display:block;margin:auto}
+footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
+@media (max-width:640px){.hero{padding-top:32px}section{padding-top:32px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="brand"><span class="logo"></span>Architecture</div>
+  <nav>
+    <a href="#overview">Overview</a><a href="#diagram">Diagram</a><a href="#components">Components</a>
+    <a href="#synapt">How Synapt works</a><a href="#usage">Synapt tools</a><a href="#advantages">Advantages</a>
+    <a href="#limits">Limits &amp; workarounds</a><a href="#lifecycle">Request lifecycle</a>
+  </nav>
+  <button class="theme" id="themeBtn">Theme</button>
+</div></header>
+
+<main>
+<div class="hero" id="overview">
+  <div class="eyebrow">AI-Powered Supply-Chain Disruption Assistant · built on Synapt</div>
+  <h1>One microservice, three engines, one knowledge substrate.</h1>
+  <p class="lead">Synapt holds what the organisation <em>knows</em> (past cases, playbooks, the knowledge graph).
+  Local ML models produce the <em>numbers</em>. Rules and templates assemble the <em>briefing</em> from that
+  evidence, and every claim is checked before anyone sees it. The external LLM is only the <em>judge</em>.</p>
+  <div class="stats">
+    <div class="stat"><b>100,000</b><span>historical disruptions</span></div>
+    <div class="stat"><b>15</b><span>Synapt MCP tools wired in</span></div>
+    <div class="stat"><b>7</b><span>agents in the workflow</span></div>
+    <div class="stat"><b>57</b><span>REST endpoints in 14 routers</span></div>
+    <div class="stat"><b>15</b><span>console pages (React)</span></div>
+    <div class="stat"><b>3</b><span>fallback layers</span></div>
+  </div>
+</div>
+
+<section id="diagram">
+  <h2>System diagram</h2>
+  <p class="sub">The browser talks to one FastAPI service. The service fans out to Synapt over MCP, to a local
+  data + ML engine. An OpenAI-compatible LLM gateway is used only by the evaluation, as the independent judge.
+  The dashed lines move in the direction data flows.</p>
+  <div class="card diagram">
+  <svg viewBox="0 0 1100 560" role="img" aria-label="Architecture diagram">
+    <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--ink-3)"/></marker></defs>
+    <!-- lane labels -->
+    <text x="20" y="34" class="dg-lab">CLIENT</text>
+    <text x="20" y="164" class="dg-lab">SERVICE</text>
+    <text x="20" y="388" class="dg-lab">ENGINES &amp; STORES</text>
+    <!-- client -->
+    <rect x="300" y="18" width="500" height="74" rx="14" class="dg-box"/>
+    <text x="320" y="44" class="dg-t">React 19 console (Vite)</text>
+    <text x="320" y="64" class="dg-s">15 pages · Detect → Investigate → Predict → Decide → Act &amp; learn</text>
+    <text x="320" y="80" class="dg-s">recharts · framer-motion · three.js Control Tower · SSE stream viewer</text>
+    <!-- gateway -->
+    <rect x="300" y="130" width="500" height="54" rx="14" class="dg-box" style="stroke:var(--blue)"/>
+    <text x="320" y="153" class="dg-t">FastAPI microservice · webapp gate</text>
+    <text x="320" y="171" class="dg-s">14 routers under /api · password gate · serves built UI</text>
+    <!-- modules -->
+    <g>
+      <rect x="60" y="214" width="190" height="120" rx="12" class="dg-box"/>
+      <text x="74" y="238" class="dg-t">Guardrails</text>
+      <text x="74" y="258" class="dg-s">injection / off-topic block</text>
+      <text x="74" y="274" class="dg-s">PII redaction</text>
+      <text x="74" y="290" class="dg-s">field vocabulary checks</text>
+      <text x="74" y="316" class="dg-s mono">agents/guardrails.py</text>
+    </g>
+    <g>
+      <rect x="270" y="214" width="270" height="120" rx="12" class="dg-box" style="stroke:var(--violet)"/>
+      <text x="284" y="238" class="dg-t">7-agent LangGraph (SSE)</text>
+      <text x="284" y="258" class="dg-s">Intake → Investigator → Impact →</text>
+      <text x="284" y="274" class="dg-s">Planner → Recovery → Report →</text>
+      <text x="284" y="290" class="dg-s">Judge (+ fact-check &amp; one rewrite)</text>
+      <text x="284" y="316" class="dg-s mono">agents/graph.py (LangGraph)</text>
+    </g>
+    <g>
+      <rect x="560" y="214" width="240" height="120" rx="12" class="dg-box"/>
+      <text x="574" y="238" class="dg-t">Decision layer</text>
+      <text x="574" y="258" class="dg-s">early warning · root cause</text>
+      <text x="574" y="274" class="dg-s">scenario $ · portfolio · network</text>
+      <text x="574" y="290" class="dg-s">incidents, SLA, actions</text>
+      <text x="574" y="316" class="dg-s mono">services/decision · risk_watch · ops</text>
+    </g>
+    <g>
+      <rect x="820" y="214" width="220" height="120" rx="12" class="dg-box"/>
+      <text x="834" y="238" class="dg-t">Quality &amp; learning</text>
+      <text x="834" y="258" class="dg-s">DeepEval (5 metrics)</text>
+      <text x="834" y="274" class="dg-s">feedback → boosts, retrain</text>
+      <text x="834" y="290" class="dg-s">feedback → trident_feedback</text>
+      <text x="834" y="316" class="dg-s mono">services/evaluation · feedback</text>
+    </g>
+    <!-- engines -->
+    <g>
+      <rect x="60" y="400" width="330" height="140" rx="14" class="dg-box" style="stroke:var(--cyan);stroke-width:2"/>
+      <text x="76" y="426" class="dg-t" style="fill:var(--cyan)">Synapt context substrate (MCP)</text>
+      <text x="76" y="448" class="dg-s">Knowledge chunks · semantic case retrieval</text>
+      <text x="76" y="465" class="dg-s">Procedures · 6 response playbooks (SOPs)</text>
+      <text x="76" y="482" class="dg-s">Graph · Neo4j BFS graph-RAG + analytics</text>
+      <text x="76" y="499" class="dg-s">Episodes / tickets · labelling, mined patterns</text>
+      <text x="76" y="522" class="dg-s mono">synapt/synapt_connector.py · agents/synapt_tools.py</text>
+    </g>
+    <g>
+      <rect x="410" y="400" width="320" height="140" rx="14" class="dg-box" style="stroke:var(--green)"/>
+      <text x="426" y="426" class="dg-t" style="fill:var(--green)">Local data + ML engine</text>
+      <text x="426" y="448" class="dg-s">pandas store of all 100k cases</text>
+      <text x="426" y="465" class="dg-s">BM25 keyword · LSA semantic (fallback)</text>
+      <text x="426" y="482" class="dg-s">HistGradientBoosting × 5 + P10/P90</text>
+      <text x="426" y="499" class="dg-s">SQLite: feedback, incidents, signals</text>
+      <text x="426" y="522" class="dg-s mono">agents/retrieval · prediction · services/data_store</text>
+    </g>
+    <g>
+      <rect x="750" y="400" width="290" height="140" rx="14" class="dg-box" style="stroke:var(--amber)"/>
+      <text x="766" y="426" class="dg-t" style="fill:var(--amber)">Judge LLM (evaluation only)</text>
+      <text x="766" y="448" class="dg-s">LLM-as-Judge benchmark (4 rubrics)</text>
+      <text x="766" y="465" class="dg-s">DeepEval metrics · POST /api/judge</text>
+      <text x="766" y="482" class="dg-s">never called by the workflow</text>
+      <text x="766" y="499" class="dg-s">rule rubric if unreachable</text>
+      <text x="766" y="522" class="dg-s mono">llm.py · aicredits.in · gpt-4o-mini</text>
+    </g>
+    <!-- arrows -->
+    <path d="M550 92 V130" class="flow"/>
+    <path d="M550 184 V214" class="flow"/>
+    <path d="M155 184 L155 214" class="flow v" />
+    <path d="M300 157 H155 V214" class="flow"/>
+    <path d="M800 157 H930 V214" class="flow"/>
+    <path d="M405 334 L225 400" class="flow c"/>
+    <path d="M405 334 L570 400" class="flow g"/>
+    <path d="M405 334 L895 400" class="flow" style="stroke:var(--amber)"/>
+    <path d="M680 334 L570 400" class="flow g"/>
+    <path d="M930 334 L895 400" class="flow" style="stroke:var(--amber)"/>
+    <path d="M930 334 Q620 370 260 400" class="flow c"/>
+  </svg>
+  </div>
+</section>
+
+<section id="components">
+  <h2>What each component does</h2>
+  <p class="sub">Grouped by layer. Each card says what the piece is responsible for, the file that implements it, and what it hands to the next piece.</p>
+  <div class="tabs" id="compTabs">
+    <button data-k="all" class="on">All</button><button data-k="ui">Console</button><button data-k="svc">Service</button>
+    <button data-k="ai">AI &amp; ML</button><button data-k="syn">Synapt</button><button data-k="ops">Ops &amp; quality</button>
+  </div>
+  <div class="grid g3" id="compGrid"></div>
+</section>
+
+<section id="synapt">
+  <h2>How Synapt works</h2>
+  <p class="sub">Synapt is a <b>context substrate</b>: a managed memory for AI applications. Instead of one vector index it keeps
+  three linked stores (the "tri-store") and exposes them through the <b>Model Context Protocol (MCP)</b>, so any agent can
+  read, reason over, and write back to the same organisational memory.</p>
+  <div class="grid g2">
+    <div class="card tri">
+      <svg viewBox="0 0 520 380" role="img" aria-label="Synapt tri-store">
+        <circle cx="260" cy="190" r="62" fill="var(--cyan-soft)" stroke="var(--cyan)" stroke-width="2"/>
+        <text x="260" y="184" text-anchor="middle" class="dg-t">Synapt</text>
+        <text x="260" y="202" text-anchor="middle" class="dg-s">MCP server</text>
+        <g><circle cx="110" cy="80" r="56" fill="var(--blue-soft)" stroke="var(--blue)"/>
+          <text x="110" y="76" text-anchor="middle" class="dg-t">Knowledge</text><text x="110" y="94" text-anchor="middle" class="dg-s">chunks + vectors</text></g>
+        <g><circle cx="410" cy="80" r="56" fill="var(--violet-soft)" stroke="var(--violet)"/>
+          <text x="410" y="76" text-anchor="middle" class="dg-t">Graph</text><text x="410" y="94" text-anchor="middle" class="dg-s">entities + relations</text></g>
+        <g><circle cx="110" cy="300" r="56" fill="var(--green-soft)" stroke="var(--green)"/>
+          <text x="110" y="296" text-anchor="middle" class="dg-t">Procedures</text><text x="110" y="314" text-anchor="middle" class="dg-s">SOPs / playbooks</text></g>
+        <g><circle cx="410" cy="300" r="56" fill="var(--amber-soft)" stroke="var(--amber)"/>
+          <text x="410" y="296" text-anchor="middle" class="dg-t">Episodes</text><text x="410" y="314" text-anchor="middle" class="dg-s">tickets + feedback</text></g>
+        <path d="M150 118 L215 155" class="flow"/><path d="M370 118 L305 155" class="flow v"/>
+        <path d="M150 262 L215 225" class="flow g"/><path d="M370 262 L305 225" class="flow" style="stroke:var(--amber)"/>
+        <path d="M166 80 H354" stroke="var(--line)" stroke-width="1.5" stroke-dasharray="3 4"/>
+        <text x="260" y="72" text-anchor="middle" class="dg-s">chunks link to graph nodes</text>
+      </svg>
+    </div>
+    <div class="card">
+      <h3>The four memories</h3>
+      <table>
+        <tr><td><span class="pill b">Knowledge</span></td><td>Documents are chunked, embedded and indexed. <code>trident_get_chunks</code> returns the most similar passages. We ingested 43 Markdown files: 4,000 case narratives, 100k case profiles and aggregate statistics.</td></tr>
+        <tr><td><span class="pill v">Graph</span></td><td>Entities and relations extracted from the ingested text, stored in Neo4j. <code>trident_query</code> walks N hops from the entities in the question (BFS) and answers from that subgraph: <em>graph-RAG</em>.</td></tr>
+        <tr><td><span class="pill g">Procedures</span></td><td>Step-by-step operating procedures. We load six response playbooks; <code>trident_get_procedures</code> fetches the one that matches the disruption type.</td></tr>
+        <tr><td><span class="pill a">Episodes</span></td><td>What happened when the system was used: tickets, outcomes, feedback. <code>trident_label_ticket</code> labels a new ticket from similar past ones; <code>trident_feedback</code> records whether an answer helped.</td></tr>
+      </table>
+      <p class="callout b" style="margin-top:14px"><b>Every answer carries quality signals:</b> knowledge, procedural and graph confidence plus a <em>degraded</em> flag. We log them per request and show them next to DeepEval scores.</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:14px">
+    <h3>How one Synapt graph-RAG call flows</h3>
+    <div class="diagram"><svg viewBox="0 0 1060 150" role="img" aria-label="Synapt query flow">
+      <g font-family="Inter">
+      <rect x="10" y="40" width="150" height="70" rx="12" class="dg-box"/><text x="85" y="70" text-anchor="middle" class="dg-t">Question</text><text x="85" y="88" text-anchor="middle" class="dg-s">regions masked</text>
+      <rect x="190" y="40" width="160" height="70" rx="12" class="dg-box" style="stroke:var(--blue)"/><text x="270" y="70" text-anchor="middle" class="dg-t">Vector search</text><text x="270" y="88" text-anchor="middle" class="dg-s">top-k chunks</text>
+      <rect x="380" y="40" width="160" height="70" rx="12" class="dg-box" style="stroke:var(--violet)"/><text x="460" y="70" text-anchor="middle" class="dg-t">Entity linking</text><text x="460" y="88" text-anchor="middle" class="dg-s">seed graph nodes</text>
+      <rect x="570" y="40" width="160" height="70" rx="12" class="dg-box" style="stroke:var(--violet)"/><text x="650" y="70" text-anchor="middle" class="dg-t">BFS, 2 hops</text><text x="650" y="88" text-anchor="middle" class="dg-s">reasoning subgraph</text>
+      <rect x="760" y="40" width="140" height="70" rx="12" class="dg-box" style="stroke:var(--green)"/><text x="830" y="70" text-anchor="middle" class="dg-t">Procedures</text><text x="830" y="88" text-anchor="middle" class="dg-s">+ episodes</text>
+      <rect x="930" y="40" width="120" height="70" rx="12" class="dg-box" style="stroke:var(--cyan)"/><text x="990" y="70" text-anchor="middle" class="dg-t">Answer</text><text x="990" y="88" text-anchor="middle" class="dg-s">+ confidence</text>
+      <path d="M160 75 H190" class="flow"/><path d="M350 75 H380" class="flow"/><path d="M540 75 H570" class="flow v"/><path d="M730 75 H760" class="flow v"/><path d="M900 75 H930" class="flow c"/>
+      </g></svg></div>
+  </div>
+</section>
+
+<section id="usage">
+  <h2>Every Synapt tool we use, and where</h2>
+  <p class="sub">15 MCP tools are wired in. The core path uses four; the rest power the knowledge page, the ticket store and the loader script.</p>
+  <div class="card tw"><table id="toolTable"><thead><tr><th>Tool</th><th>Store</th><th>What we use it for</th><th>Used by</th><th>If it fails</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="advantages">
+  <h2>Why Synapt instead of "just a vector DB"</h2>
+  <p class="sub">The same three questions the problem statement asks, answered by plain vector search vs. by Synapt.</p>
+  <div class="grid g3" id="advGrid"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>Division of labour</h3>
+    <div class="tw"><table>
+      <thead><tr><th>Job</th><th>Synapt</th><th>Local ML + rules</th><th>Judge LLM</th></tr></thead>
+      <tbody>
+        <tr><td>Find similar past disruptions</td><td>✔ semantic + graph</td><td>✔ BM25 + profile match (all 100k)</td><td>—</td></tr>
+        <tr><td>"How was it resolved?"</td><td>✔ procedures, graph answer</td><td>✔ strategy statistics</td><td>—</td></tr>
+        <tr><td>Predict impact, loss, recovery</td><td>—</td><td>✔ 5 models with P10–P90</td><td>—</td></tr>
+        <tr><td>Explain why</td><td>✔ reasoning subgraph, graph-RAG answer</td><td>✔ feature contributions</td><td>—</td></tr>
+        <tr><td>Grade the output</td><td>quality signals</td><td>✔ fact-check, rule audit</td><td>✔ independent judge (evaluation)</td></tr>
+        <tr><td>Remember outcomes</td><td>✔ episodes, feedback</td><td>✔ retrain from outcomes</td><td>—</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<section id="limits">
+  <h2>What I found, and how I worked around it</h2>
+  <p class="sub">Real issues found while building on the Synapt beta, each with the workaround now in the code.</p>
+  <div class="grid g2" id="limitGrid"></div>
+</section>
+
+<section id="lifecycle">
+  <h2>Request lifecycle: one incident, end to end</h2>
+  <p class="sub">Press play to step through what happens when an operator describes a new disruption on the Incident Cockpit.</p>
+  <div class="grid g2">
+    <div class="card">
+      <div class="seq" id="seq"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn p" id="playBtn">▶ Play</button><button class="btn" id="resetBtn">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Timing (typical)</h3>
+      <svg viewBox="0 0 460 260" style="width:100%;height:auto" id="timing"></svg>
+      <p style="color:var(--ink-2);font-size:.85rem;margin:6px 0 0">Synapt and the local search run in parallel; Synapt graph-RAG dominates wall time (≈ 10.6 s of an 11.5 s run). No LLM call. Each step streams to the UI as soon as it finishes (Server-Sent Events), so the operator sees results within seconds.</p>
+    </div>
+  </div>
+</section>
+</main>
+<footer>AI-Powered Supply-Chain Disruption Assistant · Architecture · see also how-it-works.html, design.html, synapt-modes.html</footer>
+
+<script>
+const COMPONENTS=[
+ {k:"ui",ic:"🖥️",c:"blue",t:"React console",f:"frontend/src/App.jsx",d:"Single-page app with a sidebar grouped by stage. Every page has an info drawer that explains it in plain language.",b:["15 pages, hash routing","Glossary terms with hover help","Talks only to /api/*"]},
+ {k:"ui",ic:"🛰️",c:"cyan",t:"Control Tower (3D)",f:"ControlTower.jsx · logistics/",d:"Live 3D view of suppliers, ports, roads, ships and 747 freighters. Lazy-loaded so it never slows the rest of the app.",b:["three.js / react-three-fiber","Flight paths with taxi, take-off, landing","Shows open incidents on the map"]},
+ {k:"ui",ic:"📡",c:"violet",t:"Workflow viewer",f:"TabWorkflow.jsx",d:"Opens a Server-Sent Events stream and animates each agent as it starts and finishes.",b:["Shows each agent's output","Hand-off to Incident Desk","Feedback form on the result"]},
+ {k:"svc",ic:"🚪",c:"blue",t:"FastAPI service",f:"server.py · routes/ · schemas/",d:"The microservice. 57 endpoints in 14 routers (health, copilot, search, prediction, decisions, portfolio, early warning, incidents, statistics, Synapt, playbooks, feedback, evaluation, fallback lab).",b:["Bootstraps data + models in a background thread","Returns 503 while warming up","OpenAPI docs at /docs"]},
+ {k:"svc",ic:"🔐",c:"amber",t:"Web gate",f:"services/webapp.py",d:"Production wiring: optional password sign-in, CORS allow-list and serving the built UI from the same origin.",b:["HMAC session cookie","401 for API, redirect for pages","Off in local development"]},
+ {k:"svc",ic:"🛡️",c:"red",t:"Guardrails",f:"agents/guardrails.py",d:"Every free-text input is validated before any model sees it.",b:["Blocks prompt injection & secrets","Redacts e-mails, cards, SSNs","Rejects off-topic text","Checks field values against the dataset vocabulary"]},
+ {k:"ai",ic:"🤖",c:"violet",t:"7-agent LangGraph",f:"agents/graph.py · agents/state.py",d:"A LangGraph StateGraph: Guardrails → Classifier → (Hybrid retriever ∥ Synapt worker) → Evidence fusion → Impact → Planner → Recovery → Synthesis → Judge. Each node has one job and passes a typed state to the next.",b:["Synapt calls start in parallel at intake","Report is fact-checked and rewritten once if needed","No LLM inside: rules, Synapt, ML, templates"]},
+ {k:"ai",ic:"🔎",c:"blue",t:"Hybrid retrieval",f:"agents/retrieval.py · services/data_store.py",d:"Three ranked lists fused with Reciprocal Rank Fusion: Synapt semantic, BM25 keyword, and a profile match over all 100k cases. Then re-ranked by attribute similarity.",b:["RRF k = 60, semantic weight α = 0.6","Faceted filters on 6 attributes","LSA semantic index if Synapt is down"]},
+ {k:"ai",ic:"📈",c:"green",t:"Prediction models",f:"agents/prediction.py",d:"HistGradientBoosting models for production impact, revenue loss, partial and full recovery, plus a high-impact risk classifier.",b:["Quantile models give P10–P90 ranges","'Insufficient history' warning","What-if counterfactuals"]},
+ {k:"ai",ic:"🧩",c:"cyan",t:"Classifier",f:"agents/classifier.py",d:"Turns a free-text description into structured fields (type, industry, tier, region, severity, backup) with per-field confidence.",b:["Keyword rules constrained to allowed values","Industry hints (avionics → Aerospace …)","98/98 fields on the golden set"]},
+ {k:"ai",ic:"⚖️",c:"amber",t:"Judge + fact-check",f:"agents/judge.py · agents/synthesis.py · scripts/llm_judge.py",d:"At runtime a rule rubric (6 criteria) scores the briefing and a deterministic checker rejects unknown case IDs and numbers not in the evidence. The external LLM is the independent judge in evaluation only.",b:["Approve / revise verdict","LLM judge: llm_judge.py, DeepEval, /api/judge","Fact-check pass rate tracked in eval"]},
+ {k:"syn",ic:"🧠",c:"cyan",t:"Synapt MCP connector",f:"synapt/synapt_connector.py",d:"SynaptConfig + SynaptMCPConnector over Streamable-HTTP JSON-RPC 2.0: authenticate, initialize_mcp, list_remote_tools, call_tool (injects provider_id/top_k from the live tool schema), handles SSE or JSON replies, re-authenticates on 401.",b:["Token refreshed every 50 min","Thread-safe session"]},
+ {k:"syn",ic:"🔌",c:"cyan",t:"Synapt tools & worker node",f:"agents/synapt_tools.py",d:"Wraps each tool in a typed function with timeouts and a circuit breaker, maps masked regions back, and normalises answers + quality signals.",b:["Breaker opens after 3 failures, retries after 60 s","Region token bridge","Fixed, provider-pinned Cypher templates"]},
+ {k:"syn",ic:"📥",c:"green",t:"Knowledge loader",f:"synapt/ingest_to_synapt.py · test_connection.py",d:"Builds knowledge_base/ (scripts/build_knowledge_base.py), ingests cases, SOPs and reference docs with a dry-run manifest, learns region tokens and verifies the connection; the .xlsx ticket store is loaded in the console. Checks what Synapt holds.",b:["docs · ingest · tickets · check","Idempotent, safe to re-run"]},
+ {k:"ops",ic:"🚨",c:"red",t:"Early warning & signals",f:"services/risk_watch.py",d:"Scores each region × disruption type from external signals (live GDACS feed + manual) blended with ML impact.",b:["60% likelihood + 40% impact","Watchlist with drill-down"]},
+ {k:"ops",ic:"💰",c:"blue",t:"Decision engine",f:"services/decision.py",d:"Compares response options in money: expected loss avoided vs. cost of acting, scaled by outage days. Editable cost assumptions.",b:["Net benefit and ROI per option","Root-cause chains with evidence"]},
+ {k:"ops",ic:"📋",c:"violet",t:"Incident desk",f:"services/ops.py",d:"Turns an analysis into a tracked incident with an SLA clock, an escalation chain and action items. Closing actions writes outcomes back as feedback.",b:["P1 4h · P2 24h · P3 72h · P4 7d","Outcome → retraining data"]},
+ {k:"ops",ic:"✅",c:"green",t:"Evaluation & feedback",f:"services/evaluation.py · feedback.py",d:"25-case DeepEval suite + guardrail suite. Ratings adjust strategy weights (×0.85–1.15); reported outcomes retrain models; verdicts go to trident_feedback.",b:["5 DeepEval metrics","Synapt confidence logged next to them"]},
+];
+const TOOLS=[
+ ["trident_get_chunks","Knowledge","Semantic leg of hybrid search; kNN labelling of a new incident","retrieval, classifier","Local LSA semantic index"],
+ ["trident_query","Graph","Graph-RAG answer + reasoning subgraph (2 hops) and quality signals","Investigator agent, Search & Ask, Knowledge Graph","Skipped; answer built from local evidence"],
+ ["trident_get_procedures","Procedures","Fetch the response playbook for the disruption type","Planner agent","Plan uses strategy statistics only"],
+ ["trident_feedback","Episodes","Send each user verdict back to Synapt","Feedback form","Stored locally, still used for re-weighting"],
+ ["trident_episodes","Episodes","Mined incident patterns from the ticket store","Knowledge page","Section hidden"],
+ ["trident_label_ticket","Episodes","Label a ticket from similar labelled tickets","Classifier panel","kNN labelling via chunks / rules"],
+ ["trident_cypher","Graph","Six fixed, provider-pinned analytics queries","Knowledge Graph → Ask the graph","Offline network view from local data"],
+ ["trident_ingest","Knowledge","Load docs, playbooks, ontology","Loader script","—"],
+ ["trident_get_stats","All","What is stored for this provider","Health, Knowledge page","Shown as unavailable"],
+ ["trident_get_schema / find_exact / search","Graph / Knowledge","Exploration and checks","Loader script","—"],
+ ["trident_create_entity / concept / relationship","Graph","Typed ontology (attempted)","Loader script","Server error; ontology doc ingested instead"],
+];
+const ADV=[
+ {ic:"🔗",t:"Answers come with a path",d:"Graph-RAG returns the subgraph it walked, so the 'why' is visible: incident → type → strategy → outcome. A vector DB returns only passages."},
+ {ic:"📘",t:"Procedures are first-class",d:"Playbooks are stored as procedures, not text blobs, so the planner gets ordered steps for the exact disruption type."},
+ {ic:"🔁",t:"Memory that learns",d:"Episodes and feedback live next to the knowledge, so verdicts improve future answers without re-indexing."},
+ {ic:"📏",t:"Built-in quality signals",d:"Every answer reports knowledge / procedural / graph confidence and a degraded flag, so we can monitor retrieval quality in production."},
+ {ic:"🔒",t:"Tenant isolation + PII masking",d:"Data is scoped by provider and personal data is masked at ingest; masked regions are mapped back by our bridge."},
+ {ic:"🔌",t:"Open protocol (MCP)",d:"Any MCP-capable agent or IDE can use the same memory. No proprietary SDK in our code: plain JSON-RPC over HTTP."},
+];
+const LIMITS=[
+ {s:"r",t:"Typed entities cannot be created",p:"trident_create_entity / create_concept fail on the server with index_node() missing 'neo4j_id'.",w:"Ingested an ontology document instead. Result: the graph has few typed entities, so graph confidence averages ~0.57 and Synapt's own trust signal marks answers 'degraded'."},
+ {s:"r",t:"trident_cypher is not tenant-scoped",p:"Free-form Cypher could read other providers' nodes.",w:"Only six fixed query templates are allowed, each pinned to our provider_id. No user-supplied Cypher reaches Synapt."},
+ {s:"a",t:"Regions are masked as PII",p:"'Asia-Pacific' comes back as [LOCATION_ab12], which breaks region filters.",w:"A bridge learns token ↔ region from cases we already know, masks outgoing queries and unmasks answers (artifacts/synapt_region_tokens.json)."},
+ {s:"a",t:"Ticket mining accepts .xlsx only",p:"CSV / JSON uploads are rejected by the ticket gateway.",w:"The loader writes 5,000 labelled tickets to disruption_tickets.xlsx."},
+ {s:"a",t:"label_ticket needs a JSON string",p:"Passing an object fails silently.",w:"The service json.dumps the ticket and merges ticket labels with chunk-kNN labels."},
+ {s:"b",t:"Only part of the 100k cases as narrative text",p:"Ingesting 100k long narratives is slow and costly.",w:"4,000 narratives + compact profiles for all 100k + statistics in Synapt; BM25, profile match and ML cover every row locally (exact-profile hit rate 14% → 83%)."},
+];
+const SEQ=[
+ ["Console","Operator types a free-text incident and presses Analyse; an SSE stream opens."],
+ ["Guardrails","Text is checked for injection, off-topic and PII; e-mails are redacted."],
+ ["Intake agent","Keyword rules classify it into fields; Synapt graph-RAG and playbook calls start in parallel."],
+ ["Investigator","Hybrid search: Synapt chunks + BM25 + profile match, fused by RRF, re-ranked by similarity."],
+ ["Impact agent","ML models predict impact, loss, recovery (P10–P90) and risk; priority P1–P4 is computed."],
+ ["Planner","Strategies ranked by historical effectiveness; the Synapt playbook steps become the action plan."],
+ ["Recovery agent","Counterfactual prediction for the chosen strategy; cohort percentiles and milestones."],
+ ["Report agent","Briefing built from the evidence plus the Synapt graph answer; fact-check rejects unknown IDs / numbers."],
+ ["Judge","Six-criterion rule rubric scores it and returns approve / revise. Result + quality signals stream back."],
+ ["Act & learn","Operator opens an incident, tracks actions; outcomes and ratings flow to retraining and trident_feedback."],
+];
+const TIMING=[["Guardrails + classify",0,0.1,"--blue"],["Synapt graph-RAG",0.1,10.7,"--cyan"],["Hybrid search",0.1,3,"--green"],["ML predict + explain",10.7,11,"--green"],["Planner (stats + playbook)",11,11.4,"--amber"],["Recovery",11.4,11.5,"--green"],["Report + fact-check",11.5,11.5,"--amber"],["Judge (rules)",11.5,11.5,"--violet"]];
+
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+function renderComps(k){
+  const g=document.getElementById('compGrid');
+  g.innerHTML=COMPONENTS.filter(c=>k==='all'||c.k===k).map(c=>`<div class="card comp"><div class="hd"><div class="ic" style="background:var(--${c.c}-soft)">${c.ic}</div><div><h3>${c.t}</h3><span class="file">${c.f}</span></div></div><p>${c.d}</p><ul>${c.b.map(x=>`<li>${x}</li>`).join('')}</ul></div>`).join('');
+}
+document.querySelectorAll('#compTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#compTabs button').forEach(x=>x.classList.toggle('on',x===b));renderComps(b.dataset.k)});
+renderComps('all');
+const pc={Knowledge:"b",Graph:"v",Procedures:"g",Episodes:"a",All:"c","Graph / Knowledge":"v"};
+document.querySelector('#toolTable tbody').innerHTML=TOOLS.map(t=>`<tr><td><code>${t[0]}</code></td><td><span class="pill ${pc[t[1]]||''}">${t[1]}</span></td><td>${t[2]}</td><td>${t[3]}</td><td style="color:var(--ink-2)">${t[4]}</td></tr>`).join('');
+document.getElementById('advGrid').innerHTML=ADV.map(a=>`<div class="card comp"><div class="hd"><div class="ic" style="background:var(--cyan-soft)">${a.ic}</div><h3>${a.t}</h3></div><p>${a.d}</p></div>`).join('');
+document.getElementById('limitGrid').innerHTML=LIMITS.map(l=>`<div class="card comp"><div class="hd"><span class="pill ${l.s}">${l.s==='r'?'Server issue':l.s==='a'?'Behaviour':'Design choice'}</span><h3>${l.t}</h3></div><p><b>Problem.</b> ${l.p}</p><p class="callout g" style="margin-top:4px"><b>Workaround.</b> ${l.w}</p></div>`).join('');
+const seq=document.getElementById('seq');
+seq.innerHTML=SEQ.map(s=>`<div class="step"><div class="who" style="color:var(--blue)">${s[0]}</div><div>${s[1]}</div></div>`).join('');
+let timer=null,idx=0;const steps=[...seq.children];
+function reset(){clearInterval(timer);timer=null;idx=0;steps.forEach(s=>s.classList.remove('on'));document.getElementById('playBtn').textContent='▶ Play'}
+document.getElementById('playBtn').onclick=()=>{if(timer){clearInterval(timer);timer=null;document.getElementById('playBtn').textContent='▶ Play';return}
+  if(idx>=steps.length)reset();document.getElementById('playBtn').textContent='❚❚ Pause';
+  timer=setInterval(()=>{if(idx<steps.length){steps[idx++].classList.add('on')}else{clearInterval(timer);timer=null;document.getElementById('playBtn').textContent='↺ Replay'}},700)};
+document.getElementById('resetBtn').onclick=reset;
+function drawTiming(){
+  const s=document.getElementById('timing');const W=460,L=150,max=12,row=28;
+  let h=`<text x="${L}" y="14" style="fill:${css('--ink-3')};font:600 10px Inter">0 s</text><text x="${W-30}" y="14" style="fill:${css('--ink-3')};font:600 10px Inter">${max} s</text>`;
+  TIMING.forEach((t,i)=>{const y=24+i*row,x=L+(t[1]/max)*(W-L-10),w=Math.max(4,((t[2]-t[1])/max)*(W-L-10));
+    h+=`<text x="0" y="${y+15}" style="fill:${css('--ink-2')};font:500 11px Inter">${t[0]}</text><rect x="${L}" y="${y+4}" width="${W-L-10}" height="16" rx="5" fill="${css('--surface-2')}"/><rect x="${x}" y="${y+4}" width="${w}" height="16" rx="5" fill="${css(t[3])}"><animate attributeName="width" from="0" to="${w}" dur=".8s" fill="freeze"/></rect>`});
+  s.innerHTML=h;
+}
+drawTiming();
+const btn=document.getElementById('themeBtn');
+btn.onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark';drawTiming()};
+</script>
+</body>
+</html>

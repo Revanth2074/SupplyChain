@@ -1,0 +1,313 @@
+{
+ "supply_chain_disruptions": {
+  "cases/cases_001.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "d389dc2115818a7cab964176bfff1d5b12a2d81d493a528b284bbd17328f196a"
+  },
+  "cases/cases_002.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b5370be3dd4e9553119f4aa3be3bc1777d40f1519dfe42ee2d76b7a8b9b6d406"
+  },
+  "cases/cases_003.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6debe9caa77ead160384df4387af71bfd944aedf621ce608e3b3ef0053fbfa76"
+  },
+  "cases/cases_004.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "14d692991682436365920241700f760c736e2dd05d31ccc0d6146ef1810e472a"
+  },
+  "cases/cases_005.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "91397749ced3bdd9a00db7dae4e40a16e365dd110d92ed7962b45dc992da953a"
+  },
+  "cases/cases_006.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "572c4031f21de1ee015e1a2533f34435537452b2e31f2bd42a56bfb86c905f80"
+  },
+  "cases/cases_007.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "457494b8ec387bdf5899b50eaf0af4a1e1b9a3ef7d8e1bea9a916f7fe0b71548"
+  },
+  "cases/cases_008.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "70288c9b5cfd65b22d65c4c7580d15a6c00b720da2bf2e732c5b211f57a15c68"
+  },
+  "cases/cases_009.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "0d0c896d0a75085c310c4f4b2600e0d97130cafcb27f3a39744bd70ee2846f79"
+  },
+  "cases/cases_010.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "f01f7b4aff922951c5a9d6528abfa05f93f91d4e5e34e7e1c8b5dc1666a6c237"
+  },
+  "cases/cases_011.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "162d6e463a596760f73858aad0a3dc8ed1b2d69e7ace479a5c8f5cdc71057fec"
+  },
+  "cases/cases_012.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "44d827240938e64174d837fc6ed38b97ddc12a9b14b0826a42c53d5849318c31"
+  },
+  "cases/cases_013.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "1f5ab191cf79b3621fcfc4a9dedc63be28d4192db1ca0aba2be3ac21c607cb36"
+  },
+  "cases/cases_014.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "ca4de7776b2c72184435d2d211fc88955abf1216a9ec03c50e26ea1338ce7c5d"
+  },
+  "cases/cases_015.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6326249810c4d23d70933ddd03174ca248e7fc9121f758cd83d2a177faa18f02"
+  },
+  "cases/cases_016.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c281521b2a81913084035a793a50942e6d2853ccd263215797184bfb1a5f4524"
+  },
+  "cases/cases_017.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "05ae963ef75712e06038629ff24c78145d7cfdbb9163bb5f5a7bfd2e0c9c79e7"
+  },
+  "cases/cases_018.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "424fbd90999a5577c8e4009db3ff5ccc2538d5243ff2aa62e14ab97a457c7e28"
+  },
+  "cases/cases_019.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "71afc61d90e279630e6c9559f94940f6c419b8144f8607acd702ce6e8e10e0d0"
+  },
+  "cases/cases_020.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "a4b4161761e133eac28f5a9ed9eee48d92fbe9acdef1809702ca00b22d9c0473"
+  },
+  "cases/cases_021.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "3440340b44558a4da6ef5008ea8f46c9062a5648b0fc07bd19dbdd1667df692b"
+  },
+  "cases/cases_022.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c888692cb39740a3e56d9e478d5afc35d52f7ea669fc9ce151974fe86347bcb7"
+  },
+  "cases/cases_023.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "f0091e1d0ca677e3c2850ec69ffdc794ea4917c543469ea0d6978daed47bfc08"
+  },
+  "cases/cases_024.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "a921b70449cba7a24d6ba0fbd3b60b27710896d12868b06f514a1fc3d0d465b9"
+  },
+  "cases/cases_025.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c8108359dc75fcc5c3b9d928d7d41a31c5fb21c548ac7fb588dac164abaab19d"
+  },
+  "cases/cases_026.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "0b8ccecd3e0f7af99663c189bb242b88fcdca04b98cedbe97332dc14114cef4b"
+  },
+  "cases/cases_027.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "06df13b60dea966e5b8e28a2fa9832e905f1549248fb3ebe2c24b980d946e7c5"
+  },
+  "cases/cases_028.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c1a5aa3b8021128f59fa03383f489ccaf5f6bebfecbcc9e7cc40f1bcf54ff49d"
+  },
+  "cases/cases_029.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "42442379100ab66dea7bc08f192ceeb6589f8bf90ddd4a089348f0a9155e8b8d"
+  },
+  "cases/cases_030.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b0bf6fb8d2f6959ec0d01671e42ca1f51e340c6ab1e938b46acc00dd1d300995"
+  },
+  "cases/cases_031.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "93f5f3e46c71f1c16c9ea7054892db7bb907fdf1899f3b119b23ad53bd35925e"
+  },
+  "cases/cases_032.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "8b865521ea4d898e6bb6c153b11de9db422ec2e21f64e8fa1463408c66b5e394"
+  },
+  "cases/cases_033.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b4b98e2d008125f4e517445ef1760d74c9a8219250c761d595c270d0927ec9f2"
+  },
+  "cases/cases_034.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "a39f914bfbf76ba0bc653476a8872f768e0b7a01baf5e2d977f66607d127a89e"
+  },
+  "cases/cases_035.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b2837e4ebca84edf5770142c5b1d34ac30444d956b1d26a7dd86cb40f7007053"
+  },
+  "cases/cases_036.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6075ec5ebb3a8f7642a847381325cc9ac065298b7f905d7fe492759bc65eba70"
+  },
+  "cases/cases_037.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "d427f85217a3d623aaaef5ac3a8db05ebe84f569ee11ab5a8c9bd6ce9a6a6a6e"
+  },
+  "cases/cases_038.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "3c292442ab2e936f7ac7da7e0aef1477e98d7330a024c6c4f227108f1a014ba6"
+  },
+  "cases/cases_039.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "f8922ecef903d0e385c84e7e9e7f8e3f31ec7862044ce3e031387136d36b189e"
+  },
+  "cases/cases_040.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "1726160c19e6d73b6dd6009848f5a02fcc66b7686a065a74f2926133192ff4fc"
+  },
+  "reference/aggregate_stats.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "bbf1e2d38c4d97ff5a0ce1feac131bddfe1202ec7175053e2ac55c7474f63e45"
+  },
+  "reference/ontology.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "538db5ae4f803614c81f4fc9ea05836a54ef96c99dcc5502906625e88be8c9b3"
+  },
+  "reference/profiles.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "ec84ceb3edef55f964fa6c4bab89d79c3cf75f7880fdb1c9de7510ab3f82c18c"
+  },
+  "reference/response_playbooks_combined.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_as": "response_playbooks.md",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6afba8588acdb65767dd67d789ed8b15cc7c027f8f9880545a6d5e11f13a8d6a"
+  }
+ }
+}

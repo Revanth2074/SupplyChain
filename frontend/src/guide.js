@@ -3,7 +3,7 @@
 export const ENGINES = {
   synapt: { label: 'Synapt knowledge', color: '#7c3aed', desc: 'The knowledge base: past cases, playbooks and a knowledge graph it searches and reasons over.' },
   ml: { label: 'ML models', color: '#0891b2', desc: 'Prediction models trained on 100,000 past disruptions: impact, loss, recovery time, risk.' },
-  llm: { label: 'AI writer (LLM)', color: '#2563eb', desc: 'A language model that reads the evidence and writes plans, briefings and answers.' },
+  llm: { label: 'LLM judge', color: '#2563eb', desc: 'An external language model (aicredits.in) used only to grade the assistant in evaluation. It never writes plans, briefings or answers: those come from rules, Synapt and templates.' },
   rules: { label: 'Rules & formulas', color: '#64748b', desc: 'Transparent business rules: priority scores, SLAs, cost assumptions, fact-checks.' },
   data: { label: 'Historical data', color: '#16a34a', desc: 'Statistics computed directly from the 100,000-case dataset.' },
 };
@@ -27,7 +27,7 @@ export const PAGES = {
       'Click any step or card to jump to the page that does that job.',
     ],
     read: ['Red numbers need attention today.', 'Green means the learning loop has real outcomes to learn from.'],
-    engines: ['synapt', 'ml', 'llm', 'rules'],
+    engines: ['synapt', 'ml', 'rules'],
   },
   tower: {
     title: 'Control Tower', stage: null,
@@ -53,7 +53,7 @@ export const PAGES = {
       'Each supplier gets an early-warning score from alerts, delivery performance, recent incidents, stock cover and dependency, combined with the ML estimate of how bad a disruption would be.',
     ],
     read: ['Score 0-100: 70+ critical, 55+ high, 40+ elevated.', 'Arrow = how much the current alerts raised the score.', 'Top-right of the risk matrix = likely and severe: act first.'],
-    engines: ['llm', 'synapt', 'ml', 'rules'],
+    engines: ['synapt', 'ml', 'rules'],
     caveat: 'The likelihood part is a transparent rule-based score (weights are shown), because the historical data has no dates to learn timing from.',
   },
   workflow: {
@@ -69,7 +69,7 @@ export const PAGES = {
       'The briefing is fact-checked: every number and case ID must match the evidence.',
     ],
     read: ['Bars under numbers = 80% range (P10 to P90).', '"Fact-checked" badge = every figure verified against the evidence.'],
-    engines: ['llm', 'synapt', 'ml', 'rules'],
+    engines: ['synapt', 'ml', 'rules'],
   },
   search: {
     title: 'Search & Ask', stage: 'investigate',
@@ -81,7 +81,7 @@ export const PAGES = {
       'Ask mode lets the AI answer using only the retrieved cases and Synapt\'s knowledge graph, citing case IDs.',
     ],
     read: ['Badges show where a case was found (Synapt, keyword).', 'Case IDs (DIS-xxxxxx) are real records you can check.'],
-    engines: ['synapt', 'data', 'llm'],
+    engines: ['synapt', 'data', 'rules'],
   },
   knowledge: {
     title: 'Knowledge Graph', stage: 'investigate',
@@ -201,10 +201,10 @@ export const PAGES = {
   lab: {
     title: 'Fallback Lab', stage: null,
     plain: 'Switch parts of the system off on purpose and check the assistant keeps working on its backups.',
-    why: 'Real outages happen on the worst day. This proves, live, that losing Synapt, the AI writer or the prediction models lowers quality instead of breaking the app.',
+    why: 'Real outages happen on the worst day. This proves, live, that losing Synapt, the LLM judge or the prediction models lowers quality instead of breaking the app.',
     how: [
-      'Each switch makes one dependency fail at its lowest level (Synapt, only its graph, only its playbooks, the LLM, the ML models, the live hazard feed).',
-      'Every page then uses its fallback automatically: local search instead of Synapt, rules and templates instead of the LLM, historical cohort statistics instead of the models.',
+      'Each switch makes one dependency fail at its lowest level (Synapt, only its graph, only its playbooks, the LLM judge, the ML models, the live hazard feed).',
+      'Every page then uses its fallback automatically: local search instead of Synapt, the rule rubric instead of the LLM judge, historical cohort statistics instead of the models.',
       'The self-test calls every feature once and checks it answered through the engine it should, given the switches.',
       'Switches affect everyone using the app and restore themselves after the chosen time.',
     ],
@@ -244,7 +244,7 @@ export const GLOSSARY = {
   ROI: 'Return on investment: net benefit for every dollar of extra mitigation cost.',
   'Outage days': 'Effective days without supply: full outage until partial recovery, then half until full recovery.',
   Playbook: 'A step-by-step response procedure for one disruption type, stored in Synapt.',
-  'LLM-as-Judge': 'A second AI that audits the report for grounding, relevance, actionability, completeness, consistency and safety.',
+  'LLM-as-Judge': 'An external AI (aicredits.in) that grades the report for grounding, relevance, actionability, completeness, consistency and safety during evaluation. The live workflow uses the same rubric as deterministic rules.',
   DeepEval: 'An evaluation toolkit that scores AI answers on relevance, faithfulness and quality.',
   Faithfulness: 'Does the answer only state things the retrieved evidence supports? 1.0 = fully faithful.',
   'Fact-check': 'Code that checks every amount, percentage and case ID in a briefing against the evidence.',

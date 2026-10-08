@@ -4,7 +4,7 @@ const BASE_URL = '/api';
 
 async function handleResponse(res) {
   if (res.status === 401) {
-    // deployed with a password gate: session missing or expired
+    // APP_PASSWORD gate is on: session missing or expired
     window.location.href = '/login';
     throw new Error('Sign in required');
   }

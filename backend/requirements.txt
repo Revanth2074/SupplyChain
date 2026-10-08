@@ -10,5 +10,7 @@ joblib>=1.4
 openai>=1.40
 rank-bm25>=0.2.2
 deepeval>=2.0
+pytest>=8.0
 openpyxl>=3.1
 python-multipart>=0.0.9
+langgraph>=1.0

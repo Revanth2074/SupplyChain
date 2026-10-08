@@ -224,7 +224,7 @@ function Playbooks() {
     <Section icon={BookOpen} iconColor="#7c3aed" title="Response playbooks (Synapt procedure store)" subtitle="SOPs ingested as structured procedures; the Response Planning agent follows the matching one.">
       {error && <Callout tone="danger">{error}</Callout>}
       {!procs && !error && <Skeleton height={200} />}
-      {procs && procs.length === 0 && <Callout tone="warning">No playbooks found. Run <code>python -m scripts.synapt_knowledge ingest</code>.</Callout>}
+      {procs && procs.length === 0 && <Callout tone="warning">No playbooks found. Run <code>python synapt/ingest_to_synapt.py --only sops</code> in backend/.</Callout>}
       {procs && procs.length > 0 && (
         <>
           <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.8rem' }}>
@@ -273,7 +273,7 @@ function MemoryAndLabels({ knowledge }) {
       {!knowledge?.has_ticket_store && knowledge && (
         <Callout tone="info" style={{ marginTop: '0.7rem' }}>
           Synapt only creates a ticket store (needed for <code>trident_label_ticket</code> and mined episodes) from the console's
-          Data Ingestion › Ticketing source. Upload <code>synapt_ingest/disruption_tickets.xlsx</code> there; until then the labels
+          Data Ingestion › Ticketing source. Upload <code>knowledge_base/tickets/disruption_tickets.xlsx</code> there; until then the labels
           below come from a vote over the nearest Synapt-retrieved cases.
         </Callout>
       )}

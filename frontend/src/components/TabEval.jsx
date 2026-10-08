@@ -140,12 +140,12 @@ export default function TabEval() {
 
       {evalResults?.n_fallback_cases > 0 && (
         <div className="glass-card" style={{ borderLeft: '4px solid #d97706', fontSize: '0.86rem' }}>
-          <strong>{evalResults.n_fallback_cases} of {evalResults.n_cases} cases ran in no-LLM fallback mode</strong>
-          {' '}(the LLM gateway was unavailable). DeepEval and the LLM judge are averaged over the {evalResults.n_llm_cases} full-LLM cases only.
+          <strong>{evalResults.n_fallback_cases} of {evalResults.n_cases} cases could not be scored by the LLM judge</strong>
+          {' '}(the judge gateway was unavailable). DeepEval and the LLM judge are averaged over the {evalResults.n_llm_cases} judged cases only; the workflow itself never uses the LLM.
           {evalResults.summary.fallback_mode && (
             <span style={{ color: 'var(--text-muted)' }}>
-              {' '}Fallback cases: rule classifier {(evalResults.summary.fallback_mode.classification_accuracy * 100).toFixed(1)}% accurate,
-              heuristic judge {(evalResults.summary.fallback_mode.llm_judge_overall * 100).toFixed(0)}%,
+              {' '}Unjudged cases: rule classifier {(evalResults.summary.fallback_mode.classification_accuracy * 100).toFixed(1)}% accurate,
+              rule audit {(evalResults.summary.fallback_mode.rule_audit_overall * 100).toFixed(0)}%,
               fact-check {(evalResults.summary.fallback_mode.fact_check_pass_rate * 100).toFixed(0)}%.
             </span>
           )}
@@ -280,7 +280,7 @@ export default function TabEval() {
                 </p>
 
                 {row.llm_used === false && (
-                  <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>No-LLM fallback run · DeepEval skipped</span>
+                  <span className="badge badge-warning" style={{ fontSize: '0.72rem' }}>LLM judge unreachable · DeepEval skipped</span>
                 )}
                 {/* DeepEval metric chips */}
                 {row.llm_used !== false && row.metrics && Object.keys(row.metrics).length > 0 && (

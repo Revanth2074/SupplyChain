@@ -10,7 +10,7 @@ import { Reveal } from './visuals';
 
 const ICON = { synapt: Network, synapt_graph: Network, synapt_procedures: Network, llm: Sparkles, ml: BrainCircuit, live_feed: Radio };
 const ENGINE_LABEL = {
-  llm: 'LLM', rules: 'Keyword rules', synapt: 'Synapt', 'local-lsa': 'Local LSA index', unavailable: 'Skipped (graceful)',
+  llm: 'LLM judge', rules: 'Rules', statistics: 'Strategy statistics', 'statistics+synapt-playbook': 'Statistics + Synapt playbook', 'template+synapt': 'Template + Synapt answer', synapt: 'Synapt', 'local-lsa': 'Local LSA index', unavailable: 'Skipped (graceful)',
   model: 'ML models', cohort: 'Cohort statistics', template: 'Template', heuristic: 'Heuristic rubric',
   live: 'Live GDACS', blocked: 'Blocked', allowed: 'Allowed', crashed: 'Crashed',
 };
@@ -102,7 +102,7 @@ export default function TabFallbackLab() {
           ? <><b>{offCount} dependenc{offCount > 1 ? 'ies are' : 'y is'} switched off for everyone using this app.</b> Every page now runs on its fallback. Switches restore themselves automatically, or use <b>Restore all</b>.</>
           : <>Switch a dependency off to simulate an outage, then <b>Run self-test</b> (or use any page) to see the fallback take over. Switches affect the whole app and restore themselves after the chosen time.</>}
       </Callout>
-      {lab && !lab.enabled && <Callout tone="danger">The Fallback Lab is disabled on this deployment (<code>ENABLE_FALLBACK_LAB=0</code>).</Callout>}
+      {lab && !lab.enabled && <Callout tone="danger">The Fallback Lab is disabled on this server (<code>ENABLE_FALLBACK_LAB=0</code>).</Callout>}
       {err && <Callout tone="danger">{err}</Callout>}
 
       <Section icon={Power} title="Dependencies" subtitle="Each switch makes that dependency fail at its lowest level, so the real error handling and fallbacks run."
@@ -124,7 +124,7 @@ export default function TabFallbackLab() {
         {lab && (
           <div className="lab-status">
             <span><i className={lab.synapt.circuit_open ? 'bad' : 'ok'} /> Synapt {lab.synapt.simulated_outage?.length ? 'simulated outage' : lab.synapt.circuit_open ? `circuit open (${lab.synapt.open_tools.join(', ')})` : 'connected'}</span>
-            <span><i className={lab.llm_configured ? 'ok' : 'bad'} /> LLM {lab.llm_configured ? 'configured' : 'not configured'}</span>
+            <span><i className={lab.llm_configured ? 'ok' : 'bad'} /> LLM judge {lab.llm_configured ? 'configured' : 'not configured'}</span>
             <span><i className={lab.models_fallback ? 'warn' : 'ok'} /> Predictions from {lab.models_fallback ? 'cohort statistics' : 'ML models'}</span>
           </div>
         )}
@@ -133,7 +133,7 @@ export default function TabFallbackLab() {
       <Section icon={FlaskConical} title="Self-test" subtitle="Runs every feature once and checks it answered through the engine it should, given the switches above."
         right={(
           <div className="lab-controls">
-            <label className="lab-check-label"><input type="checkbox" checked={full} onChange={(e) => setFull(e.target.checked)} /> Include full workflow (≈20 s, uses LLM credits when on)</label>
+            <label className="lab-check-label"><input type="checkbox" checked={full} onChange={(e) => setFull(e.target.checked)} /> Include full workflow (≈20 s, no LLM credits)</label>
             <button className="btn btn-primary" onClick={run} disabled={running}>
               {running ? <><Spinner /> Running…</> : <><PlayCircle size={16} /> Run self-test</>}
             </button>

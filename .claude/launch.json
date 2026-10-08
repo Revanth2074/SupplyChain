@@ -7,7 +7,7 @@
       "runtimeArgs": [
         "-m",
         "uvicorn",
-        "app.main:app",
+        "server:app",
         "--app-dir",
         "D:\\SupplyChain\\backend",
         "--host",

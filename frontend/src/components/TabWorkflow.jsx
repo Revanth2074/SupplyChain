@@ -50,7 +50,7 @@ const AGENT_META = {
   planner: { title: 'Response Planning Agent', role: 'Strategy effectiveness ranking & tactical action plan' },
   recovery: { title: 'Recovery Analysis Agent', role: 'Cohort recovery percentiles & resilience scoring' },
   reporter: { title: 'Report Agent', role: 'Executive leadership briefing synthesis' },
-  judge: { title: 'LLM-as-Judge Agent', role: 'Groundedness & safety audit' },
+  judge: { title: 'Judge Agent', role: 'Rule-based groundedness & safety audit' },
 };
 
 export default function TabWorkflow({ options, onOpen }) {
@@ -558,17 +558,17 @@ export default function TabWorkflow({ options, onOpen }) {
             </div>
           </div>
 
-          {/* Section: LLM-as-Judge Audit Scorecard */}
+          {/* Section: Judge audit scorecard (rule rubric) */}
           {result.judge && (
             <div className="glass-panel" style={{ padding: '1.5rem', borderLeft: `4px solid ${result.judge.verdict === 'approve' ? '#10b981' : '#f59e0b'}` }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
                   <h3 style={{ fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <ShieldCheck size={20} color={result.judge.verdict === 'approve' ? '#10b981' : '#f59e0b'} />
-                    LLM-as-Judge Audit Evaluation
+                    Judge Audit
                   </h3>
                   <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                    Evaluated by {result.judge.model || 'Auditor'} via 6-dimension supply chain rubric
+                    Evaluated by {result.judge.model || 'the rule auditor (no LLM)'} via 6-dimension supply chain rubric
                   </p>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>

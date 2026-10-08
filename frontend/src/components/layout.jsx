@@ -107,7 +107,7 @@ export function TopBar({ page, health, onInfo, onMenu, onOpen }) {
         )}
         <StatusDot ok={synaptOk} label="Synapt" value={synaptOk ? 'Connected' : 'Fallback'} />
         <StatusDot ok={health?.models?.ready && !mlOff} warn label="Models" value={mlOff ? 'Cohort stats' : health?.models?.ready ? 'Ready' : 'Training'} />
-        <StatusDot ok={health?.llm?.configured && !llmOff} warn label="AI" value={llmOff ? 'Fallback' : health?.llm?.model || '—'} />
+        <StatusDot ok={health?.llm?.configured && !llmOff} warn label="Judge LLM" value={llmOff ? 'Rules' : health?.llm?.model || '—'} />
         <button className="tb-info" onClick={onInfo} aria-label="How this page works">
           <Info size={17} /> <span>How it works</span>
         </button>
