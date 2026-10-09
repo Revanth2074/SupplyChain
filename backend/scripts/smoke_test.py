@@ -1,11 +1,12 @@
-"""Smoke test of API endpoints. Run: .venv/Scripts/python -m scripts.smoke_test"""
+"""Smoke test of the API endpoints against a running server. Run from backend/: python scripts/smoke_test.py [basic ask analyze]"""
 import json
+import os
 import sys
 import time
 
 import httpx
 
-B = "http://127.0.0.1:8000/api"
+B = os.getenv("API_BASE", "http://127.0.0.1:8000/api")
 c = httpx.Client(timeout=200)
 
 

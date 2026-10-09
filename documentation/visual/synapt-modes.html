@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Synapt Modes &amp; Fallbacks</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f8fb;--surface:#fff;--surface-2:#f1f5f9;--ink:#0f172a;--ink-2:#475569;--ink-3:#94a3b8;--line:#e2e8f0;
+  --blue:#2563eb;--blue-soft:#dbeafe;--cyan:#0891b2;--cyan-soft:#cffafe;--violet:#7c3aed;--violet-soft:#ede9fe;
+  --green:#16a34a;--green-soft:#dcfce7;--amber:#d97706;--amber-soft:#fef3c7;--red:#dc2626;--red-soft:#fee2e2;
+  --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0b1120;--surface:#111827;--surface-2:#1e293b;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#64748b;--line:#1f2a3d;
+  --blue:#60a5fa;--blue-soft:#172554;--cyan:#22d3ee;--cyan-soft:#083344;--violet:#a78bfa;--violet-soft:#2e1065;
+  --green:#4ade80;--green-soft:#052e16;--amber:#fbbf24;--amber-soft:#451a03;--red:#f87171;--red-soft:#450a0a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);}}
+:root[data-theme="dark"]{
+  --bg:#0b1120;--surface:#111827;--surface-2:#1e293b;--ink:#e2e8f0;--ink-2:#94a3b8;--ink-3:#64748b;--line:#1f2a3d;
+  --blue:#60a5fa;--blue-soft:#172554;--cyan:#22d3ee;--cyan-soft:#083344;--violet:#a78bfa;--violet-soft:#2e1065;
+  --green:#4ade80;--green-soft:#052e16;--amber:#fbbf24;--amber-soft:#451a03;--red:#f87171;--red-soft:#450a0a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.35);}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.6 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+code{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:.84em;background:var(--surface-2);padding:1px 6px;border-radius:6px}
+.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:16px;align-items:center;overflow-x:auto}
+.brand{font-weight:800;white-space:nowrap;display:flex;gap:8px;align-items:center}
+.logo{width:22px;height:22px;border-radius:7px;background:linear-gradient(135deg,var(--cyan),var(--green))}
+.top nav{display:flex;gap:4px}
+.top nav a{white-space:nowrap;color:var(--ink-2);text-decoration:none;font-size:.84rem;padding:6px 10px;border-radius:8px}
+.top nav a:hover{background:var(--surface-2);color:var(--ink)}
+.theme{margin-left:auto;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer;font:inherit;font-size:.8rem}
+main{max-width:1180px;margin:0 auto;padding:0 16px 80px}
+.hero{padding:56px 0 20px}
+.eyebrow{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--cyan);font-weight:700}
+h1{font-size:clamp(1.9rem,4vw,2.7rem);line-height:1.15;margin:.3em 0 .4em;letter-spacing:-.02em}
+h2{font-size:1.5rem;letter-spacing:-.01em;margin:0 0 .3em}
+h3{font-size:1.02rem;margin:0 0 .3em}
+.lead{color:var(--ink-2);font-size:1.06rem;max-width:780px}
+section{padding:40px 0 6px;scroll-margin-top:60px}
+.sub{color:var(--ink-2);margin:0 0 20px;max-width:800px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:20px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+.pill{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:999px}
+.full{background:var(--green-soft);color:var(--green)}.deg{background:var(--amber-soft);color:var(--amber)}.off{background:var(--red-soft);color:var(--red)}
+/* mode switch */
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:16px}
+.mode{border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:14px;cursor:pointer;text-align:left;font:inherit;color:var(--ink);transition:.2s}
+.mode:hover{border-color:var(--ink-3)}
+.mode.on{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft)}
+.mode b{display:block;font-size:.95rem}
+.mode span{color:var(--ink-2);font-size:.8rem}
+.deps{display:flex;gap:6px;margin-top:8px}
+.dep{font-size:.7rem;font-weight:600;padding:2px 7px;border-radius:6px}
+.dep.y{background:var(--green-soft);color:var(--green)}.dep.n{background:var(--red-soft);color:var(--red);text-decoration:line-through}
+/* pipeline */
+.pipe{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.node{border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--surface);position:relative;transition:.3s}
+.node .n{font-size:.7rem;color:var(--ink-3);font-weight:700;letter-spacing:.08em}
+.node b{display:block;font-size:.9rem;margin:2px 0 6px}
+.node .src{font-size:.78rem;color:var(--ink-2);min-height:3.2em}
+.node.full{border-color:var(--green);background:color-mix(in srgb,var(--green-soft) 45%,var(--surface))}
+.node.deg{border-color:var(--amber);background:color-mix(in srgb,var(--amber-soft) 45%,var(--surface))}
+.node.off{border-color:var(--red);background:color-mix(in srgb,var(--red-soft) 40%,var(--surface))}
+.node .st{position:absolute;top:10px;right:10px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}
+.sbox{border-radius:12px;padding:12px 14px;background:var(--surface-2)}
+.sbox b{font-size:1.5rem;display:block}
+.sbox span{font-size:.8rem;color:var(--ink-2)}
+/* table */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.87rem;min-width:760px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:700;position:sticky;top:0;background:var(--surface)}
+tr:last-child td{border-bottom:0}
+td small{color:var(--ink-2);display:block;font-size:.78rem}
+/* breaker */
+.breaker svg{width:100%;height:auto;display:block}
+.st-node{transition:.3s}
+.ctrl{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:7px 14px;font:inherit;font-size:.85rem;cursor:pointer}
+.btn.p{background:var(--blue);border-color:var(--blue);color:#fff}.btn.r{background:var(--red);border-color:var(--red);color:#fff}
+.log{font-family:"JetBrains Mono",monospace;font-size:.76rem;background:var(--surface-2);border-radius:10px;padding:10px;height:150px;overflow:auto;margin-top:12px;color:var(--ink-2)}
+.log div{white-space:nowrap}
+/* bars */
+.bars .row{display:grid;grid-template-columns:180px 1fr 56px;gap:10px;align-items:center;margin:8px 0;font-size:.85rem}
+.bars .track{height:14px;background:var(--surface-2);border-radius:7px;overflow:hidden}
+.bars .fill{height:100%;border-radius:7px;width:0;transition:width 1s cubic-bezier(.2,.8,.2,1)}
+.bars .v{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.legend{display:flex;gap:14px;font-size:.8rem;color:var(--ink-2);margin-bottom:6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.callout{border-left:3px solid var(--blue);background:var(--blue-soft);padding:12px 14px;border-radius:0 10px 10px 0;font-size:.9rem;margin-top:14px}
+.callout.a{border-color:var(--amber);background:var(--amber-soft)}
+footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
+@media (max-width:640px){.summary{grid-template-columns:1fr}.bars .row{grid-template-columns:110px 1fr 48px}}
+</style>
+</head>
+<body>
+<header class="top"><div class="in">
+  <div class="brand"><span class="logo"></span>Synapt modes &amp; fallbacks</div>
+  <nav><a href="#modes">Four modes</a><a href="#matrix">Capability matrix</a><a href="#measured">Measured</a><a href="#breaker">Circuit breaker</a><a href="#llm">Where the LLM is</a><a href="#lab">Try it live</a><a href="#why">Why it matters</a></nav>
+  <button class="theme" id="themeBtn">Theme</button>
+</div></header>
+<main>
+<div class="hero">
+  <div class="eyebrow">Graceful degradation</div>
+  <h1>Works with Synapt. Still works without it.</h1>
+  <p class="lead">The workflow depends on one external service: <b>Synapt</b> (knowledge, graph-RAG answers, playbooks).
+  An external <b>LLM</b> is used only as the independent judge in evaluation, never inside the workflow. Every Synapt step
+  has a local fallback, so losing a service lowers quality instead of breaking the app.
+  Pick a mode below to see exactly what changes.</p>
+</div>
+
+<section id="modes">
+  <h2>The four operating modes</h2>
+  <p class="sub">Click a mode. Each workflow step shows what it runs on in that mode: <span class="pill full">full</span> <span class="pill deg">fallback</span> <span class="pill off">unavailable</span></p>
+  <div class="modes" id="modes-sw"></div>
+  <div class="card">
+    <div class="pipe" id="pipe"></div>
+    <div class="summary" id="summ"></div>
+  </div>
+</section>
+
+<section id="matrix">
+  <h2>Capability matrix</h2>
+  <p class="sub">Every feature, what powers it normally, and what takes over when a dependency is missing.</p>
+  <div class="card tw"><table id="mx"><thead><tr><th>Capability</th><th>With Synapt + judge LLM</th><th>Without Synapt</th><th>Without judge LLM</th></tr></thead><tbody></tbody></table></div>
+</section>
+
+<section id="measured">
+  <h2>Measured: retrieval with and without Synapt</h2>
+  <p class="sub">The 25 golden incidents from the evaluation suite, top-8 results each. "Type precision" means the share of returned cases with the same disruption type;
+  "similarity" is the weighted attribute match to the incident. Synapt was forced offline for the second run, so the service fell back to its local LSA index.</p>
+  <div class="grid g2">
+    <div class="card bars">
+      <h3>Semantic retrieval alone</h3>
+      <div class="legend"><span><i style="background:var(--cyan)"></i>Synapt</span><span><i style="background:var(--ink-3)"></i>Local LSA fallback</span></div>
+      <div id="barsSem"></div>
+      <p class="callout">Synapt's semantic leg finds the right kind of case <b>18.5 points more often</b> than the local index.</p>
+    </div>
+    <div class="card bars">
+      <h3>Full hybrid search (semantic + BM25 + profile, RRF)</h3>
+      <div class="legend"><span><i style="background:var(--cyan)"></i>With Synapt</span><span><i style="background:var(--ink-3)"></i>Without Synapt</span></div>
+      <div id="barsHyb"></div>
+      <p class="callout a">With all three legs fused, the gap almost disappears. That is the point of hybrid retrieval: <b>no single leg is a single point of failure.</b> What you lose offline is the graph answer, the playbooks and episode memory, not the case list.</p>
+    </div>
+  </div>
+</section>
+
+<section id="breaker">
+  <h2>The circuit breaker</h2>
+  <p class="sub">Every Synapt call goes through one breaker (<code>agents/synapt_tools.breaker_for</code>). After <b>3 consecutive failures</b> it <b>opens</b>, and calls skip Synapt instantly instead of waiting for timeouts.
+  After a <b>60 s cooldown</b> one call is allowed through (half-open); success closes it again. Try it:</p>
+  <div class="grid g2">
+    <div class="card breaker">
+      <svg viewBox="0 0 520 250" id="bsvg" role="img" aria-label="Circuit breaker states">
+        <defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0L10,5L0,10z" fill="var(--ink-3)"/></marker></defs>
+        <g id="sClosed" class="st-node"><rect x="20" y="80" width="140" height="80" rx="16"/><text x="90" y="115" text-anchor="middle" font-weight="700" font-size="15">CLOSED</text><text x="90" y="136" text-anchor="middle" font-size="11">calls go to Synapt</text></g>
+        <g id="sOpen" class="st-node"><rect x="360" y="80" width="140" height="80" rx="16"/><text x="430" y="115" text-anchor="middle" font-weight="700" font-size="15">OPEN</text><text x="430" y="136" text-anchor="middle" font-size="11">local fallback only</text></g>
+        <g id="sHalf" class="st-node"><rect x="190" y="180" width="140" height="60" rx="16"/><text x="260" y="207" text-anchor="middle" font-weight="700" font-size="14">HALF-OPEN</text><text x="260" y="226" text-anchor="middle" font-size="11">one trial call</text></g>
+        <path d="M160 100 H360" stroke="var(--ink-3)" fill="none" marker-end="url(#m)"/><text x="260" y="92" text-anchor="middle" font-size="11" fill="var(--ink-2)">3 failures in a row</text>
+        <path d="M430 160 Q430 210 330 210" stroke="var(--ink-3)" fill="none" marker-end="url(#m)"/><text x="450" y="195" font-size="11" fill="var(--ink-2)">after 60 s</text>
+        <path d="M190 210 Q90 210 90 160" stroke="var(--ink-3)" fill="none" marker-end="url(#m)"/><text x="28" y="195" font-size="11" fill="var(--ink-2)">success</text>
+        <path d="M300 180 Q360 150 380 160" stroke="var(--ink-3)" fill="none" stroke-dasharray="4 4" marker-end="url(#m)"/><text x="330" y="150" font-size="10" fill="var(--ink-2)">fails</text>
+        <text x="260" y="40" text-anchor="middle" font-size="13" fill="var(--ink)" id="bState">failures: 0 · state: CLOSED</text>
+      </svg>
+      <div class="ctrl">
+        <button class="btn p" id="bOk">Successful call</button>
+        <button class="btn r" id="bFail">Failed call</button>
+        <button class="btn" id="bWait">Skip 60 s</button>
+        <button class="btn" id="bReset">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>What the operator sees</h3>
+      <div class="log" id="blog"></div>
+      <p style="color:var(--ink-2);font-size:.86rem;margin:10px 0 0">The API reports this honestly: every search result carries <code>semantic_source</code>
+      (<code>synapt</code>, <code>synapt+local</code> or <code>local-lsa</code>) and a <code>fallback_reason</code>, and <code>/api/health</code> shows the breaker state.
+      The UI shows a badge, so nobody mistakes a degraded answer for a full one.</p>
+    </div>
+  </div>
+</section>
+
+<section id="llm">
+  <h2>Where the LLM is (and isn't)</h2>
+  <p class="sub">Following the reference Synapt capstone, no agent calls an external LLM. Each step below runs on rules, Synapt and
+  templates; the aicredits.in model only grades the output in evaluation.</p>
+  <div class="grid g4" id="llmGrid"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>Why the LLM was taken out of the workflow</h3>
+    <p class="muted small" style="margin:0 0 10px">In an earlier design the LLM wrote the plan and briefing. During a 25-case evaluation the gateway returned <code>402 Budget Exceeded</code> after case 8, and every later analysis silently dropped to templates. Now the workflow never needs credits:</p>
+    <div class="summary" style="margin-top:0">
+      <div class="sbox"><b style="color:var(--green)">98/98</b><span>golden-set fields classified by rules alone</span></div>
+      <div class="sbox"><b style="color:var(--green)">11.5 s</b><span>full analysis, 0 LLM calls (10.6 s is Synapt graph-RAG)</span></div>
+      <div class="sbox"><b style="color:var(--green)">100%</b><span>briefings pass the fact-check</span></div>
+    </div>
+    <p class="muted small" style="margin:10px 0 0">Caveat: the golden descriptions name the disruption type explicitly, which suits keyword rules; vague real-world text is the case to watch.</p>
+  </div>
+</section>
+
+<section id="lab">
+  <h2>Try it live: the Fallback Lab</h2>
+  <p class="sub">Everything on this page can be reproduced in the running app. Open <b>Fallback Lab</b> (sidebar → System), switch a dependency off, and press <b>Run self-test</b>.</p>
+  <div class="grid g2">
+    <div class="card"><h3>Six switches</h3><p class="muted small" style="margin:0;color:var(--ink-2)">Synapt (all tools) · Synapt graph-RAG only · Synapt playbooks only · LLM judge · prediction models (→ cohort statistics) · live hazard feed. Each fails at the lowest level, so the real fallback code runs, and restores itself after a chosen time.</p></div>
+    <div class="card"><h3>Self-test result (measured)</h3><p class="muted small" style="margin:0;color:var(--ink-2)">With the full workflow: all on 15/15 checks on the normal engines (including a live LLM-judge call); Synapt off 15/15 with the fallbacks; LLM judge + models + feed off 15/15, no crashes. With models off, cohort statistics gave 125 days full recovery vs 129 from the model for the same incident.</p></div>
+  </div>
+</section>
+
+<section id="why">
+  <h2>Why this design</h2>
+  <div class="grid g2">
+    <div class="card"><h3>For operations</h3><p style="color:var(--ink-2);margin:0">A disruption assistant is needed most on the bad day, when networks and vendors are also under stress. A tool that stops when one dependency stops cannot be trusted in a war-room.</p></div>
+    <div class="card"><h3>For Synapt</h3><p style="color:var(--ink-2);margin:0">It shows Synapt's real value-add. Offline, you keep a decent case list. With Synapt, you get better recall, reasoning paths, playbooks and memory, with confidence signals that make the difference measurable.</p></div>
+  </div>
+</section>
+</main>
+<footer>AI-Powered Supply-Chain Disruption Assistant · Synapt modes &amp; fallbacks · numbers measured on the 25-case golden set</footer>
+
+<script>
+const MODES=[
+ {id:"full",t:"Full",d:"Synapt + judge LLM online",s:1,l:1},
+ {id:"nosyn",t:"Without Synapt",d:"Synapt down or not configured",s:0,l:1},
+ {id:"nollm",t:"Without judge LLM",d:"No key, gateway down or out of credits",s:1,l:0},
+ {id:"off",t:"Fully offline",d:"Only local data + ML",s:0,l:0},
+];
+// per step: [label, fn(s,l) -> [state, source]]
+const STEPS=[
+ ["Guardrails",(s,l)=>["full","Local regex + vocabulary checks. Never depends on a service."]],
+ ["Classify",(s,l)=>["full","Keyword rules constrained to the dataset vocabulary (no LLM)"]],
+ ["Retrieve cases",(s,l)=>s?["full","Synapt semantic + BM25 + profile, RRF"]:["deg","Local LSA + BM25 + profile, RRF"]],
+ ["Graph reasoning",(s,l)=>s?["full","Synapt graph-RAG subgraph + answer"]:["off","Skipped; no reasoning path shown"]],
+ ["Predict",(s,l)=>["full","Local HistGradientBoosting models, P10–P90 (cohort statistics if the models are off)"]],
+ ["Plan",(s,l)=>s?["full","Strategy statistics + Synapt playbook steps"]:["deg","Strategy statistics only"]],
+ ["Briefing",(s,l)=>s?["full","Evidence template + Synapt graph answer, fact-checked"]:["deg","Evidence template, fact-checked (no Synapt answer)"]],
+ ["Judge",(s,l)=>["full","Rule rubric, 6 criteria (no LLM)"]],
+ ["Learn",(s,l)=>s?["full","Local re-weighting + retrain + trident_feedback"]:["deg","Local re-weighting + retrain only"]],
+ ["Evaluate (offline)",(s,l)=>l?["full","External LLM judge + DeepEval"]:["deg","Rule rubric + deterministic metrics only"]],
+];
+const MATRIX=[
+ ["Similar-case search","Synapt semantic + BM25 + profile match","Local LSA replaces Synapt leg (measured below)","Unchanged"],
+ ["Ask a question (RAG Q&A)","Synapt trident_query answer + hybrid-search sources","Most relevant local cases (extractive)","Unchanged"],
+ ["Reasoning graph explorer","Synapt subgraph, rings by hop","Unavailable (page explains why)","Unchanged"],
+ ["Ask the graph (analytics)","6 provider-pinned Cypher templates","Offline network view from local data","Unchanged"],
+ ["Response playbooks","trident_get_procedures steps become the plan actions","Plan uses statistics only","Unchanged"],
+ ["Classification","Rules; Synapt kNN / ticket labels as a second opinion","Unchanged (rules)","Unchanged"],
+ ["Predictions & ranges","Local ML","Unchanged","Unchanged"],
+ ["Explainability","Local contributions + importance","Unchanged","Unchanged"],
+ ["Prioritisation & SLA","Local formula","Unchanged","Unchanged"],
+ ["Decision engine, early warning, root cause","Local + Synapt evidence","Local only","Unchanged"],
+ ["Executive briefing","Evidence template + Synapt answer, fact-checked","Evidence template, fact-checked","Unchanged"],
+ ["Judge agent (runtime)","Rule rubric","Unchanged","Unchanged"],
+ ["LLM-as-Judge (evaluation)","External LLM rubric","Runs","Rule rubric fallback"],
+ ["DeepEval","Runs","Runs (lower contextual relevancy expected)","Skipped; deterministic metrics only"],
+ ["Feedback loop","Local + trident_feedback","Local only","Unchanged"],
+];
+const MEAS={sem:[["Type precision",.87,.685],["Attribute similarity",.777,.725]],hyb:[["Type precision",1.0,1.0],["Attribute similarity",.998,.99]],ms:[951,661]};
+const LLM=[
+ ["Classifier","Keyword rules per field with confidence, constrained to the dataset vocabulary","none"],
+ ["Planner","Strategy statistics + Synapt playbook steps (trident_get_procedures)","none"],
+ ["Report","Evidence template + Synapt graph-RAG answer, deterministic fact-check","none"],
+ ["Judge","Runtime: rule rubric. Evaluation: external LLM judge (llm_judge.py, DeepEval, /api/judge)","evaluation only"],
+];
+
+const $=id=>document.getElementById(id);
+function setMode(m){
+  document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('on',b.dataset.id===m.id));
+  const res=STEPS.map(([n,f])=>[n,...f(m.s,m.l)]);
+  $('pipe').innerHTML=res.map((r,i)=>`<div class="node ${r[1]}"><span class="pill ${r[1]} st">${r[1]==='full'?'full':r[1]==='deg'?'fallback':'off'}</span><div class="n">STEP ${i+1}</div><b>${r[0]}</b><div class="src">${r[2]}</div></div>`).join('');
+  const c=k=>res.filter(r=>r[1]===k).length;
+  $('summ').innerHTML=`<div class="sbox"><b style="color:var(--green)">${c('full')}</b><span>steps at full quality</span></div><div class="sbox"><b style="color:var(--amber)">${c('deg')}</b><span>steps on a fallback</span></div><div class="sbox"><b style="color:var(--red)">${c('off')}</b><span>steps unavailable</span></div>`;
+}
+$('modes-sw').innerHTML=MODES.map(m=>`<button class="mode" data-id="${m.id}"><b>${m.t}</b><span>${m.d}</span><div class="deps"><span class="dep ${m.s?'y':'n'}">Synapt</span><span class="dep ${m.l?'y':'n'}">Judge LLM</span><span class="dep y">Local ML</span></div></button>`).join('');
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>setMode(MODES.find(m=>m.id===b.dataset.id)));
+setMode(MODES[0]);
+const tag=t=>/Unchanged/.test(t)?`<span class="pill full">same</span> `:/Unavailable|Skipped/.test(t)?`<span class="pill off">off</span> `:`<span class="pill deg">fallback</span> `;
+document.querySelector('#mx tbody').innerHTML=MATRIX.map(r=>`<tr><td><b>${r[0]}</b></td><td>${r[1]}</td><td>${tag(r[2])}<small>${r[2]}</small></td><td>${tag(r[3])}<small>${r[3]}</small></td></tr>`).join('');
+function bars(el,rows){
+  $(el).innerHTML=rows.map(r=>`<div class="row"><span>${r[0]}</span><div><div class="track"><div class="fill" style="background:var(--cyan)" data-w="${r[1]*100}"></div></div><div class="track" style="margin-top:4px"><div class="fill" style="background:var(--ink-3)" data-w="${r[2]*100}"></div></div></div><span class="v">${Math.round(r[1]*1000)/10}%<br><span style="color:var(--ink-3)">${Math.round(r[2]*1000)/10}%</span></span></div>`).join('');
+}
+bars('barsSem',MEAS.sem);bars('barsHyb',MEAS.hyb);
+$('barsHyb').insertAdjacentHTML('beforeend',`<div class="row"><span>Avg. latency</span><span style="color:var(--ink-2)">${MEAS.ms[0]} ms with Synapt · ${MEAS.ms[1]} ms local</span><span></span></div>`);
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.querySelectorAll('.fill').forEach(f=>f.style.width=f.dataset.w+'%');io.unobserve(e.target)}}),{threshold:.3});
+document.querySelectorAll('.bars').forEach(b=>io.observe(b));
+$('llmGrid').innerHTML=LLM.map(r=>`<div class="card"><h3>${r[0]}</h3><p style="margin:0 0 8px;font-size:.86rem"><span class="pill full">runs on</span> ${r[1]}</p><p style="margin:0;font-size:.86rem;color:var(--ink-2)"><span class="pill deg">LLM</span> ${r[2]}</p></div>`).join('');
+// breaker sim
+let fails=0,state='CLOSED',t=0;
+function paint(){
+  const col={CLOSED:['--green-soft','--green'],OPEN:['--red-soft','--red'],'HALF-OPEN':['--amber-soft','--amber']};
+  [['sClosed','CLOSED'],['sOpen','OPEN'],['sHalf','HALF-OPEN']].forEach(([id,s])=>{const g=$(id),r=g.querySelector('rect'),on=s===state;
+    r.setAttribute('fill',on?`var(${col[s][0]})`:'var(--surface)');r.setAttribute('stroke',on?`var(${col[s][1]})`:'var(--line)');r.setAttribute('stroke-width',on?2.5:1.2);
+    g.querySelectorAll('text').forEach(x=>x.setAttribute('fill',on?`var(${col[s][1]})`:'var(--ink-2)'))});
+  $('bState').textContent=`failures: ${fails} · state: ${state}`;
+}
+function log(m,c){const d=document.createElement('div');t+=1;d.innerHTML=`<span style="color:var(--ink-3)">#${t}</span> ${m}`;if(c)d.style.color=`var(${c})`;$('blog').prepend(d)}
+$('bOk').onclick=()=>{if(state==='OPEN'){log('Call skipped: circuit open → served from local LSA','--amber');return}
+  fails=0;state='CLOSED';log('Synapt answered → semantic_source = "synapt"','--green');paint()};
+$('bFail').onclick=()=>{if(state==='OPEN'){log('Call skipped: circuit open → served from local LSA','--amber');return}
+  fails++;log(`Synapt timeout (${fails}/3) → this request falls back to local LSA`,'--amber');
+  if(fails>=3||state==='HALF-OPEN'){state='OPEN';log('Breaker OPEN: next 60 s skip Synapt entirely (no waiting on timeouts)','--red')}paint()};
+$('bWait').onclick=()=>{if(state==='OPEN'){state='HALF-OPEN';log('60 s passed → HALF-OPEN: next call is a trial','--blue')}else log('Nothing to wait for');paint()};
+$('bReset').onclick=()=>{fails=0;state='CLOSED';t=0;$('blog').innerHTML='';paint()};
+paint();log('Ready. Try three failed calls.');
+$('themeBtn').onclick=()=>{const r=document.documentElement;const dark=r.dataset.theme?r.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;r.dataset.theme=dark?'light':'dark'};
+</script>
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Synapt, Explained Simply</title>
+<meta name="description" content="What the Synapt MCP connector gives us, how each part behaves and how this project uses it, explained like a story for a five-year-old with grown-up notes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fffaf3;--surface:#ffffff;--surface-2:#fff1df;--line:#f0e2cc;--ink:#2b2118;--ink-2:#6b5a49;--ink-3:#a4927e;
+  --sun:#f59e0b;--sun-soft:#fff1d2;--sky:#2f80ed;--sky-soft:#e3efff;--leaf:#16a34a;--leaf-soft:#dcfce7;
+  --berry:#db2777;--berry-soft:#fde4f0;--grape:#7c3aed;--grape-soft:#ede5fd;--tomato:#dc2626;--tomato-soft:#fee2e2;
+  --radius:22px;--shadow:0 2px 0 rgba(43,33,24,.06),0 10px 30px rgba(43,33,24,.07);
+  --mono:"JetBrains Mono",ui-monospace,monospace;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#17130f;--surface:#211b16;--surface-2:#2b231c;--line:#3a2f26;--ink:#f6ece0;--ink-2:#cdbba7;--ink-3:#8f7d6b;
+  --sun-soft:#3a2b10;--sky-soft:#152a47;--leaf-soft:#11331f;--berry-soft:#3c1729;--grape-soft:#2a1f47;--tomato-soft:#3d1717;
+  --shadow:0 2px 0 rgba(0,0,0,.3);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17130f;--surface:#211b16;--surface-2:#2b231c;--line:#3a2f26;--ink:#f6ece0;--ink-2:#cdbba7;--ink-3:#8f7d6b;
+  --sun-soft:#3a2b10;--sky-soft:#152a47;--leaf-soft:#11331f;--berry-soft:#3c1729;--grape-soft:#2a1f47;--tomato-soft:#3d1717;
+  --shadow:0 2px 0 rgba(0,0,0,.3);color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 Nunito,system-ui,sans-serif}
+code,.mono{font-family:var(--mono);font-size:.82em}
+code{background:var(--surface-2);padding:1px 6px;border-radius:6px}
+a{color:var(--sky)}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+header.top{position:sticky;top:0;z-index:10;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;gap:14px;height:58px}
+.logo{font-weight:900;font-size:18px;display:flex;align-items:center;gap:8px}
+nav{display:flex;gap:4px;margin-left:auto;overflow-x:auto}
+nav a{color:var(--ink-2);text-decoration:none;font-weight:700;font-size:14px;padding:6px 10px;border-radius:999px;white-space:nowrap}
+nav a:hover{background:var(--surface-2);color:var(--ink)}
+.theme{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;font:inherit;font-size:13px;cursor:pointer}
+section{padding:56px 0 8px}
+h1{font-size:clamp(32px,6vw,52px);line-height:1.08;margin:0 0 14px;letter-spacing:-.02em;font-weight:900}
+h2{font-size:clamp(24px,4vw,34px);margin:0 0 8px;letter-spacing:-.01em;font-weight:900}
+h3{margin:0 0 6px;font-size:19px;font-weight:800}
+.lead{font-size:20px;color:var(--ink-2);max-width:760px}
+.sub{color:var(--ink-2);max-width:760px;margin:0 0 22px}
+.hero{padding:56px 0 20px;display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px 22px;box-shadow:var(--shadow)}
+.grid{display:grid;gap:16px}.g2{grid-template-columns:repeat(2,minmax(0,1fr))}.g3{grid-template-columns:repeat(3,minmax(0,1fr))}.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.emoji{font-size:40px;line-height:1;margin-bottom:8px}
+.grown{margin-top:10px;font-size:14px;color:var(--ink-2);background:var(--surface-2);border-radius:14px;padding:10px 12px}
+.grown b{color:var(--ink)}
+.grown::before{content:"🧑‍💼 For grown-ups: ";font-weight:800;color:var(--ink)}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 11px;font-size:13px;font-weight:800;white-space:nowrap}
+.p-used{background:var(--leaf-soft);color:var(--leaf)}.p-tried{background:var(--tomato-soft);color:var(--tomato)}
+.p-spare{background:var(--surface-2);color:var(--ink-2)}.p-sky{background:var(--sky-soft);color:var(--sky)}
+.p-sun{background:var(--sun-soft);color:#b45309}.p-grape{background:var(--grape-soft);color:var(--grape)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:10px 16px;box-shadow:var(--shadow)}
+.stat b{display:block;font-size:26px;font-weight:900;line-height:1.1}
+.stat span{font-size:13px;color:var(--ink-2)}
+/* library illustration */
+.lib svg{width:100%;height:auto}
+.lib text{font-family:Nunito,sans-serif;font-weight:800}
+/* story stepper */
+.story{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+.lane{position:relative;height:300px;background:linear-gradient(180deg,var(--sky-soft),var(--surface));border-radius:var(--radius);border:1px solid var(--line);overflow:hidden}
+.actor{position:absolute;top:30px;width:120px;text-align:center;font-weight:800;font-size:14px}
+.actor .big{font-size:54px;display:block}
+.actor.app{left:18px}.actor.syn{right:18px}
+.wire{position:absolute;left:150px;right:150px;top:84px;border-top:4px dashed var(--line)}
+.msg{position:absolute;top:58px;left:150px;font-size:34px;transition:left .9s cubic-bezier(.5,0,.3,1),opacity .3s;opacity:0}
+.speech{position:absolute;left:18px;right:18px;bottom:16px;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;font-weight:700;min-height:74px}
+.steps{display:flex;flex-direction:column;gap:8px}
+.step{display:flex;gap:12px;align-items:flex-start;padding:10px 12px;border-radius:16px;border:1px solid var(--line);background:var(--surface);cursor:pointer;transition:.2s}
+.step .n{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:900;background:var(--surface-2)}
+.step.on{border-color:var(--sun);box-shadow:0 0 0 3px var(--sun-soft)}
+.step.on .n{background:var(--sun);color:#fff}
+.step small{display:block;color:var(--ink-2);font-size:13px}
+.btn{font:inherit;font-weight:800;border-radius:999px;border:0;padding:10px 18px;cursor:pointer;background:var(--sun);color:#fff}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--line)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}
+/* rooms */
+.room{border-top:8px solid var(--c);}
+.room .what{font-size:14px;margin-top:8px}
+.room ul{margin:6px 0 0;padding-left:20px;font-size:15px}
+/* tools */
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px}
+.filters button{font:inherit;font-weight:800;font-size:14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink-2);padding:6px 14px;cursor:pointer}
+.filters button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+.tool{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px 18px;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s}
+.tool:hover{transform:translateY(-2px)}
+.tool .head{display:flex;gap:10px;align-items:center}
+.tool .ic{font-size:30px}
+.tool .nm{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--ink-2)}
+.tool .kid{margin:8px 0 0;font-weight:700}
+.tool .more{display:none;margin-top:10px;font-size:14px;color:var(--ink-2)}
+.tool.open .more{display:block}
+.tool .more dt{font-weight:800;color:var(--ink);margin-top:6px}
+.tool .more dd{margin:0}
+.tool .tap{font-size:12px;color:var(--ink-3);margin-top:8px}
+/* timeline */
+.tl{position:relative;margin-top:10px}
+.tl-row{display:grid;grid-template-columns:150px 1fr;gap:12px;align-items:center;margin:8px 0;font-size:14px;font-weight:700}
+.tl-track{position:relative;height:26px;background:var(--surface-2);border-radius:13px}
+.tl-bar{position:absolute;top:3px;bottom:3px;border-radius:10px;display:flex;align-items:center;padding:0 8px;color:#fff;font-size:12px;white-space:nowrap;overflow:hidden}
+.axis{display:flex;justify-content:space-between;margin-left:162px;font-size:12px;color:var(--ink-3)}
+/* helpers + gotchas */
+.helper{display:flex;gap:14px;align-items:flex-start}
+.helper .emoji{font-size:34px;margin:0}
+.gloss{width:100%;border-collapse:collapse;font-size:15px}
+.gloss th,.gloss td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+.gloss th{color:var(--ink-2);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
+.breaker{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lamp{width:22px;height:22px;border-radius:50%;background:var(--leaf);box-shadow:0 0 0 4px var(--leaf-soft);transition:.3s}
+.lamp.open{background:var(--tomato);box-shadow:0 0 0 4px var(--tomato-soft)}
+.lamp.half{background:var(--sun);box-shadow:0 0 0 4px var(--sun-soft)}
+footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
+/* console section */
+.menu-col h3{display:flex;align-items:center;gap:8px}
+.menu-col ul{list-style:none;margin:8px 0 0;padding:0}
+.menu-col li{padding:7px 0;border-top:1px dashed var(--line);font-size:15px}
+.menu-col li b{display:block}
+.menu-col li span{color:var(--ink-2);font-size:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:12px 14px;box-shadow:var(--shadow)}
+.kpi b{display:block;font-size:26px;font-weight:900;line-height:1.15}
+.kpi span{font-size:13px;color:var(--ink-2)}
+.meter{display:grid;grid-template-columns:190px 1fr 56px;gap:10px;align-items:center;margin:9px 0;font-weight:700;font-size:15px}
+.meter .track{height:14px;background:var(--surface-2);border-radius:8px;overflow:hidden}
+.meter .fill{height:100%;border-radius:8px;width:0;transition:width 1s ease}
+.meter .v{text-align:right;font-family:var(--mono);font-size:13px}
+.vs{width:100%;border-collapse:collapse;font-size:15px}
+.vs th,.vs td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left}
+.vs td.n{text-align:right;font-family:var(--mono);font-size:14px}
+.vs th{font-size:13px;color:var(--ink-2);text-transform:uppercase;letter-spacing:.05em}
+.note{font-size:13px;color:var(--ink-3);margin-top:8px}
+@media (max-width:860px){.meter{grid-template-columns:120px 1fr 50px}}
+@media (max-width:860px){
+  .hero,.story,.g2,.g3,.g4{grid-template-columns:1fr}
+  nav{display:none}
+  .tl-row{grid-template-columns:100px 1fr}.axis{margin-left:112px}
+  .actor{width:90px}.wire{left:110px;right:110px}.msg{left:110px}
+}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="logo">📚 Synapt, explained simply</div>
+  <nav><a href="#who">Who's who</a><a href="#talk">How we talk</a><a href="#rooms">The 4 rooms</a><a href="#tools">17 buttons</a><a href="#day">One analysis</a><a href="#helpers">Our helpers</a><a href="#oops">Oopsies</a><a href="#console">The console</a><a href="#words">Big words</a></nav>
+  <button class="theme" id="themeBtn" type="button">🌗 Theme</button>
+</div></header>
+
+<main class="wrap">
+<!-- ================================================================ HERO -->
+<div class="hero">
+  <div>
+    <h1>Synapt is a giant, smart library. Our app talks to it with a walkie-talkie.</h1>
+    <p class="lead">The library remembers 100,000 old supply-chain problems and how people fixed them. When a new problem
+      happens, our app picks up the walkie-talkie (the <b>MCP connector</b>), presses the right button, and the library
+      answers. This page explains every button, what it does, and where our app uses it.</p>
+    <div class="stats">
+      <div class="stat"><b>17</b><span>buttons on the walkie-talkie</span></div>
+      <div class="stat"><b>11</b><span>buttons our app really uses</span></div>
+      <div class="stat"><b>4</b><span>rooms in the library</span></div>
+      <div class="stat"><b>1</b><span>shelf that is ours alone</span></div>
+    </div>
+  </div>
+  <div class="card lib" aria-hidden="true">
+    <svg viewBox="0 0 320 250">
+      <rect x="20" y="70" width="280" height="160" rx="14" fill="var(--sun-soft)" stroke="var(--sun)" stroke-width="3"/>
+      <polygon points="10,78 160,12 310,78" fill="var(--sun)"/>
+      <text x="160" y="62" text-anchor="middle" fill="#fff" font-size="20">SYNAPT</text>
+      <rect x="40" y="95" width="56" height="70" rx="8" fill="var(--sky-soft)" stroke="var(--sky)" stroke-width="2"/>
+      <text x="68" y="136" text-anchor="middle" font-size="22">📖</text>
+      <rect x="106" y="95" width="56" height="70" rx="8" fill="var(--leaf-soft)" stroke="var(--leaf)" stroke-width="2"/>
+      <text x="134" y="136" text-anchor="middle" font-size="22">🧾</text>
+      <rect x="172" y="95" width="56" height="70" rx="8" fill="var(--grape-soft)" stroke="var(--grape)" stroke-width="2"/>
+      <text x="200" y="136" text-anchor="middle" font-size="22">📔</text>
+      <rect x="238" y="95" width="48" height="70" rx="8" fill="var(--berry-soft)" stroke="var(--berry)" stroke-width="2"/>
+      <text x="262" y="136" text-anchor="middle" font-size="22">🏷️</text>
+      <rect x="135" y="180" width="50" height="50" rx="6" fill="var(--surface)" stroke="var(--sun)" stroke-width="3"/>
+      <text x="160" y="214" text-anchor="middle" font-size="22">🧙</text>
+      <text x="68" y="182" text-anchor="middle" font-size="11" fill="var(--ink-2)">Knowledge</text>
+      <text x="134" y="182" text-anchor="middle" font-size="11" fill="var(--ink-2)">Recipes</text>
+      <text x="200" y="182" text-anchor="middle" font-size="11" fill="var(--ink-2)">Diary</text>
+      <text x="262" y="182" text-anchor="middle" font-size="11" fill="var(--ink-2)">Stickers</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ================================================================ WHO'S WHO -->
+<section id="who">
+  <h2>Who's who in the story</h2>
+  <p class="sub">Six characters. Learn these and everything else makes sense.</p>
+  <div class="grid g3">
+    <div class="card"><div class="emoji">🏭</div><h3>Our app</h3><p>The helper robot that a supply-chain team asks, “a supplier broke, what do we do?”</p>
+      <div class="grown">The FastAPI service in <code>backend/</code> with 7 LangGraph agents and the console in <code>backend/static/</code>.</div></div>
+    <div class="card"><div class="emoji">📚</div><h3>The library (Synapt)</h3><p>A huge library that stores what we taught it, understands meaning, and connects ideas like a spider web.</p>
+      <div class="grown">Synapt's Context Substrate (Trident): vector chunks + a Neo4j knowledge graph + a procedure store + episodic memory + a ticket store, at <code>beta.synapt.ai</code>.</div></div>
+    <div class="card"><div class="emoji">📻</div><h3>The walkie-talkie (MCP connector)</h3><p>The only way to talk to the library. It has 17 buttons. Press one, say your question, get an answer.</p>
+      <div class="grown"><code>backend/synapt/synapt_connector.py</code> — <code>SynaptMCPConnector</code>. Model Context Protocol = JSON-RPC 2.0 over HTTPS; answers can stream back as server-sent events.</div></div>
+    <div class="card"><div class="emoji">🎫</div><h3>The library card (token)</h3><p>Before talking, we show our name and password and get a card. No card, no talking.</p>
+      <div class="grown"><code>authenticate()</code> posts the username/password from <code>backend/.env</code> to the auth service and gets a bearer token; on a 401 it logs in again automatically.</div></div>
+    <div class="card"><div class="emoji">🗄️</div><h3>Our own shelf (provider)</h3><p>The library is shared with other people, but we have our own shelf with our name on it. We only read our shelf.</p>
+      <div class="grown"><code>SYNAPT_PROVIDER_ID=supply_chain_disruptions</code>. The connector adds <code>provider_id</code> to every call automatically when the tool accepts one.</div></div>
+    <div class="card"><div class="emoji">🧙</div><h3>The librarian (trident_query)</h3><p>The cleverest button: you ask a whole question, the librarian reads, follows the web of ideas, and answers in words with a “how sure am I” score.</p>
+      <div class="grown">Graph-RAG: retrieve chunks → seed graph nodes → walk up to 2 hops → generate a grounded answer with confidence, knowledge/procedural/graph confidence and a reasoning subgraph.</div></div>
+  </div>
+</section>
+
+<!-- ================================================================ HOW WE TALK -->
+<section id="talk">
+  <h2>How one call travels</h2>
+  <p class="sub">Press <b>Play</b> to watch our app and the library talk. Or click any step.</p>
+  <div class="story">
+    <div class="lane" aria-live="polite">
+      <div class="actor app"><span class="big">🏭</span>Our app</div>
+      <div class="actor syn"><span class="big">📚</span>Synapt</div>
+      <div class="wire"></div>
+      <div class="msg" id="msg">✉️</div>
+      <div class="speech" id="speech">Press Play to start the story.</div>
+    </div>
+    <div>
+      <div class="steps" id="steps"></div>
+      <div class="row"><button class="btn" id="playBtn" type="button">▶ Play</button><button class="btn ghost" id="resetBtn" type="button">Start over</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================ ROOMS -->
+<section id="rooms">
+  <h2>The 4 rooms in the library</h2>
+  <p class="sub">Synapt keeps different kinds of memory in different rooms. Here is what we put in each one, and what we get out.</p>
+  <div class="grid g4">
+    <div class="card room" style="--c:var(--sky)"><div class="emoji">📖</div><h3>Knowledge room</h3>
+      <p>Stories of old problems, cut into small pages, plus a spider web that links ideas.</p>
+      <div class="what"><b>We put in:</b><ul><li>4,000 case cards (40 files)</li><li>profiles of all 100,000 cases</li><li>summary statistics + an ontology</li></ul></div>
+      <div class="grown">Chunks + Neo4j graph. Our provider: 894 nodes, 1,038 edges, 688 chunks. Read with <code>trident_get_chunks</code>, <code>trident_search</code>, <code>trident_query</code>.</div></div>
+    <div class="card room" style="--c:var(--leaf)"><div class="emoji">🧾</div><h3>Recipe room</h3>
+      <p>Step-by-step recipes: “if a port is jammed, do step 1, then step 2…”.</p>
+      <div class="what"><b>We put in:</b><ul><li>6 response playbooks, one per disruption type, 7 steps each</li></ul></div>
+      <div class="grown">Procedure Store. <code>trident_get_procedures</code> returns ordered steps; our Planner turns them into the action plan.</div></div>
+    <div class="card room" style="--c:var(--grape)"><div class="emoji">📔</div><h3>Diary room</h3>
+      <p>A diary of past conversations, so the library can say “we saw something like this before”.</p>
+      <div class="what"><b>We get:</b><ul><li>past episodes and mined patterns</li><li>our 👍/👎 ratings help it learn</li></ul></div>
+      <div class="grown">Episodic memory. <code>trident_episodes</code> inspects it; <code>trident_query</code> uses it (<code>episodes_used</code>); <code>trident_feedback</code> records verdicts.</div></div>
+    <div class="card room" style="--c:var(--berry)"><div class="emoji">🏷️</div><h3>Sticker room</h3>
+      <p>Old tickets with stickers on them. Show a new ticket, and it guesses the right stickers from look-alikes.</p>
+      <div class="what"><b>We put in:</b><ul><li>5,000 labelled tickets (uploaded as <code>.xlsx</code> in the Synapt console)</li></ul></div>
+      <div class="grown">Ticket store. <code>trident_label_ticket</code> predicts labels like recovery outcome from nearest neighbours, with confidence and support.</div></div>
+  </div>
+</section>
+
+<!-- ================================================================ TOOLS -->
+<section id="tools">
+  <h2>The 17 buttons on the walkie-talkie</h2>
+  <p class="sub">Every tool the connector knows. <b>Tap a card</b> to see the grown-up details and exactly where our app uses it.</p>
+  <div class="filters" id="filters"></div>
+  <div class="tools" id="toolGrid"></div>
+</section>
+
+<!-- ================================================================ ONE ANALYSIS -->
+<section id="day">
+  <h2>What happens in one real analysis</h2>
+  <p class="sub">A user types “Ransomware hit our Tier 2 electronics supplier in Asia, no backup, severity 4” and presses Analyse.
+    Seven helper robots (agents) take turns. Here is when each one talks to the library, measured on a real run (about 11.5 seconds in total).</p>
+  <div class="card">
+    <div class="tl" id="timeline"></div>
+    <div class="axis"><span>0 s</span><span>3 s</span><span>6 s</span><span>9 s</span><span>12 s</span></div>
+    <div class="grown">Agents live in <code>backend/agents/</code>. The Investigation step runs two branches in parallel:
+      <code>hybrid_retriever</code> (calls <code>trident_get_chunks</code> + <code>trident_search</code>) and <code>synapt_worker</code>
+      (calls <code>trident_query</code> + <code>trident_get_procedures</code>). Everything after that is local maths, ML and rules — no LLM.</div>
+  </div>
+</section>
+
+<!-- ================================================================ HELPERS -->
+<section id="helpers">
+  <h2>The little helpers we built around the walkie-talkie</h2>
+  <p class="sub">Real libraries are sometimes busy or closed. These helpers make sure our app never gets stuck.</p>
+  <div class="grid g2">
+    <div class="card"><div class="helper"><div class="emoji">🔌</div><div><h3>The safety switch (circuit breaker)</h3>
+      <p>If the library doesn't answer 3 times in a row, we stop calling for a minute instead of waiting and waiting. Then we try once more.</p>
+      <div class="breaker"><span class="lamp" id="lamp"></span><b id="lampText">Library OK — calls go through</b></div>
+      <div class="row"><button class="btn ghost" id="failBtn" type="button">📵 No answer</button><button class="btn ghost" id="okBtn" type="button">✅ Answer</button><button class="btn ghost" id="waitBtn" type="button">⏱️ Wait 60 s</button></div>
+      <div class="grown">One breaker per tool in <code>agents/synapt_tools.breaker_for</code>; 3 failures open it, 60 s later one trial call (half-open). The API reports <code>semantic_source</code> and <code>fallback_reason</code> so a degraded answer is never hidden.</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">🎭</div><div><h3>The secret-code decoder (region masks)</h3>
+      <p>The library hides place names for privacy, writing <code>[LOCATION_3]</code> instead of “Asia-Pacific”. We learned which code means which place, so we can read the answers.</p>
+      <div class="grown"><code>regions</code> bridge in <code>agents/synapt_tools.py</code>: <code>mask()</code> before sending, <code>unmask()</code> after; tokens learned from returned case IDs and saved in <code>artifacts/synapt_region_tokens.json</code>.</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">🗄️</div><div><h3>The name tag (provider id)</h3>
+      <p>Every time we press a button, our shelf name is added for us, so we never read someone else's shelf by mistake.</p>
+      <div class="grown"><code>call_tool()</code> reads each tool's input schema and injects <code>provider_id</code> only where it is accepted (it is not, for example, on <code>trident_feedback</code>).</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">🔁</div><div><h3>Try again (session refresh)</h3>
+      <p>If the library says “who are you?” we show our card again. If it forgot our conversation, we say hello again.</p>
+      <div class="grown">401 → re-authenticate; 404 on the MCP session → new <code>initialize</code> handshake; tool errors (<code>isError</code>) raise <code>SynaptError</code> so callers can fall back.</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">🏠</div><div><h3>Our own small library (fallbacks)</h3>
+      <p>If the big library is closed, we still have a small one at home: keyword search and our own copies of all 100,000 cases. Answers are a bit less clever, but we still answer.</p>
+      <div class="grown">Local LSA semantic index + BM25 + profile match in <code>services/data_store.py</code> and <code>agents/retrieval.py</code>. Synapt's semantic leg found the right disruption type 87% of the time vs 68.5% for the local fallback.</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">🧪</div><div><h3>The pretend-it's-broken lab</h3>
+      <p>A button in our app that pretends the library is closed, so we can prove the helpers really work.</p>
+      <div class="grown">Fallback Lab (<code>services/faults.py</code>, <code>services/fallback_lab.py</code>): switches for all Synapt tools, graph-RAG only, or playbooks only. The self-test passes 15/15 with Synapt off.</div></div></div></div>
+  </div>
+</section>
+
+<!-- ================================================================ OOPSIES -->
+<section id="oops">
+  <h2>Oopsies we found in the library</h2>
+  <p class="sub">Synapt is a beta. We found these while building, worked around each one, and wrote them down for the Synapt team.</p>
+  <div class="grid g2">
+    <div class="card"><h3>🧱 “Make a new idea” buttons are broken</h3><p>The buttons that add new things to the spider web fail on the library's side.</p>
+      <div class="grown"><code>trident_create_entity</code> / <code>create_concept</code> / <code>create_relationship</code> fail with <code>index_node() missing 'neo4j_id'</code>. Fewer typed entities → graph confidence ≈ 0.58 and answers flagged “degraded”. Workaround: an ontology document so extraction creates the types.</div></div>
+    <div class="card"><h3>🔓 One button can see other people's shelves</h3><p>The “ask in database language” button isn't locked to our shelf, so we only allow 6 safe, pre-written questions.</p>
+      <div class="grown"><code>trident_cypher</code> is not tenant-scoped. We never send free-form Cypher; six fixed templates in <code>GRAPH_INSIGHTS</code>, each pinned to our <code>provider_id</code>.</div></div>
+    <div class="card"><h3>⏳ The library says “slow down” quietly</h3><p>When we send too many books at once, the library says “wait 47 seconds” — but as a normal answer, not as an error.</p>
+      <div class="grown"><code>trident_ingest</code> returns <code>{"error": "rate_limited", "retry_after_seconds": N}</code> as a result. Our ingest script now waits and retries, and the manifest never records a rejected file as sent.</div></div>
+    <div class="card"><h3>🏷️ Sticker room has picky rules</h3><p>Tickets must be uploaded as a spreadsheet, and the labelling button wants the ticket written as text.</p>
+      <div class="grown">The ticket gateway accepts <code>.xlsx</code> only (console upload; MCP can't create a ticket store) and <code>trident_label_ticket</code> needs <code>ticket</code> as a JSON <i>string</i>.</div></div>
+  </div>
+</section>
+
+<!-- ================================================================ THE CONSOLE -->
+<section id="console">
+  <h2>Peeking inside the library office (the Synapt console)</h2>
+  <p class="sub">The library also has an office with screens, where grown-ups watch everything: how full the shelves are, how sure
+    the librarian is, and whether anything broke. This is what <code>beta.synapt.ai/admin</code> showed on 9 October 2026, read-only.
+    Synapt calls itself an <b>"AI-Powered Data Science &amp; Networking Platform"</b> (Synapt 2.0); sign-in is protected with SSO, JWT and MFA.</p>
+
+  <h3 style="margin-top:8px">🗺️ The five rooms of the office</h3>
+  <div class="grid g3" style="margin-top:12px">
+    <div class="card menu-col"><h3>🧱 Substrate core</h3><p class="sub" style="margin:0">Where the library is built.</p><ul>
+      <li><b>Context Provider</b><span>Make a shelf. Ours: <code>supply_chain_disruptions</code> (+ <code>_v2</code>).</span></li>
+      <li><b>Data Ingestion</b><span>Put books in: files, URLs, video, web scraping, code, tickets, SharePoint, Jira, Confluence, Salesforce, databases, REST APIs. Default: 512-word pages, 64 overlap.</span></li>
+      <li><b>Context Graph</b><span>See the spider web as a picture.</span></li>
+      <li><b>Query Context Graph</b><span>Chat with a query agent that shows its reasoning trace and a "context ledger".</span></li>
+      <li><b>Knowledge Pack</b><span>Teach the library your own kinds of knots and strings (custom entity + relationship types). 12 system types, 24 user-defined.</span></li></ul></div>
+    <div class="card menu-col"><h3>⚖️ Governance</h3><p class="sub" style="margin:0">Where every answer is written down.</p><ul>
+      <li><b>Audit Logs</b><span>Every login between services, every ingest, every LLM call, failed jobs, and the system versions.</span></li>
+      <li><b>Explainability</b><span>For each answer: the graph path, the pages cited, the hops and the confidence, so anyone can check it.</span></li></ul>
+      <h3 style="margin-top:16px">🔌 Integration &amp; services</h3><ul>
+      <li><b>MCP Servers</b><span>The same 17 walkie-talkie buttons our app uses, with a "Run" button to try each one.</span></li>
+      <li><b>Agent Connector</b><span>Lets outside AI agents log in with their own identity and get scoped, approved read access to a shelf.</span></li>
+      <li><b>Wiki</b><span>The how-to guide.</span></li></ul></div>
+    <div class="card menu-col"><h3>🔭 Observability</h3><p class="sub" style="margin:0">Where the health screens are.</p><ul>
+      <li><b>Context Status</b><span>Confidence, hallucination risk and retrieval quality per shelf.</span></li>
+      <li><b>Context Monitoring</b><span>Speed, throughput, SLA alerts and token usage.</span></li>
+      <li><b>Pipeline Health</b><span>Live view of the ingest conveyor belt.</span></li>
+      <li><b>Graph Evals</b><span>A report card for the spider web: structure, coverage, consistency, meaning.</span></li>
+      <li><b>Episodic Mining</b><span>How chats turn into diary episodes, and which ones help later.</span></li></ul>
+      <h3 style="margin-top:16px">🧩 Use cases</h3><ul>
+      <li><b>Telecom · Finance · Retail</b><span>Ready-made workspaces (e.g. SME credit risk, retail inventory).</span></li>
+      <li><b>TestCase Generation</b><span>Synapt writes tests for its own code changes.</span></li></ul></div>
+  </div>
+
+  <h3 style="margin-top:34px">📋 Our shelf's report card — <code>supply_chain_disruptions</code></h3>
+  <p class="sub">Straight from <b>Context Status</b> (all time, live from the tri-store).</p>
+  <div class="kpis">
+    <div class="kpi"><b>174</b><span>questions asked by our app</span></div>
+    <div class="kpi"><b>74.8%</b><span>average confidence</span></div>
+    <div class="kpi"><b>0</b><span>low-confidence answers (&lt; 0.5)</span></div>
+    <div class="kpi"><b>95%</b><span>answers grounded · 0% likely hallucinated</span></div>
+    <div class="kpi"><b>0.25</b><span>hallucination-risk score (lower is better)</span></div>
+    <div class="kpi"><b>5.0 · 2.0</b><span>pages read · graph hops per answer</span></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>📦 What's on our shelf</h3>
+      <div class="kpis" style="margin-top:10px">
+        <div class="kpi"><b>47</b><span>documents</span></div><div class="kpi"><b>703</b><span>chunks (pages)</span></div>
+        <div class="kpi"><b>104</b><span>entities</span></div><div class="kpi"><b>1,054</b><span>relations</span></div>
+        <div class="kpi"><b>6</b><span>procedures</span></div><div class="kpi"><b>6</b><span>concepts</span></div>
+      </div>
+      <p class="note">Confidence split of our 174 answers: 166 "good" (0.7–0.9), 8 "medium" (0.5–0.7), 0 low. Lowest-scoring questions were broad ones like "which strategies worked, how fast?" (0.65); Synapt marks them "partial context match".</p></div>
+    <div class="card"><h3>🧪 Graph Evals report card (calculated 6 Oct 2026)</h3>
+      <div id="evalMeters"></div>
+      <div class="grown"><b>Why only 15% coverage?</b> The isolated-entity rate is <b>87.88%</b>: most entities have no links. That is exactly the broken
+        <code>trident_create_entity</code> button from the Oopsies section, now confirmed by Synapt's own report card. Provenance is
+        99.96% and duplicates 0%, so what <i>is</i> stored is clean. Query speed: seed 1.0 s median, retrieval 36 ms median, traversal depth 1.3.</div></div>
+  </div>
+
+  <h3 style="margin-top:34px">⚙️ The machines inside the library</h3>
+  <p class="sub">From <b>Audit Logs › System versioning</b>. Handy when the panel asks "what does Synapt run on?"</p>
+  <div class="grid g3">
+    <div class="card"><div class="emoji">🧠</div><h3>LLM (primary)</h3><p><code>gpt-5.4-mini-2026-03-17</code></p><div class="grown">Synapt uses its own model inside <code>trident_query</code> to write answers and extract knowledge. That's why our app needs no LLM in its workflow.</div></div>
+    <div class="card"><div class="emoji">🔢</div><h3>Embeddings + vectors</h3><p><code>synapt-2-0-dev-text-embedding-ada-002</code> stored in <b>Milvus 2.6.5</b></p><div class="grown">Powers <code>trident_get_chunks</code> meaning-search. Chunking strategy <code>semantic-512</code>.</div></div>
+    <div class="card"><div class="emoji">🕸️</div><h3>Graph database</h3><p><b>Neo4j 5.26.23</b> (community)</p><div class="grown">Powers <code>trident_search</code>, <code>trident_cypher</code> and graph walks. Pipeline version v0.0.1 — it really is a beta.</div></div>
+  </div>
+
+  <h3 style="margin-top:34px">🌍 The whole library, not just our shelf</h3>
+  <p class="sub">Platform-wide totals shown on the same screens (all teams together).</p>
+  <div class="kpis">
+    <div class="kpi"><b>863</b><span>providers registered (737 hold data)</span></div>
+    <div class="kpi"><b>247K</b><span>graph nodes · 433K relationships</span></div>
+    <div class="kpi"><b>6.6K · 78K</b><span>documents · chunks</span></div>
+    <div class="kpi"><b>~698K</b><span>questions answered</span></div>
+    <div class="kpi"><b>2.6M</b><span>LLM calls logged</span></div>
+    <div class="kpi"><b>96.6%</b><span>ingest pipeline success rate</span></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>🏁 Our shelf vs the whole library</h3>
+      <table class="vs"><thead><tr><th>Measure</th><th>Ours</th><th>Platform</th></tr></thead><tbody>
+        <tr><td>Average confidence</td><td class="n"><b>74.8%</b></td><td class="n">73.9%</td></tr>
+        <tr><td>Hallucination risk (lower better)</td><td class="n"><b>0.25</b></td><td class="n">0.26</td></tr>
+        <tr><td>Low-confidence answers</td><td class="n"><b>0</b> of 174</td><td class="n">436 of ~698K</td></tr>
+        <tr><td>Pages cited per answer</td><td class="n">5.0</td><td class="n">7.2</td></tr>
+        <tr><td>Graph hops per answer</td><td class="n">2.0</td><td class="n">2.6</td></tr>
+      </tbody></table>
+      <p class="note">We ask for 2 hops (<code>SYNAPT_GRAPH_HOPS=2</code>) and 5 pages (<code>SYNAPT_TOP_K=5</code>), so those two match our settings exactly.</p></div>
+    <div class="card"><h3>🏭 How long the ingest conveyor belt takes</h3>
+      <div id="stageMeters"></div>
+      <p class="note">Average per file, platform-wide (Context Monitoring). End-to-end ≈ 58 s on average; 1,417 of 24,882 jobs (5.7%) ended dead-lettered. This is why our ingest script waits for rate limits and records a manifest instead of trusting one big upload.</p></div>
+  </div>
+
+  <h3 style="margin-top:34px">🚀 Things the console offers that we could use next</h3>
+  <div class="grid g2">
+    <div class="card"><h3>🧩 Knowledge Pack → fix the 15% coverage</h3><p>Define our own knot types — Supplier, Disruption, Strategy, Region, Playbook — and links like HIT_BY, RESOLVED_WITH, LOCATED_IN. The next ingest would then link entities properly instead of leaving 88% of them alone.</p>
+      <div class="grown">Other teams already have packs (for example an 11-entity / 14-relation network-operations pack). This replaces our ontology-document workaround and should raise graph confidence.</div></div>
+    <div class="card"><h3>🪪 Agent Connector → let our app log in as an agent</h3><p>Instead of a username and password, our app could get its own agent identity, with read-only access to just our shelf.</p>
+      <div class="grown">Federated identity (OAuth 2.0 / OIDC JWT) + scoped grants + token exchange, all audited. The right production setup for our MCP connector.</div></div>
+    <div class="card"><h3>📥 More data sources</h3><p>Real supplier tickets from Jira, playbooks from SharePoint or Confluence, or live data straight from a database or REST API.</p>
+      <div class="grown">We used file/content ingest only; the same <code>trident_ingest</code> path accepts these connector types.</div></div>
+    <div class="card"><h3>🔭 Monitoring as a check, not just a screen</h3><p>Context Status and Graph Evals give the same numbers our app logs, so they can confirm our evaluation independently.</p>
+      <div class="grown">Our Quality page logs Synapt confidence per query (0.746 average across 172 logged answers); Synapt's own screen shows 74.8% for our provider. Two independent sources agree.</div></div>
+  </div>
+
+  <div class="card" style="margin-top:20px;border:2px solid var(--sun)">
+    <h3>🎤 Three lines for the presentation</h3>
+    <ol style="margin:6px 0 0;padding-left:22px">
+      <li>"Synapt's own Context Status rates our provider at <b>74.8% confidence with zero low-confidence answers</b> over 174 queries, slightly above the platform average of 73.9%."</li>
+      <li>"Its Graph Evals confirm what we found: <b>99% consistency but 88% isolated entities</b>, because entity creation fails server-side. A Knowledge Pack is our planned fix."</li>
+      <li>"Synapt runs its own LLM (gpt-5.4-mini), Milvus and Neo4j behind MCP, which is why <b>our workflow needs no LLM of its own</b>; we only use an external model to judge."</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================================================================ GLOSSARY -->
+<section id="words">
+  <h2>Big words, small meanings</h2>
+  <div class="card" style="overflow-x:auto">
+    <table class="gloss">
+      <thead><tr><th>Big word</th><th>Like a 5-year-old would say</th><th>What it really is</th></tr></thead>
+      <tbody>
+        <tr><td><b>MCP</b></td><td>The walkie-talkie language everyone agreed on.</td><td>Model Context Protocol: a standard way for apps and AI tools to list and call tools (JSON-RPC 2.0 over HTTP).</td></tr>
+        <tr><td><b>Tool</b></td><td>One button on the walkie-talkie.</td><td>A named function with an input schema, called with <code>tools/call</code>.</td></tr>
+        <tr><td><b>Token</b></td><td>The library card.</td><td>A bearer token from the auth service, sent in every request header.</td></tr>
+        <tr><td><b>Provider</b></td><td>Our own shelf.</td><td>A tenant/namespace for our documents, graph and stores.</td></tr>
+        <tr><td><b>Chunk</b></td><td>One small page torn from a book.</td><td>A passage of an ingested document, stored with an embedding for meaning search.</td></tr>
+        <tr><td><b>Knowledge graph</b></td><td>A spider web joining ideas.</td><td>Nodes (entities, concepts, procedures, steps) and edges in Neo4j.</td></tr>
+        <tr><td><b>Graph-RAG</b></td><td>The librarian reads pages, follows the web, then answers.</td><td>Retrieval-augmented generation that also traverses the graph for context.</td></tr>
+        <tr><td><b>Confidence</b></td><td>How sure the librarian is, from 0 to 1.</td><td>Synapt's scores: overall, knowledge, procedural and graph confidence.</td></tr>
+        <tr><td><b>Ingest</b></td><td>Putting new books on our shelf.</td><td><code>trident_ingest</code>: upload content; Synapt chunks it and extracts graph nodes.</td></tr>
+        <tr><td><b>Circuit breaker</b></td><td>The safety switch.</td><td>Stops calling a failing service for a while so the app stays fast.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+</main>
+
+<footer>AI-Powered Supply-Chain Disruption Assistant · how the Synapt MCP connector is used · facts taken from <code>backend/synapt/synapt_connector.py</code> and <code>backend/agents/synapt_tools.py</code></footer>
+
+<script>
+// ------------------------------------------------------------------ the 17 tools (from TRIDENT_TOOLS_DEFINITIONS)
+const TOOLS = [
+  { n: 'trident_query', ic: '🧙', s: 'used', kid: 'Ask the librarian a whole question. She reads, follows the web of ideas and answers with a "how sure am I" score.',
+    real: 'Graph-RAG answer + confidence (overall, knowledge, procedural, graph) + reasoning subgraph + procedures and episodes it used.',
+    where: 'Investigation agent (agents/synapt_tools.synapt_worker_node → fetch_synapt_rag), the Search & Ask answer (/api/ask), the Knowledge Graph page, and the Control Tower site simulation.',
+    got: 'The "Synapt Knowledge Graph" section of every briefing and the drawn subgraph. Average confidence 0.755 over 25 test incidents.' },
+  { n: 'trident_get_chunks', ic: '📄', s: 'used', kid: 'Find the pages whose meaning is closest to my question.',
+    real: 'Semantic (embedding) search over raw ingested text; returns passages and scores.',
+    where: 'The Synapt leg of hybrid search (agents/retrieval.semantic_search_synapt), fused with BM25 and profile matching by Reciprocal Rank Fusion. Also test_connection.py and region learning.',
+    got: 'Similar historical cases (joined back to the CSV by their DIS- id). Right disruption type 87% of the time vs 68.5% offline.' },
+  { n: 'trident_search', ic: '🕸️', s: 'used', kid: 'Find the knots in the spider web that match my words.',
+    real: 'Semantic search across graph nodes (entities, concepts, procedures, steps); returns node ids.',
+    where: 'agents/synapt_tools.search_nodes, called next to get_chunks in the semantic leg.',
+    got: 'The "knowledge nodes" (playbooks and steps) shown with search results.' },
+  { n: 'trident_get_procedures', ic: '🧾', s: 'used', kid: 'Give me the step-by-step recipe for this kind of problem.',
+    real: 'Structured SOPs from the Procedure Store with ordered steps and prerequisites.',
+    where: 'Planner agent (procedure_for → the plan\'s first actions become the playbook steps), the Knowledge Graph "playbooks" card, /api/synapt/procedures.',
+    got: '6 playbooks, 7 steps each; the plan method shows "statistics+synapt-playbook".' },
+  { n: 'trident_episodes', ic: '📔', s: 'used', kid: 'Open the diary: what did we talk about before?',
+    real: 'Episodic memory: mined incident patterns and past episodes for the provider.',
+    where: 'agents/synapt_tools.episodes → /api/synapt/episodes and the Synapt knowledge summary.',
+    got: 'The episode store status and past episodes that trident_query can draw on.' },
+  { n: 'trident_label_ticket', ic: '🏷️', s: 'used', kid: 'Look at this new ticket and guess its stickers from the look-alikes.',
+    real: 'Predicts label values (e.g. recovery_outcome) from nearest labelled tickets, with confidence and support.',
+    where: 'agents/synapt_tools.label_ticket → POST /api/synapt/label (ticket passed as a JSON string).',
+    got: 'A second opinion on labels; the main classifier is our own rules.' },
+  { n: 'trident_cypher', ic: '🔐', s: 'used', kid: 'Ask the library in its own secret database language. We only use 6 safe, pre-written questions.',
+    real: 'Read-only Cypher against Neo4j. Not tenant-scoped on the server, so free-form queries are never sent.',
+    where: 'GRAPH_INSIGHTS in agents/synapt_tools.py → /api/synapt/insights/{key} → Knowledge Graph "graph insights".',
+    got: 'Tables like "recommended strategy per disruption type" and "backup supplier effect", read straight from the playbook graph.' },
+  { n: 'trident_feedback', ic: '👍', s: 'used', kid: 'Tell the librarian "good answer" or "bad answer" so she learns.',
+    real: 'Records a verdict on a trident_query answer, using the query_id it returned as feedback_id.',
+    where: 'agents/synapt_tools.send_feedback, called when an operator rates an analysis (POST /api/feedback).',
+    got: 'Operator ratings flow back to Synapt; the Quality page counts how many were sent.' },
+  { n: 'trident_ingest', ic: '📥', s: 'used', kid: 'Put new books on our shelf.',
+    real: 'Uploads content (text, SOP or tabular); Synapt chunks it, embeds it and extracts graph nodes. Can set a time-to-live.',
+    where: 'synapt/ingest_to_synapt.py (48 knowledge-base files, with a manifest so unchanged files are skipped) and Early Warning signals (routes/signals.py, 30-day TTL).',
+    got: 'Everything the library knows about us. Rate-limited: our script waits and retries.' },
+  { n: 'trident_get_stats', ic: '📊', s: 'used', kid: 'How many books and knots are on our shelf?',
+    real: 'Counts of documents, nodes, chunks, entities, concepts, procedures, edges for the provider.',
+    where: 'synapt/test_connection.py, agents/synapt_tools.stats → Knowledge Graph KPIs and health.',
+    got: 'Provider size: 47 documents, 894 nodes, 688 chunks, 6 procedures (original provider).' },
+  { n: 'trident_find_exact', ic: '🔎', s: 'used', kid: 'Is there a knot with exactly this name?',
+    real: 'Finds a node by exact label or name (case-insensitive).',
+    where: 'Only in synapt/ingest_to_synapt.py, to check whether something already exists before trying to create it.',
+    got: 'Avoids duplicates during the optional graph-building step.' },
+  { n: 'trident_create_entity', ic: '🧱', s: 'tried', kid: 'Add a new knot (a thing) to the spider web.',
+    real: 'Creates an entity node. Fails server-side: index_node() missing \'neo4j_id\'.',
+    where: 'Tried in synapt/ingest_to_synapt.py --graph.', got: 'Nothing (broken in the beta). Worked around with an ontology document.' },
+  { n: 'trident_create_concept', ic: '💡', s: 'tried', kid: 'Add a new word meaning to the spider web.',
+    real: 'Creates a concept (definition/term). Same server-side error.',
+    where: 'Tried in synapt/ingest_to_synapt.py --graph.', got: 'Nothing (broken in the beta).' },
+  { n: 'trident_create_relationship', ic: '🔗', s: 'tried', kid: 'Tie a string between two knots.',
+    real: 'Creates an edge between existing entities or concepts; depends on the two above.',
+    where: 'Tried in synapt/ingest_to_synapt.py --graph.', got: 'Nothing, because the knots could not be created.' },
+  { n: 'trident_get_schema', ic: '🗺️', s: 'spare', kid: 'Show me the map of what kinds of knots and strings exist.',
+    real: 'Graph schema: node types, edge types, counts and property names.',
+    where: 'Not used: we get node/edge types through two of the fixed Cypher insight templates instead.', got: '—' },
+  { n: 'trident_get_node', ic: '🔍', s: 'spare', kid: 'Tell me everything about this one knot.',
+    real: 'A node\'s properties and meaningful connections.',
+    where: 'Not used: trident_query already returns the nodes it used, with descriptions, in its reasoning subgraph.', got: '—' },
+  { n: 'trident_traverse', ic: '🚶', s: 'spare', kid: 'Walk along the strings from this knot.',
+    real: 'Walks the graph from a node following chosen edge types.',
+    where: 'Not used: trident_query does the walking for us (graph_hops = 2).', got: '—' },
+];
+const STATUS = { used: ['✅ We use it', 'p-used'], tried: ['🧱 Tried, broken in beta', 'p-tried'], spare: ['💤 Available, not needed', 'p-spare'] };
+let filter = 'all';
+function drawTools() {
+  const counts = { all: TOOLS.length, used: 0, tried: 0, spare: 0 };
+  TOOLS.forEach((t) => counts[t.s]++);
+  document.getElementById('filters').innerHTML = [['all', 'All'], ['used', '✅ Used'], ['tried', '🧱 Tried'], ['spare', '💤 Not needed']]
+    .map(([k, l]) => `<button type="button" class="${filter === k ? 'on' : ''}" data-f="${k}">${l} · ${counts[k]}</button>`).join('');
+  document.getElementById('toolGrid').innerHTML = TOOLS.filter((t) => filter === 'all' || t.s === filter).map((t) => `
+    <div class="tool" tabindex="0" role="button" aria-expanded="false">
+      <div class="head"><span class="ic">${t.ic}</span><div><div class="nm">${t.n}</div><span class="pill ${STATUS[t.s][1]}">${STATUS[t.s][0]}</span></div></div>
+      <p class="kid">${t.kid}</p>
+      <dl class="more"><dt>What it really does</dt><dd>${t.real}</dd><dt>Where our app uses it</dt><dd>${t.where}</dd><dt>What we got from it</dt><dd>${t.got}</dd></dl>
+      <div class="tap">Tap for grown-up details</div>
+    </div>`).join('');
+}
+document.addEventListener('click', (e) => {
+  const f = e.target.closest('[data-f]');
+  if (f) { filter = f.dataset.f; drawTools(); return; }
+  const t = e.target.closest('.tool');
+  if (t) { t.classList.toggle('open'); t.setAttribute('aria-expanded', t.classList.contains('open')); t.querySelector('.tap').textContent = t.classList.contains('open') ? 'Tap to close' : 'Tap for grown-up details'; }
+});
+document.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('tool')) { e.preventDefault(); e.target.click(); } });
+drawTools();
+
+// ------------------------------------------------------------------ the call story
+const STEPS = [
+  ['🎫', 'Get a library card', 'Our app shows its name and password. The library gives back a card (token).', 'POST to the auth service → bearer token (connector.authenticate)', 'right'],
+  ['🤝', 'Say hello', 'We say "hi, I speak walkie-talkie version X". The library says hi back and gives us a conversation number.', 'MCP initialize handshake → session id header (initialize_mcp)', 'right'],
+  ['📋', 'Ask what buttons exist', 'The library tells us its 17 buttons and what each one needs.', 'tools/list → tool names + input schemas, cached (list_remote_tools)', 'left'],
+  ['📻', 'Press a button', 'We press "librarian" and ask our question. Our shelf name is added for us.', 'tools/call trident_query {question, top_k, graph_hops} + provider_id injected (call_tool)', 'right'],
+  ['📚', 'The library works', 'It finds pages, walks the spider web, reads the recipe book and the diary, then writes an answer.', 'Retrieval → graph traversal → procedures/episodes → grounded answer', 'none'],
+  ['💬', 'The answer comes back', 'We get the answer plus a "how sure" score and the map of ideas it used.', 'JSON (sometimes streamed as server-sent events): answer, confidence, subgraph, query_id', 'left'],
+  ['🎭', 'Decode the secret names', 'Place names come back as codes like [LOCATION_3]. We swap them back to real names.', 'regions.unmask() using learned tokens', 'none'],
+  ['👍', 'Say thank you', 'After the person rates our help, we tell the library if its answer was good, so it learns.', 'tools/call trident_feedback {feedback_id: query_id, verdict}', 'right'],
+];
+let cur = -1; let timer = null;
+const stepsEl = document.getElementById('steps');
+stepsEl.innerHTML = STEPS.map((s, i) => `<div class="step" data-i="${i}"><span class="n">${i + 1}</span><div><b>${s[0]} ${s[1]}</b><small>${s[3]}</small></div></div>`).join('');
+function go(i) {
+  cur = i;
+  document.querySelectorAll('.step').forEach((el, k) => el.classList.toggle('on', k === i));
+  const s = STEPS[i]; const m = document.getElementById('msg');
+  document.getElementById('speech').textContent = `${s[0]} ${s[2]}`;
+  m.textContent = s[0];
+  const lane = document.querySelector('.lane'); const w = lane.clientWidth;
+  const start = 150; const end = w - 190;
+  if (s[4] === 'none') { m.style.opacity = 0; return; }
+  m.style.transition = 'none'; m.style.left = `${s[4] === 'right' ? start : end}px`; m.style.opacity = 1;
+  requestAnimationFrame(() => requestAnimationFrame(() => { m.style.transition = ''; m.style.left = `${s[4] === 'right' ? end : start}px`; }));
+}
+stepsEl.addEventListener('click', (e) => { const s = e.target.closest('.step'); if (s) { stop(); go(+s.dataset.i); } });
+function stop() { clearInterval(timer); timer = null; document.getElementById('playBtn').textContent = '▶ Play'; }
+document.getElementById('playBtn').onclick = () => {
+  if (timer) { stop(); return; }
+  document.getElementById('playBtn').textContent = '⏸ Pause';
+  go((cur + 1) % STEPS.length);
+  timer = setInterval(() => { if (cur >= STEPS.length - 1) { stop(); return; } go(cur + 1); }, 2600);
+};
+document.getElementById('resetBtn').onclick = () => { stop(); cur = -1; document.querySelectorAll('.step').forEach((el) => el.classList.remove('on')); document.getElementById('msg').style.opacity = 0; document.getElementById('speech').textContent = 'Press Play to start the story.'; };
+
+// ------------------------------------------------------------------ one analysis timeline (measured run, seconds)
+const TL = [
+  ['🧩 Intake', 0, 0.05, 'var(--ink-3)', 'rules'],
+  ['🔎 Search', 0.05, 2.5, 'var(--sky)', 'get_chunks + search'],
+  ['🧙 Librarian', 0.05, 10.6, 'var(--sun)', 'trident_query'],
+  ['🧾 Recipes', 0.05, 1.2, 'var(--leaf)', 'get_procedures'],
+  ['📈 Impact', 10.6, 10.95, 'var(--grape)', 'ML'],
+  ['🧭 Plan', 10.95, 11.3, 'var(--leaf)', 'stats + playbook'],
+  ['⏱️ Recovery', 11.3, 11.4, 'var(--grape)', 'ML'],
+  ['📝 Report + judge', 11.4, 11.5, 'var(--berry)', 'template'],
+];
+const MAX = 12;
+document.getElementById('timeline').innerHTML = TL.map(([l, a, b, c, t]) => `<div class="tl-row"><span>${l}</span><div class="tl-track">
+  <div class="tl-bar" style="left:${(a / MAX) * 100}%;width:${Math.max(2.5, ((b - a) / MAX) * 100)}%;background:${c}" title="${t}">${(b - a) > 1 ? t : ''}</div></div></div>`).join('');
+
+// ------------------------------------------------------------------ circuit breaker toy
+let fails = 0; let state = 'closed';
+const lamp = document.getElementById('lamp'); const txt = document.getElementById('lampText');
+function paint() {
+  lamp.className = 'lamp' + (state === 'open' ? ' open' : state === 'half' ? ' half' : '');
+  txt.textContent = state === 'open' ? 'Switch OFF — using our home library for 60 s' : state === 'half' ? 'Trying the big library once more…' : `Library OK — calls go through${fails ? ` (${fails}/3 misses)` : ''}`;
+}
+document.getElementById('failBtn').onclick = () => { if (state === 'open') return; fails++; if (fails >= 3 || state === 'half') { state = 'open'; } paint(); };
+document.getElementById('okBtn').onclick = () => { if (state === 'open') return; fails = 0; state = 'closed'; paint(); };
+document.getElementById('waitBtn').onclick = () => { if (state === 'open') { state = 'half'; fails = 0; } paint(); };
+paint();
+
+// ------------------------------------------------------------------ console meters (values read from the Synapt console)
+function meters(id, rows, max, fmt) {
+  document.getElementById(id).innerHTML = rows.map(([l, v, c]) => `<div class="meter"><span>${l}</span><div class="track"><div class="fill" data-w="${(100 * v) / max}" style="background:${c}"></div></div><span class="v">${fmt(v)}</span></div>`).join('');
+}
+meters('evalMeters', [['Consistency', 99, 'var(--leaf)'], ['Structural integrity', 76, 'var(--sky)'], ['Semantic quality', 34, 'var(--sun)'], ['Coverage & completeness', 15, 'var(--tomato)']], 100, (v) => `${v}%`);
+meters('stageMeters', [['Reading the file', 0.345, 'var(--leaf)'], ['Parsing', 9.2, 'var(--sky)'], ['Chunking + embedding', 22.0, 'var(--grape)'], ['Graph indexing', 26.1, 'var(--sun)']], 26.1, (v) => `${v < 1 ? Math.round(v * 1000) + ' ms' : v + ' s'}`);
+const meterObs = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.querySelectorAll('.fill').forEach((f) => { f.style.width = f.dataset.w + '%'; }); meterObs.unobserve(e.target); } }), { threshold: 0.3 });
+['evalMeters', 'stageMeters'].forEach((id) => meterObs.observe(document.getElementById(id)));
+
+// ------------------------------------------------------------------ theme
+document.getElementById('themeBtn').onclick = () => {
+  const r = document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  r.dataset.theme = dark ? 'light' : 'dark';
+};
+</script>
+</body>
+</html>

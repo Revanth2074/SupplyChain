@@ -46,10 +46,8 @@ wheels/
 .coverage
 htmlcov/
 
-# --- Node / Frontend (Vite + React) ---
+# --- Node (not used; the console is static HTML/CSS/JS) ---
 node_modules/
-frontend/node_modules/
-frontend/dist/
 dist/
 .vite/
 npm-debug.log*
@@ -60,7 +58,10 @@ pnpm-debug.log*
 # --- Runtime Artifacts, Models & Databases ---
 # Note: Keep artifacts directory structure, ignore binary models and SQLite DBs
 backend/artifacts/*.joblib
+backend/models/*.joblib
 backend/artifacts/*.db
+backend/artifacts/history.json
+SupplyChain_final*.zip
 backend/artifacts/*.sqlite
 backend/artifacts/*.sqlite3
 .deepeval/

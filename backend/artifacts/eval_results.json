@@ -1,36 +1,38 @@
 {
- "ran_at": "2026-10-07 14:31:08",
+ "ran_at": "2026-10-08 21:57:22",
  "n_cases": 25,
  "evaluator_model": "gpt-4o-mini",
  "deepeval_enabled": true,
- "n_llm_cases": 8,
- "n_fallback_cases": 17,
+ "n_llm_cases": 16,
+ "n_fallback_cases": 9,
  "summary": {
   "deepeval": {
-   "AnswerRelevancyMetric": 0.978,
-   "ContextualRelevancyMetric": 0.89,
-   "FaithfulnessMetric": 0.922,
-   "Impact Analysis Correctness": 0.775,
-   "Recommendation Quality": 0.738
+   "AnswerRelevancyMetric": 0.985,
+   "ContextualRelevancyMetric": 0.883,
+   "FaithfulnessMetric": 0.902,
+   "Impact Analysis Correctness": 0.747,
+   "Recommendation Quality": 0.747
   },
-  "classification_accuracy": 0.969,
-  "llm_judge_overall": 0.983,
+  "classification_accuracy": 1.0,
+  "llm_judge_overall": 1.0,
+  "rule_audit_overall": 0.9,
   "fact_check_pass_rate": 1.0,
-  "retrieval_type_precision": 1.0,
-  "avg_similarity": 0.98,
-  "avg_latency_ms": 19652,
+  "retrieval_type_precision": 0.98,
+  "avg_similarity": 0.887,
+  "avg_latency_ms": 13449,
   "guardrail_pass_rate": 1.0,
   "fallback_mode": {
-   "n": 17,
-   "classification_accuracy": 0.985,
-   "llm_judge_overall": 0.867,
+   "n": 9,
+   "classification_accuracy": 1.0,
+   "llm_judge_overall": null,
+   "rule_audit_overall": 0.9,
    "fact_check_pass_rate": 1.0
   },
   "synapt": {
    "confidence": 0.755,
    "knowledge_confidence": 0.891,
    "procedural_confidence": 0.797,
-   "graph_confidence": 0.575,
+   "graph_confidence": 0.576,
    "degraded_rate": 1.0,
    "n": 25
   }
@@ -42,10 +44,10 @@
    "source": "golden",
    "classification": {
     "disruption_type": "Cyber Attack",
-    "industry": "Electronics",
     "supplier_region": "Asia-Pacific",
+    "industry": "Aerospace",
     "supplier_tier": 2,
-    "disruption_severity": 4,
+    "disruption_severity": 3,
     "has_backup_supplier": false
    },
    "expected": {
@@ -54,16 +56,28 @@
     "supplier_tier": 2,
     "has_backup_supplier": false
    },
-   "classification_accuracy": 0.75,
+   "classification_accuracy": 1.0,
    "classification_detail": {
     "disruption_type": true,
-    "industry": false,
+    "industry": true,
     "supplier_tier": true,
     "has_backup_supplier": true
    },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
-   "primary_strategy": "Production Reroute",
+   "retrieval_type_precision": 0.833,
+   "avg_similarity": 0.833,
+   "primary_strategy": "Inventory Buffer",
+   "audit": {
+    "overall": 0.9,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
+     "consistency": 4,
+     "safety": 5
+    }
+   },
    "judge": {
     "overall": 1.0,
     "verdict": "approve",
@@ -78,40 +92,41 @@
    },
    "metrics": {
     "AnswerRelevancyMetric": {
-     "score": 1.0,
+     "score": 0.96,
      "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the severity of the ransomware attack and its impact on the supply chain without any irrelevant statements."
+     "reason": "The score is 0.96 because the response was mostly relevant, but it incorrectly rated the severity of the incident as 3 out of 5 instead of the stated 4 out of 5 in the input."
     },
     "FaithfulnessMetric": {
-     "score": 0.944,
-     "passed": true,
-     "reason": "The score is 0.94 because the actual output incorrectly emphasizes the avionics aspect of the Tier 2 supplier, while the retrieval context only confirms that all suppliers were Tier 2 without specifying avionics."
-    },
-    "ContextualRelevancyMetric": {
      "score": 1.0,
      "passed": true,
-     "reason": "The score is 1.00 because all relevant statements in the retrieval context align perfectly with the input, including 'Disruption type: Cyber Attack.', 'Supplier tier: Tier 2.', 'Supplier region: Asia-Pacific.', and 'Severity was 4 out of 5.'. This strong correlation confirms the contextual relevancy."
+     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.793,
+     "passed": true,
+     "reason": "The score is 0.79 because while the retrieval context provided relevant information such as 'Disruption type: Cyber Attack' and 'The supplier had no backup supplier', it also included contradictory details like 'Severity was 3 out of 5', which does not match the input severity of '4/5'. This inconsistency affects the overall relevancy."
     },
     "Recommendation Quality": {
-     "score": 0.7,
+     "score": 0.6,
      "passed": true,
-     "reason": "The response effectively recommends a primary strategy of 'Production Reroute' within 24 hours, which aligns with the urgency of the situation. It justifies this choice by referencing historical cases that demonstrate the effectiveness of this strategy in similar disruptions. However, it includes case IDs that are not present in the retrieval context, which detracts from its credibility. The immed"
+     "reason": "The output provides a recommended response strategy of 'Inventory Buffer' which aligns with the historical data indicating its effectiveness for cyber attacks. However, it inaccurately states the severity as 3/5 instead of the input's 4/5, which misrepresents the urgency of the situation. While it includes concrete actions and justifies the recommendation with historical cases, the misalignment in"
     },
     "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively states the expected production impact (51.0%), revenue loss ($1,403,797), and recovery time (145 days), aligning well with the evaluation steps. It also references historical precedents that provide context for the estimates, demonstrating plausibility. However, while it identifies the lack of a backup supplier and the severity of the incident, it could further elaborate on "
+     "score": 0.4,
+     "passed": false,
+     "reason": "The output fails to accurately state the expected production impact and financial loss, as it reports a severity of 3/5 instead of the input's severity of 4/5. While it provides a plausible recovery outlook, the estimates for production impact and revenue loss do not align with the severity level indicated in the input. Additionally, it does not clearly identify the factors driving the impact, suc"
     }
    },
-   "latency_ms": 23330,
+   "latency_ms": 15163,
    "synapt": {
-    "confidence": 0.76,
+    "confidence": 0.74,
     "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.57,
+    "procedural_confidence": 0.8,
+    "graph_confidence": 0.53,
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": true
   },
   {
@@ -120,12 +135,11 @@
    "source": "golden",
    "classification": {
     "disruption_type": "Port Congestion",
-    "industry": "Electronics",
     "supplier_region": "Asia-Pacific",
     "supplier_size": "Large",
-    "response_type": "Alternative Supplier",
+    "industry": "Electronics",
     "supplier_tier": 1,
-    "disruption_severity": 3,
+    "disruption_severity": 4,
     "has_backup_supplier": true
    },
    "expected": {
@@ -142,8 +156,20 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
+   "avg_similarity": 0.917,
    "primary_strategy": "Alternative Supplier",
+   "audit": {
+    "overall": 0.9,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
+     "consistency": 4,
+     "safety": 5
+    }
+   },
    "judge": {
     "overall": 1.0,
     "verdict": "approve",
@@ -163,27 +189,27 @@
      "reason": "The score is 1.00 because the response directly addresses the issue of port congestion and the backup supplier, providing relevant information without any irrelevant statements."
     },
     "FaithfulnessMetric": {
-     "score": 0.941,
+     "score": 0.929,
      "passed": true,
-     "reason": "The score is 0.94 because the estimated revenue loss of $4,456,602 does not align with the provided range of $1,709,565 to $9,681,136, indicating a slight discrepancy in the actual output."
+     "reason": "The score is 0.93 because the actual output's claim of a severe production impact contradicts the historical average production impact of 24.3% and revenue loss of $1,963,051 presented in the retrieval context."
     },
     "ContextualRelevancyMetric": {
-     "score": 0.713,
+     "score": 1.0,
      "passed": true,
-     "reason": "The score is 0.71 because while the retrieval context mentions 'Disruption type: Port Congestion' and 'The supplier had a backup supplier,' much of the additional information, such as 'Severity was 3 out of 5' and various production impacts, does not directly address the specific issue of port congestion delaying containers from the supplier."
+     "reason": "The score is 1.00 because all relevant statements in the retrieval context, such as 'Disruption type: Port Congestion' and 'The supplier had a backup supplier,' directly align with the input regarding severe port congestion affecting a Tier 1 supplier's electronic components."
     },
     "Recommendation Quality": {
      "score": 0.8,
      "passed": true,
-     "reason": "The output effectively recommends activating the backup supplier in Vietnam as the primary response strategy, which aligns with the evaluation steps. It provides a justified rationale referencing historical cases, although it incorrectly cites an additional case ID (DIS-011875) not found in the retrieval context. The recommended actions are concrete and time-bound, specifying activation within 1 d"
+     "reason": "The output effectively recommends activating the Alternative Supplier as the primary response strategy, which aligns with historical data indicating it is the fastest recovery method for port congestion in electronics. It provides a justified rationale based on historical cases and statistics, detailing the average recovery times. Additionally, it outlines concrete, time-bound actions, such as cla"
     },
     "Impact Analysis Correctness": {
-     "score": 0.7,
+     "score": 0.8,
      "passed": true,
-     "reason": "The output effectively states the expected production impact of 44.7% and a revenue loss of $4,456,602, which aligns with the evaluation steps. However, while it mentions a recovery time of 72 days, it does not provide sufficient context to assess the plausibility of these estimates against similar cases in the retrieval context. Additionally, it identifies the backup supplier in Vietnam, but lack"
+     "reason": "The output effectively identifies the expected production impact (59.6%), financial loss ($5,989,290), and recovery time (partial \u224830 days, full \u224896 days), aligning well with the evaluation steps. It also references historical precedents and the importance of activating the backup supplier, which is crucial given the severity of the disruption. However, while the estimates are plausible, the recov"
     }
    },
-   "latency_ms": 28633,
+   "latency_ms": 19900,
    "synapt": {
     "confidence": 0.77,
     "knowledge_confidence": 0.9,
@@ -192,6 +218,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": true
   },
   {
@@ -200,9 +227,9 @@
    "source": "golden",
    "classification": {
     "disruption_type": "Labor Strike",
-    "industry": "Automotive",
     "supplier_region": "Europe",
     "supplier_size": "Medium",
+    "industry": "Automotive",
     "supplier_tier": 1,
     "disruption_severity": 3
    },
@@ -220,164 +247,20 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
+   "avg_similarity": 0.908,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.933,
-    "verdict": "revise",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 4,
-     "completeness": 5,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input regarding the labor strike and its impact on production without any irrelevant statements."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.929,
-     "passed": true,
-     "reason": "The score is 0.93 because the actual output claims a high-risk level of 59% for a high-impact outcome, which is not supported by the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because all relevant statements in the retrieval context, such as 'Disruption type: Labor Strike.', 'Industry: Automotive.', and 'Severity was 3 out of 5.', perfectly align with the input, confirming the context's complete relevance."
-    },
-    "Recommendation Quality": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The output effectively recommends an Alternative Supplier strategy as the primary response, which aligns with the severity of the disruption. It provides historical justification by referencing similar cases, although it incorrectly cites case IDs that do not appear in the retrieval context. The immediate actions are concrete and time-bound, with a clear plan to initiate the response within 24 hou"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The output effectively outlines the expected production impact of 45.4%, estimated revenue loss of $1,783,566, and a recovery time of 71 days, which aligns with the evaluation steps. However, while it identifies the primary strategy as an Alternative Supplier, it lacks a clear mention of the absence of a backup supplier, which is a critical factor in assessing the impact. The historical context pr"
-    }
-   },
-   "latency_ms": 21152,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "llm_used": true
-  },
-  {
-   "id": "G4",
-   "input": "Earthquake damaged a small Tier 3 API (active pharmaceutical ingredient) supplier plant in Japan. Single source, critical severity.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Natural Disaster",
-    "industry": "Pharmaceuticals",
-    "supplier_region": "Asia-Pacific",
-    "supplier_size": "Small",
-    "supplier_tier": 3,
-    "disruption_severity": 5,
-    "has_backup_supplier": false
-   },
-   "expected": {
-    "disruption_type": "Natural Disaster",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 3,
-    "has_backup_supplier": false
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.946,
-   "primary_strategy": "Production Reroute",
-   "judge": {
-    "overall": 0.933,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
-     "relevance": 5,
-     "actionability": 4,
-     "completeness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the impact of the earthquake on the critical Tier 3 API supplier plant without any irrelevant statements."
-    },
-    "FaithfulnessMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.879,
-     "passed": true,
-     "reason": "The score is 0.88 because while the retrieval context includes relevant statements like 'Earthquake damaged a small Tier 3 API (active pharmaceutical ingredient) supplier plant in Japan.', many other details such as 'Severity was 5 out of 5' and 'Production impact was 34.6% (Moderate)' do not specifically relate to the damage of the supplier plant, leading to some irrelevancy."
-    },
-    "Recommendation Quality": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The response effectively recommends a specific primary strategy, Production Reroute, which aligns with the critical nature of the disruption. It is justified with historical cases that demonstrate similar scenarios, although the cited cases do not match the retrieval context, which penalizes the score. The immediate actions are concrete and time-bound, specifying a 3-day timeframe for initiation. "
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.9,
-     "passed": true,
-     "reason": "The output effectively states the expected production impact of 51.0%, a projected revenue loss of $934,119, and a recovery time of 181 days, aligning well with the evaluation steps. It also references historical cases to support the plausibility of these estimates. However, while it identifies the critical severity and lack of backup supplier as driving factors, it could further emphasize the imp"
-    }
-   },
-   "latency_ms": 15118,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "llm_used": true
-  },
-  {
-   "id": "G5",
-   "input": "New export sanctions block shipments from our Tier 2 semiconductor supplier in Africa/Middle East region; severity 4, we have an alternate supplier.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Geopolitical",
-    "industry": "Electronics",
-    "supplier_region": "Africa/Middle East",
-    "response_type": "Alternative Supplier",
-    "supplier_tier": 2,
-    "disruption_severity": 4,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Geopolitical",
-    "supplier_tier": 2,
-    "has_backup_supplier": true
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
-   "primary_strategy": "Alternative Supplier",
    "judge": {
     "overall": 1.0,
     "verdict": "approve",
@@ -394,30 +277,211 @@
     "AnswerRelevancyMetric": {
      "score": 1.0,
      "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input regarding export sanctions and the alternate supplier without any irrelevant statements."
+     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements, providing a clear and focused answer."
     },
     "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Expecting ',' delimiter: line 428 column 6 (char 6575)"
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
     },
     "ContextualRelevancyMetric": {
-     "score": 0.853,
+     "score": 1.0,
      "passed": true,
-     "reason": "The score is 0.85 because while the retrieval context includes relevant details such as 'Severity was 4 out of 5.' and 'The supplier had a backup supplier.', many statements like 'Disruption type: Geopolitical.' do not directly relate to the input about export sanctions, leading to some irrelevancy."
+     "reason": "The score is 1.00 because all relevant statements, such as 'Disruption type: Labor Strike.', 'Industry: Automotive.', and 'Severity was 3 out of 5.', perfectly align with the input, confirming the context's complete relevance."
     },
     "Recommendation Quality": {
      "score": 0.6,
      "passed": true,
-     "reason": "The output effectively recommends activating the backup supplier as the primary strategy, which aligns with the evaluation steps. It provides a justification based on historical cases, noting that similar strategies have been effective. However, while it includes concrete immediate actions, the recovery times mentioned are longer than those in the retrieval context, which could be seen as a shortc"
+     "reason": "The response effectively recommends a primary strategy of 'Alternative Supplier' which aligns with the historical data indicating its effectiveness for similar disruptions. It provides a justification based on historical cases and statistics, detailing the average recovery times. However, it lacks specific time-bound actions for immediate implementation, which is a requirement. Additionally, the c"
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The output effectively states the expected production impact (45.4%), financial loss ($1,783,566), and recovery time (71 days for full recovery). These estimates are plausible given the severity level of 3 and align with historical precedents. Additionally, it identifies key factors driving the impact, such as the absence of a backup supplier and the chosen response strategies. However, the produc"
+    }
+   },
+   "latency_ms": 9433,
+   "synapt": {
+    "confidence": 0.76,
+    "knowledge_confidence": 0.9,
+    "procedural_confidence": 0.81,
+    "graph_confidence": 0.58,
+    "degraded": true
+   },
+   "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
+  },
+  {
+   "id": "G4",
+   "input": "Earthquake damaged a small Tier 3 API (active pharmaceutical ingredient) supplier plant in Japan. Single source, critical severity.",
+   "source": "golden",
+   "classification": {
+    "disruption_type": "Natural Disaster",
+    "supplier_region": "Asia-Pacific",
+    "supplier_size": "Small",
+    "industry": "Pharmaceuticals",
+    "supplier_tier": 3,
+    "disruption_severity": 4,
+    "has_backup_supplier": false
+   },
+   "expected": {
+    "disruption_type": "Natural Disaster",
+    "industry": "Pharmaceuticals",
+    "supplier_tier": 3,
+    "has_backup_supplier": false
+   },
+   "classification_accuracy": 1.0,
+   "classification_detail": {
+    "disruption_type": true,
+    "industry": true,
+    "supplier_tier": true,
+    "has_backup_supplier": true
+   },
+   "retrieval_type_precision": 1.0,
+   "avg_similarity": 0.888,
+   "primary_strategy": "Inventory Buffer",
+   "audit": {
+    "overall": 0.9,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
+     "consistency": 4,
+     "safety": 5
+    }
+   },
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
+    }
+   },
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because the response directly addresses the input regarding the earthquake's impact on the API supplier plant without any irrelevant statements."
+    },
+    "FaithfulnessMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.894,
+     "passed": true,
+     "reason": "The score is 0.89 because while the retrieval context includes relevant statements like 'Earthquake damaged a small Tier 3 API supplier plant in Japan,' many other details, such as 'Disruption type: Natural Disaster' and 'Supplier size: Small,' are too general and do not specifically address the earthquake's impact on the supplier."
+    },
+    "Recommendation Quality": {
+     "score": 0.4,
+     "passed": false,
+     "reason": "The response provides a specific primary strategy of 'Inventory Buffer' but fails to align with the retrieval context, which indicates that there is no backup supplier available. The recommendation should have prioritized 'Production Reroute' as the fallback option, as historical cases show that this is the likely strategy when no alternative supplier exists. While the output includes historical p"
     },
     "Impact Analysis Correctness": {
      "score": 0.7,
      "passed": true,
-     "reason": "The output effectively states the expected production impact of 52.4% and estimated revenue loss of $1,518,804, which aligns with the evaluation steps. However, while it mentions recovery times of 36 days for partial recovery and 99 days for full recovery, these estimates are less plausible compared to historical cases that show faster recovery times. Additionally, the output identifies the backup"
+     "reason": "The output provides a detailed assessment of the situation, including expected production impact (41.1%), financial loss ($738,620), and recovery time estimates (partial \u224840 days, full \u2248132 days). However, while it identifies the lack of a backup supplier and the critical severity of the situation, it does not explicitly mention the factors driving the impact in a clear manner, such as the implica"
     }
    },
-   "latency_ms": 16269,
+   "latency_ms": 12828,
+   "synapt": {
+    "confidence": 0.76,
+    "knowledge_confidence": 0.89,
+    "procedural_confidence": 0.8,
+    "graph_confidence": 0.58,
+    "degraded": true
+   },
+   "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
+  },
+  {
+   "id": "G5",
+   "input": "New export sanctions block shipments from our Tier 2 semiconductor supplier in Africa/Middle East region; severity 4, we have an alternate supplier.",
+   "source": "golden",
+   "classification": {
+    "disruption_type": "Geopolitical",
+    "supplier_region": "Africa/Middle East",
+    "industry": "Electronics",
+    "supplier_tier": 2,
+    "disruption_severity": 4,
+    "has_backup_supplier": true
+   },
+   "expected": {
+    "disruption_type": "Geopolitical",
+    "supplier_tier": 2,
+    "has_backup_supplier": true
+   },
+   "classification_accuracy": 1.0,
+   "classification_detail": {
+    "disruption_type": true,
+    "supplier_tier": true,
+    "has_backup_supplier": true
+   },
+   "retrieval_type_precision": 1.0,
+   "avg_similarity": 0.941,
+   "primary_strategy": "Alternative Supplier",
+   "audit": {
+    "overall": 0.9,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
+     "consistency": 4,
+     "safety": 5
+    }
+   },
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
+    }
+   },
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements, demonstrating a clear understanding of the situation and providing a relevant solution."
+    },
+    "FaithfulnessMetric": {
+     "score": 0.938,
+     "passed": true,
+     "reason": "The score is 0.94 because the actual output presents expected production impact and revenue loss figures that are not aligned with the retrieval context, which specifies a range for both metrics."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because all relevant statements in the retrieval context align perfectly with the input, including the disruption type being geopolitical, the supplier tier being Tier 2, and the severity level being 4 out of 5."
+    },
+    "Recommendation Quality": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The response effectively recommends activating the Alternative Supplier as the primary strategy, which aligns with the evaluation steps. It provides a justification based on historical data, citing the average recovery times and effectiveness scores. However, while it outlines concrete actions and timelines, it lacks a direct mention of the specific case IDs from the retrieval context, which is a "
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The output effectively identifies the expected production impact (52.4%), financial loss ($1,518,804), and recovery time (partial \u224836 days, full \u224899 days), aligning well with the evaluation steps. It also references the backup supplier and assesses the impact based on historical data, which supports the plausibility of the estimates. However, while it mentions the factors driving the impact, it co"
+    }
+   },
+   "latency_ms": 9420,
    "synapt": {
     "confidence": 0.74,
     "knowledge_confidence": 0.89,
@@ -426,6 +490,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": true
   },
   {
@@ -436,6 +501,7 @@
     "disruption_type": "Factory Incident",
     "supplier_region": "North America",
     "supplier_size": "Large",
+    "industry": "Consumer Goods",
     "supplier_tier": 1,
     "disruption_severity": 2,
     "has_backup_supplier": true
@@ -452,8 +518,20 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
+   "avg_similarity": 0.862,
    "primary_strategy": "Alternative Supplier",
+   "audit": {
+    "overall": 0.9,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
+     "consistency": 4,
+     "safety": 5
+    }
+   },
    "judge": {
     "overall": 1.0,
     "verdict": "approve",
@@ -468,40 +546,41 @@
    },
    "metrics": {
     "AnswerRelevancyMetric": {
-     "score": 1.0,
+     "score": 0.941,
      "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements, providing a clear and relevant answer."
+     "reason": "The score is 0.94 because while the response was mostly relevant, the mention of SLA review time was not directly related to the immediate impact of the incident. However, the overall response effectively addressed the situation and provided valuable information."
     },
     "FaithfulnessMetric": {
-     "score": 0.867,
+     "score": 1.0,
      "passed": true,
-     "reason": "The score is 0.87 because the actual output inaccurately claims a high risk level of 63% for a high-impact outcome, contradicting the context that rates severity as moderate with no specified risk level. Additionally, the recovery timeline presented does not match the context, which indicates that full recovery times can vary significantly from 22 to 68 days."
+     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
     },
     "ContextualRelevancyMetric": {
-     "score": 0.828,
+     "score": 0.984,
      "passed": true,
-     "reason": "The score is 0.83 because while the retrieval context included relevant statements such as 'The supplier had a backup supplier' and 'Severity was 2 out of 5', it also contained numerous irrelevant details like 'Industry: Automotive' and 'Revenue loss was $894,226 (Under 1M)', which detracted from the overall relevance."
+     "reason": "The score is 0.98 because, despite the retrieval context stating 'Severity was 1 out of 5', which does not align with the input's 'moderate severity 2', the context provides relevant information such as 'Severity was 2 out of 5' and 'Production impact was 29.2% (Moderate)', which closely matches the input details."
     },
     "Recommendation Quality": {
      "score": 0.8,
      "passed": true,
-     "reason": "The response effectively recommends activating the backup supplier as the primary strategy, which aligns with the evaluation steps. It provides a justification based on historical cases, detailing the effectiveness of this approach. Concrete actions are outlined with specific timeframes, such as activating the backup supplier within 1 day. However, the output includes case IDs that do not appear i"
+     "reason": "The response effectively recommends activating the Alternative Supplier as the primary strategy, which aligns with the historical precedent of similar Factory Incident disruptions. It provides a well-justified rationale based on statistical data from past cases, including average recovery times. However, while it outlines immediate actions, it lacks specific time-bound actions for activating the b"
     },
     "Impact Analysis Correctness": {
      "score": 0.8,
      "passed": true,
-     "reason": "The output effectively states the expected production impact of 29.7% and a projected revenue loss of $2,900,213, which aligns with the evaluation steps. It also provides a recovery timeline of 16 days for partial recovery and 48 days for full recovery, which is plausible given the historical data referenced. Additionally, it identifies the backup supplier as a key factor in mitigating the impact."
+     "reason": "The output effectively identifies the expected production impact (30.1%), financial loss ($1,539,721), and recovery time (full recovery in 48 days). It also references historical precedents that support the plausibility of these estimates. Additionally, it highlights the presence of a backup supplier and the chosen response strategy, aligning well with the evaluation steps. However, while the reco"
     }
    },
-   "latency_ms": 18583,
+   "latency_ms": 9553,
    "synapt": {
     "confidence": 0.74,
     "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.79,
+    "procedural_confidence": 0.8,
     "graph_confidence": 0.53,
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": true
   },
   {
@@ -510,9 +589,9 @@
    "source": "golden",
    "classification": {
     "disruption_type": "Natural Disaster",
-    "industry": "Consumer Goods",
     "supplier_region": "North America",
     "supplier_size": "Medium",
+    "industry": "Consumer Goods",
     "supplier_tier": 1,
     "disruption_severity": 4,
     "has_backup_supplier": false
@@ -531,8 +610,20 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.995,
-   "primary_strategy": "Production Reroute",
+   "avg_similarity": 0.921,
+   "primary_strategy": "Alternative Supplier",
+   "audit": {
+    "overall": 0.9,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
+     "consistency": 4,
+     "safety": 5
+    }
+   },
    "judge": {
     "overall": 1.0,
     "verdict": "approve",
@@ -547,32 +638,32 @@
    },
    "metrics": {
     "AnswerRelevancyMetric": {
-     "score": 0.824,
+     "score": 1.0,
      "passed": true,
-     "reason": "The score is 0.82 because while the response provided relevant information about the impact of hurricane flooding on the supplier, it included multiple references to a past incident that did not directly relate to the current situation. This detracted from the overall relevance, preventing a higher score, but the core information about the supplier's status was still valuable."
+     "reason": "The score is 1.00 because the response directly addresses the impact of hurricane flooding on the supplier without any irrelevant statements."
     },
     "FaithfulnessMetric": {
-     "score": 0.818,
-     "passed": true,
-     "reason": "The score is 0.82 because the actual output's projected revenue loss of $940,079 does not align with the context's range of $430,641 to $4,903,839, and the anticipated recovery times of 45 days for partial recovery and 140 days for full recovery do not match the context's stated ranges."
+     "score": 0.583,
+     "passed": false,
+     "reason": "The score is 0.58 because there are several contradictions, including mismatched recovery times, discrepancies in expected production impact and revenue loss, and inconsistencies regarding the availability of backup suppliers and the tier of suppliers involved."
     },
     "ContextualRelevancyMetric": {
-     "score": 0.976,
+     "score": 0.939,
      "passed": true,
-     "reason": "The score is 0.98 because while the retrieval context included some irrelevant details such as 'Severity was 3 out of 5', it also contained highly relevant information like 'Severity was 4 out of 5' and 'The supplier had no backup supplier', which directly relates to the input about the hurricane flooding."
+     "reason": "The score is 0.94 because while the retrieval context provided relevant information such as 'Severity was 4 out of 5' and 'The supplier had no backup supplier,' it also included contradictory and irrelevant details like 'Severity was 3 out of 5' and 'Response strategy: Production Reroute, started after 1 days,' which detracted from its overall relevance."
     },
     "Recommendation Quality": {
-     "score": 0.8,
+     "score": 0.9,
      "passed": true,
-     "reason": "The response effectively recommends a Production Reroute strategy, which aligns with the severity of the disruption and the absence of a backup supplier. It is justified by referencing historical cases that demonstrate the effectiveness of this strategy. Concrete actions are provided, including a specific timeframe of 3 days for initiation. However, the output includes case IDs that do not appear "
+     "reason": "The response effectively identifies the primary strategy as 'Alternative Supplier' and provides a rationale based on historical effectiveness, aligning with the evaluation steps. It also includes concrete actions with timeframes, such as classifying the incident and assessing impact, which are time-bound and actionable. However, it does not penalize the use of case IDs that do not appear in the re"
     },
     "Impact Analysis Correctness": {
-     "score": 0.8,
+     "score": 0.7,
      "passed": true,
-     "reason": "The output effectively states the expected production impact (59.3%), financial loss ($940,079), and recovery time (45 days for partial recovery, 140 days for full recovery). These estimates are plausible given the severity level of 4 and align with historical cases, which show similar production impacts and recovery times. Additionally, the output identifies key factors driving the impact, such a"
+     "reason": "The output effectively identifies the expected production impact (59.3%), financial loss ($940,599), and recovery time (full recovery in 128 days). However, while it references historical precedents, it does not explicitly state the plausibility of these estimates against similar cases, which is a key evaluation step. Additionally, it identifies factors driving the impact, such as the lack of a ba"
     }
    },
-   "latency_ms": 17054,
+   "latency_ms": 12060,
    "synapt": {
     "confidence": 0.75,
     "knowledge_confidence": 0.9,
@@ -581,6 +672,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": true
   },
   {
@@ -589,9 +681,9 @@
    "source": "golden",
    "classification": {
     "disruption_type": "Labor Strike",
-    "industry": "Automotive",
     "supplier_region": "Europe",
     "supplier_size": "Large",
+    "industry": "Automotive",
     "supplier_tier": 2,
     "disruption_severity": 3,
     "has_backup_supplier": true
@@ -610,8 +702,20 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.984,
+   "avg_similarity": 0.884,
    "primary_strategy": "Alternative Supplier",
+   "audit": {
+    "overall": 0.9,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 4,
+     "actionability": 5,
+     "completeness": 4,
+     "consistency": 4,
+     "safety": 5
+    }
+   },
    "judge": {
     "overall": 1.0,
     "verdict": "approve",
@@ -631,27 +735,27 @@
      "reason": "The score is 1.00 because the response directly addresses the situation regarding the dockworkers' strike and its impact on the supply chain without any irrelevant statements."
     },
     "FaithfulnessMetric": {
-     "score": 0.955,
+     "score": 1.0,
      "passed": true,
-     "reason": "The score is 0.95 because the actual output inaccurately attributes the disruption to dockworkers at the Rotterdam port, while the retrieval context only mentions a labor strike without specifying the location or the workers involved."
+     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
     },
     "ContextualRelevancyMetric": {
      "score": 0.875,
      "passed": true,
-     "reason": "The score is 0.88 because while the retrieval context includes relevant details such as 'Severity was 3 out of 5' and 'Disruption type: Labor Strike,' it also contains several irrelevant statements like 'Severity was 2 out of 5' and 'Production impact was 31.3% (Moderate)' that detract from its overall relevance."
+     "reason": "The score is 0.88 because while the retrieval context includes relevant details such as 'Severity was 3 out of 5' and 'Disruption type: Labor Strike,' it also contains multiple irrelevant statements like 'Severity was 2 out of 5' and 'Production impact was 31.3% (Moderate)' that detract from the overall relevance."
     },
     "Recommendation Quality": {
      "score": 0.8,
      "passed": true,
-     "reason": "The output effectively recommends activating the backup supplier as the primary response strategy, which aligns with the severity level and the presence of a backup supplier. It provides historical precedents to justify this recommendation, citing specific cases that demonstrate the effectiveness of this strategy. Additionally, it outlines concrete actions to be taken within a day, fulfilling the "
+     "reason": "The response effectively identifies the primary strategy as 'Alternative Supplier' and justifies it with historical data, including average recovery times and effectiveness scores. It provides concrete actions aligned with the evaluation steps, such as classifying the incident and activating the backup supplier. However, it includes case IDs that do not appear in the retrieval context, which detra"
     },
     "Impact Analysis Correctness": {
      "score": 0.8,
      "passed": true,
-     "reason": "The output effectively outlines the expected production impact, financial loss, and recovery time, providing specific figures that align with the severity level and historical precedents. It also identifies the backup supplier as a key factor in mitigating the impact, which is crucial given the context of the disruption. However, while the revenue loss estimate is plausible, the recovery time coul"
+     "reason": "The output effectively identifies the expected production impact (37.4%), financial loss ($4,872,688), and recovery time (average 61.4 days) based on historical data. It also mentions the backup supplier and severity level, aligning well with the evaluation steps. However, while the estimates are plausible, the recovery outlook of 74 days for full recovery is slightly higher than the average for s"
     }
    },
-   "latency_ms": 17078,
+   "latency_ms": 13076,
    "synapt": {
     "confidence": 0.74,
     "knowledge_confidence": 0.89,
@@ -660,6 +764,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": true
   },
   {
@@ -688,57 +793,70 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.963,
+   "avg_similarity": 0.9,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
     }
    },
-   "latency_ms": 2895,
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 0.96,
+     "passed": true,
+     "reason": "The score is 0.96 because the response was mostly relevant, but the mention of monitoring SLA did not address the specific issue of the malware outage. However, the overall content effectively addressed the situation, justifying a high score."
+    },
+    "FaithfulnessMetric": {
+     "score": 0.941,
+     "passed": true,
+     "reason": "The score is 0.94 because the actual output claims a production impact of 21.1%, which is not supported by the retrieval context that indicates a variation from 3.4% to 40.9%."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.802,
+     "passed": true,
+     "reason": "The score is 0.80 because while the retrieval context includes relevant details such as 'Supplier tier: Tier 3' and 'Severity was 2 out of 5', it also contains numerous irrelevant statements like 'Supplier tier: Tier 2' and 'Severity was 3 out of 5' that detract from its overall relevance."
+    },
+    "Recommendation Quality": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The response effectively recommends the Alternative Supplier strategy, which aligns with the historical data indicating its effectiveness for similar disruptions. It provides a well-justified rationale based on historical cases and statistics, fulfilling the requirement for justification. However, while it outlines immediate actions, it lacks specific time-bound actions for the primary strategy, w"
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.7,
+     "passed": true,
+     "reason": "The output provides a detailed analysis of the expected production impact (21.1%), financial loss ($315,439), and recovery time (partial \u224820 days, full \u224852 days), aligning well with the evaluation steps. However, it lacks a clear identification of factors driving the impact, such as the absence of a backup supplier, which is critical for assessing recovery strategies. Overall, while the estimates "
+    }
+   },
+   "latency_ms": 11470,
    "synapt": {
-    "confidence": 0.78,
+    "confidence": 0.79,
     "knowledge_confidence": 0.88,
     "procedural_confidence": 0.79,
-    "graph_confidence": 0.67,
+    "graph_confidence": 0.69,
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G10",
@@ -766,48 +884,60 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.964,
+   "avg_similarity": 0.889,
    "primary_strategy": "Production Reroute",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
     }
    },
-   "latency_ms": 2716,
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because the response directly addresses the input regarding tariff escalation and its impact on titanium forgings without any irrelevant statements."
+    },
+    "FaithfulnessMetric": {
+     "score": 0.929,
+     "passed": true,
+     "reason": "The score is 0.93 because the actual output incorrectly states a priority for response classified as P1 - Critical with a score of 86.2 out of 100, which is not supported by the retrieval context."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.506,
+     "passed": true,
+     "reason": "The score is 0.51 because while the retrieval context includes relevant statements such as 'Disruption type: Geopolitical' and 'Severity was 5 out of 5', it also contains numerous irrelevant details like 'Supplier size: Small' and 'The supplier had no backup supplier', which detract from the overall relevance to the input about tariff escalation and border closure."
+    },
+    "Recommendation Quality": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The response effectively identifies the primary strategy as Production Reroute, which aligns with the severity and context of the disruption. It provides a well-justified rationale based on historical effectiveness scores and recovery times. However, while it outlines immediate actions and timeframes, it lacks specific case IDs from the retrieval context, which could have strengthened the justific"
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The output effectively identifies the expected production impact (74.5%), financial loss ($6,270,041), and recovery time estimates (partial \u224857 days, full \u2248155 days). It also references historical precedents and aligns with the severity of the situation. However, while it mentions the lack of a backup supplier and the critical nature of the incident, it could further elaborate on specific factors "
+    }
+   },
+   "latency_ms": 21842,
    "synapt": {
     "confidence": 0.75,
     "knowledge_confidence": 0.89,
@@ -816,7 +946,8 @@
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G11",
@@ -844,57 +975,70 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.906,
+   "avg_similarity": 0.812,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
     }
    },
-   "latency_ms": 2327,
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because the response directly addresses the critical incident at the chemical plant without any irrelevant statements."
+    },
+    "FaithfulnessMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.82,
+     "passed": true,
+     "reason": "The score is 0.82 because while the retrieval context provided relevant information such as 'Severity was 5 out of 5' and 'Production impact was 62.1% (Severe)', it also included multiple instances of irrelevant data like 'Severity was 3 out of 5' and 'Production impact was 25.2% (Moderate)', which detracted from the overall relevancy."
+    },
+    "Recommendation Quality": {
+     "score": 0.7,
+     "passed": true,
+     "reason": "The response effectively recommends the Alternative Supplier strategy, which aligns with the historical precedent of similar factory incidents. It provides a justified rationale based on effectiveness scores and recovery times. However, while it outlines immediate actions, it lacks specific time-bound actions for activating the backup supplier, which is critical for a severity 5 incident. Addition"
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.9,
+     "passed": true,
+     "reason": "The output effectively states the expected production impact of 62.5%, financial loss of $13,282,055, and recovery time estimates of partial recovery in 45 days and full recovery in 133 days. These estimates are plausible given the severity level of 5 and historical precedents. Additionally, it identifies key factors driving the impact, such as the use of an alternative supplier and the combined s"
+    }
+   },
+   "latency_ms": 10463,
    "synapt": {
     "confidence": 0.73,
     "knowledge_confidence": 0.87,
     "procedural_confidence": 0.78,
-    "graph_confidence": 0.53,
+    "graph_confidence": 0.54,
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G12",
@@ -922,57 +1066,70 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.981,
+   "avg_similarity": 0.912,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
     }
    },
-   "latency_ms": 2674,
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 0.935,
+     "passed": true,
+     "reason": "The score is 0.94 because while the response addressed the main issue of vessel backlog and port congestion, it included irrelevant statements about SLA review timeframe and low-severity cases that did not pertain to the specific backlog issue. However, the core concerns were well addressed, justifying a high relevancy score."
+    },
+    "FaithfulnessMetric": {
+     "score": 0.471,
+     "passed": false,
+     "reason": "The score is 0.47 because multiple claims in the actual output, such as the priority score of 34.3 and various average recovery times, are not supported by the retrieval context, indicating significant discrepancies."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The score is 0.80 because while the retrieval context includes relevant information such as 'Disruption type: Port Congestion' and 'Severity was 2 out of 5', it also contains numerous irrelevant details like 'The supplier had a backup supplier' and 'Revenue loss was $140,094 (Under 1M)', which do not pertain to the current vessel backlog and port congestion issues."
+    },
+    "Recommendation Quality": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The output effectively recommends the 'Alternative Supplier' strategy, which aligns with the historical precedent of similar disruptions. It provides a well-justified rationale based on statistical data, including average recovery times and effectiveness scores. However, while it outlines immediate actions, it lacks specific time-bound actions for each step, which is a shortcoming. Additionally, i"
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The output effectively states the expected production impact (30.5%), financial loss ($1,078,920), and recovery time (partial \u224816 days, full \u224848 days). These estimates are plausible given the severity level of 2 and historical precedents. Additionally, it identifies key factors driving the impact, such as the use of an alternative supplier and the effectiveness of the strategies based on historica"
+    }
+   },
+   "latency_ms": 12354,
    "synapt": {
-    "confidence": 0.76,
+    "confidence": 0.77,
     "knowledge_confidence": 0.89,
     "procedural_confidence": 0.78,
-    "graph_confidence": 0.62,
+    "graph_confidence": 0.64,
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G13",
@@ -1001,48 +1158,60 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.995,
+   "avg_similarity": 0.913,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
     }
    },
-   "latency_ms": 2824,
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements. Great job staying on topic!"
+    },
+    "FaithfulnessMetric": {
+     "score": 0.941,
+     "passed": true,
+     "reason": "The score is 0.94 because the actual output claims a response plan within 24 hours, while the retrieval context indicates that the response strategy typically starts after 1 to 2 days, creating a discrepancy in the expected timing."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.938,
+     "passed": true,
+     "reason": "The score is 0.94 because while the retrieval context included relevant statements such as 'Severity was 4 out of 5' and 'The supplier had a backup supplier', it also contained contradictory and unrelated information like 'Severity was 5 out of 5' and 'The supplier was permanently replaced', which detracted from its overall relevance."
+    },
+    "Recommendation Quality": {
+     "score": 0.9,
+     "passed": true,
+     "reason": "The response effectively recommends the 'Alternative Supplier' strategy, which aligns with the historical data indicating it is the fastest recovery option for similar disruptions. It provides a well-justified rationale based on historical effectiveness scores and recovery times. Additionally, it outlines concrete actions to be taken within specified timeframes, adhering to the evaluation steps. H"
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The output effectively identifies the expected production impact (50.8%), financial loss ($429,276), and recovery time (98 days for full recovery), aligning well with the evaluation steps. It also references the backup supplier and severity level, which are critical factors in assessing the impact. However, while the estimates are plausible, they could be more closely tied to historical precedents"
+    }
+   },
+   "latency_ms": 16119,
    "synapt": {
     "confidence": 0.75,
     "knowledge_confidence": 0.9,
@@ -1051,7 +1220,8 @@
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G14",
@@ -1080,48 +1250,60 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.946,
+   "avg_similarity": 0.885,
    "primary_strategy": "Inventory Buffer",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
     }
    },
-   "latency_ms": 3007,
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements. Great job staying on topic!"
+    },
+    "FaithfulnessMetric": {
+     "score": 0.944,
+     "passed": true,
+     "reason": "The score is 0.94 because the actual output suggests a response strategy involving an Inventory Buffer and Alternative Supplier, which are not mentioned in the retrieval context."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.911,
+     "passed": true,
+     "reason": "The score is 0.91 because while there are several irrelevant statements such as 'Supplier region: Europe' and 'The supplier relationship was kept', the relevant context regarding the 'Supplier region: Africa/Middle East' and the details about production impact and revenue loss provide significant insights into the union walkout's effects."
+    },
+    "Recommendation Quality": {
+     "score": 0.7,
+     "passed": true,
+     "reason": "The response effectively identifies the primary strategy as 'Inventory Buffer' and provides a rationale based on historical effectiveness, aligning with the evaluation steps. However, while it includes concrete actions, it lacks specific time-bound actions for each step, which is a shortcoming. Additionally, it references relevant historical cases but does not penalize the use of case IDs that do "
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.7,
+     "passed": true,
+     "reason": "The output effectively identifies the expected production impact (42.5%), financial loss ($2,196,964), and recovery time (full recovery in 94 days). However, while it provides plausible estimates based on historical precedents, it lacks a clear identification of factors driving the impact, such as the absence of a backup supplier. The recommended response aligns with the evaluation steps but could"
+    }
+   },
+   "latency_ms": 10807,
    "synapt": {
     "confidence": 0.76,
     "knowledge_confidence": 0.9,
@@ -1130,7 +1312,8 @@
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G15",
@@ -1158,48 +1341,60 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.988,
+   "avg_similarity": 0.917,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
     }
    },
-   "latency_ms": 2819,
+   "metrics": {
+    "AnswerRelevancyMetric": {
+     "score": 1.0,
+     "passed": true,
+     "reason": "The score is 1.00 because the response directly addresses the impact of ransomware on the automotive seat supplier's production without any irrelevant statements."
+    },
+    "FaithfulnessMetric": {
+     "score": 0.875,
+     "passed": true,
+     "reason": "The score is 0.88 because the actual output presents specific figures for production impact and revenue loss that are not supported by the retrieval context, which provides a range for these values. Additionally, the historical averages mentioned in the context contradict the claims made in the actual output."
+    },
+    "ContextualRelevancyMetric": {
+     "score": 0.99,
+     "passed": true,
+     "reason": "The score is 0.99 because, despite the retrieval context mentioning 'Supplier tier: Tier 2', the majority of relevant statements confirm the input's details, such as 'Supplier tier: Tier 1' and 'Severity was 4 out of 5', which align closely with the input."
+    },
+    "Recommendation Quality": {
+     "score": 0.8,
+     "passed": true,
+     "reason": "The output effectively recommends a primary response strategy of 'Alternative Supplier' and justifies it with historical data, citing specific recovery times and effectiveness scores. It also outlines concrete, time-bound actions aligned with the Synapt playbook. However, it fails to penalize the use of case IDs that do not appear in the retrieval context, which slightly undermines its adherence t"
+    },
+    "Impact Analysis Correctness": {
+     "score": 0.7,
+     "passed": true,
+     "reason": "The output effectively states the expected production impact (59.3%), financial loss ($2,371,456), and recovery time (full recovery in 96 days). However, while the estimates are plausible, they are slightly lower than the historical averages for similar cases, which could indicate a lack of thoroughness in assessing the severity. The output identifies key factors driving the impact, such as the us"
+    }
+   },
+   "latency_ms": 14600,
    "synapt": {
     "confidence": 0.77,
     "knowledge_confidence": 0.89,
@@ -1208,14 +1403,15 @@
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G16",
    "input": "Export sanctions on rare-earth magnets from a Tier 3 electronics supplier in Asia-Pacific; severity 3, backup supplier available.",
    "source": "golden",
    "classification": {
-    "disruption_type": "Port Congestion",
+    "disruption_type": "Geopolitical",
     "supplier_region": "Asia-Pacific",
     "industry": "Electronics",
     "supplier_tier": 3,
@@ -1228,56 +1424,68 @@
     "supplier_tier": 3,
     "has_backup_supplier": true
    },
-   "classification_accuracy": 0.75,
+   "classification_accuracy": 1.0,
    "classification_detail": {
-    "disruption_type": false,
+    "disruption_type": true,
     "industry": true,
     "supplier_tier": true,
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
+   "avg_similarity": 0.953,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
+   "judge": {
+    "overall": 1.0,
+    "verdict": "approve",
+    "scores": {
+     "groundedness": 5,
+     "relevance": 5,
+     "actionability": 5,
+     "completeness": 5,
+     "consistency": 5,
+     "safety": 5
+    }
+   },
    "metrics": {
     "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+     "score": 0.957,
+     "passed": true,
+     "reason": "The score is 0.96 because the response was mostly relevant but included an irrelevant statement about the SLA for review, which did not pertain to the specifics of the input regarding sanctions. This minor deviation prevented a perfect score, but the overall content was still highly aligned with the query."
     },
     "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+     "score": 0.875,
+     "passed": true,
+     "reason": "The score is 0.88 because the actual output incorrectly states a priority classified as P3 with a score of 43.3 out of 100, which is not supported by the retrieval context, and it also introduces a resilience score of 79.0 out of 100 that is not mentioned in the retrieval context."
     },
     "ContextualRelevancyMetric": {
      "score": null,
      "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+     "reason": "error: Expecting ',' delimiter: line 40 column 6 (char 1142)"
     },
     "Recommendation Quality": {
      "score": null,
      "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'insufficient balance: prompt costs ~\u20b90.05 but balance is \u20b90.00', 'type': 'insufficient_quota'}}"
     },
     "Impact Analysis Correctness": {
      "score": null,
      "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
+     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'insufficient balance: prompt costs ~\u20b90.05 but balance is \u20b90.00', 'type': 'insufficient_quota'}}"
     }
    },
-   "latency_ms": 2727,
+   "latency_ms": 16109,
    "synapt": {
     "confidence": 0.76,
     "knowledge_confidence": 0.89,
@@ -1286,7 +1494,8 @@
     "degraded": true
    },
    "fact_check_passed": true,
-   "llm_used": false
+   "plan_method": "statistics+synapt-playbook",
+   "llm_used": true
   },
   {
    "id": "G17",
@@ -1313,57 +1522,33 @@
     "supplier_tier": true,
     "disruption_severity": true
    },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
+   "retrieval_type_precision": 0.833,
+   "avg_similarity": 0.867,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 2616,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 8936,
    "synapt": {
     "confidence": 0.74,
     "knowledge_confidence": 0.88,
     "procedural_confidence": 0.8,
-    "graph_confidence": 0.53,
+    "graph_confidence": 0.54,
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1392,48 +1577,23 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
+   "avg_similarity": 0.917,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 2862,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 11452,
    "synapt": {
     "confidence": 0.78,
     "knowledge_confidence": 0.89,
@@ -1442,6 +1602,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1471,56 +1632,32 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.978,
+   "avg_similarity": 0.87,
    "primary_strategy": "Inventory Buffer",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 3102,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 9811,
    "synapt": {
-    "confidence": 0.76,
+    "confidence": 0.75,
     "knowledge_confidence": 0.89,
     "procedural_confidence": 0.8,
-    "graph_confidence": 0.58,
+    "graph_confidence": 0.55,
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1549,56 +1686,32 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 1.0,
+   "avg_similarity": 0.869,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 2879,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 18272,
    "synapt": {
     "confidence": 0.76,
     "knowledge_confidence": 0.89,
     "procedural_confidence": 0.8,
-    "graph_confidence": 0.58,
+    "graph_confidence": 0.59,
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1626,56 +1739,32 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.958,
+   "avg_similarity": 0.88,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 3028,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 12862,
    "synapt": {
     "confidence": 0.75,
     "knowledge_confidence": 0.88,
     "procedural_confidence": 0.78,
-    "graph_confidence": 0.58,
+    "graph_confidence": 0.59,
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1705,48 +1794,23 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.995,
+   "avg_similarity": 0.906,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 2995,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 10525,
    "synapt": {
     "confidence": 0.76,
     "knowledge_confidence": 0.89,
@@ -1755,6 +1819,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1783,57 +1848,33 @@
     "supplier_tier": true,
     "has_backup_supplier": true
    },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.957,
+   "retrieval_type_precision": 0.833,
+   "avg_similarity": 0.815,
    "primary_strategy": "Inventory Buffer",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 2816,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 10168,
    "synapt": {
-    "confidence": 0.74,
+    "confidence": 0.75,
     "knowledge_confidence": 0.89,
     "procedural_confidence": 0.81,
-    "graph_confidence": 0.53,
+    "graph_confidence": 0.54,
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1862,48 +1903,23 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.982,
+   "avg_similarity": 0.869,
    "primary_strategy": "Alternative Supplier",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 2989,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 14808,
    "synapt": {
     "confidence": 0.75,
     "knowledge_confidence": 0.89,
@@ -1912,6 +1928,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   },
   {
@@ -1941,48 +1958,23 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.951,
+   "avg_similarity": 0.841,
    "primary_strategy": "Combined Strategy",
-   "judge": {
-    "overall": 0.867,
+   "audit": {
+    "overall": 0.9,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 4,
+     "actionability": 5,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "FaithfulnessMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'API Key Budget Exceeded', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 2473,
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 8553,
    "synapt": {
     "confidence": 0.75,
     "knowledge_confidence": 0.9,
@@ -1991,6 +1983,7 @@
     "degraded": true
    },
    "fact_check_passed": true,
+   "plan_method": "statistics+synapt-playbook",
    "llm_used": false
   }
  ],
@@ -2055,6 +2048,5 @@
    "got": "allow",
    "passed": true
   }
- ],
- "note": "LLM gateway budget ran out during case G9: G1-G8 ran the full LLM path (DeepEval + LLM judge); G9-G25 ran in no-LLM fallback mode (rule classifier, template plan/briefing, heuristic judge)."
+ ]
 }

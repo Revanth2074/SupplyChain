@@ -1,0 +1,651 @@
+{
+ "supply_chain_disruptions": {
+  "cases/cases_001.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "d389dc2115818a7cab964176bfff1d5b12a2d81d493a528b284bbd17328f196a"
+  },
+  "cases/cases_002.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b5370be3dd4e9553119f4aa3be3bc1777d40f1519dfe42ee2d76b7a8b9b6d406"
+  },
+  "cases/cases_003.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6debe9caa77ead160384df4387af71bfd944aedf621ce608e3b3ef0053fbfa76"
+  },
+  "cases/cases_004.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "14d692991682436365920241700f760c736e2dd05d31ccc0d6146ef1810e472a"
+  },
+  "cases/cases_005.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "91397749ced3bdd9a00db7dae4e40a16e365dd110d92ed7962b45dc992da953a"
+  },
+  "cases/cases_006.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "572c4031f21de1ee015e1a2533f34435537452b2e31f2bd42a56bfb86c905f80"
+  },
+  "cases/cases_007.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "457494b8ec387bdf5899b50eaf0af4a1e1b9a3ef7d8e1bea9a916f7fe0b71548"
+  },
+  "cases/cases_008.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "70288c9b5cfd65b22d65c4c7580d15a6c00b720da2bf2e732c5b211f57a15c68"
+  },
+  "cases/cases_009.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "0d0c896d0a75085c310c4f4b2600e0d97130cafcb27f3a39744bd70ee2846f79"
+  },
+  "cases/cases_010.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "f01f7b4aff922951c5a9d6528abfa05f93f91d4e5e34e7e1c8b5dc1666a6c237"
+  },
+  "cases/cases_011.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "162d6e463a596760f73858aad0a3dc8ed1b2d69e7ace479a5c8f5cdc71057fec"
+  },
+  "cases/cases_012.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "44d827240938e64174d837fc6ed38b97ddc12a9b14b0826a42c53d5849318c31"
+  },
+  "cases/cases_013.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "1f5ab191cf79b3621fcfc4a9dedc63be28d4192db1ca0aba2be3ac21c607cb36"
+  },
+  "cases/cases_014.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "ca4de7776b2c72184435d2d211fc88955abf1216a9ec03c50e26ea1338ce7c5d"
+  },
+  "cases/cases_015.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6326249810c4d23d70933ddd03174ca248e7fc9121f758cd83d2a177faa18f02"
+  },
+  "cases/cases_016.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c281521b2a81913084035a793a50942e6d2853ccd263215797184bfb1a5f4524"
+  },
+  "cases/cases_017.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "05ae963ef75712e06038629ff24c78145d7cfdbb9163bb5f5a7bfd2e0c9c79e7"
+  },
+  "cases/cases_018.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "424fbd90999a5577c8e4009db3ff5ccc2538d5243ff2aa62e14ab97a457c7e28"
+  },
+  "cases/cases_019.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "71afc61d90e279630e6c9559f94940f6c419b8144f8607acd702ce6e8e10e0d0"
+  },
+  "cases/cases_020.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "a4b4161761e133eac28f5a9ed9eee48d92fbe9acdef1809702ca00b22d9c0473"
+  },
+  "cases/cases_021.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "3440340b44558a4da6ef5008ea8f46c9062a5648b0fc07bd19dbdd1667df692b"
+  },
+  "cases/cases_022.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c888692cb39740a3e56d9e478d5afc35d52f7ea669fc9ce151974fe86347bcb7"
+  },
+  "cases/cases_023.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "f0091e1d0ca677e3c2850ec69ffdc794ea4917c543469ea0d6978daed47bfc08"
+  },
+  "cases/cases_024.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "a921b70449cba7a24d6ba0fbd3b60b27710896d12868b06f514a1fc3d0d465b9"
+  },
+  "cases/cases_025.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c8108359dc75fcc5c3b9d928d7d41a31c5fb21c548ac7fb588dac164abaab19d"
+  },
+  "cases/cases_026.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "0b8ccecd3e0f7af99663c189bb242b88fcdca04b98cedbe97332dc14114cef4b"
+  },
+  "cases/cases_027.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "06df13b60dea966e5b8e28a2fa9832e905f1549248fb3ebe2c24b980d946e7c5"
+  },
+  "cases/cases_028.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "c1a5aa3b8021128f59fa03383f489ccaf5f6bebfecbcc9e7cc40f1bcf54ff49d"
+  },
+  "cases/cases_029.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "42442379100ab66dea7bc08f192ceeb6589f8bf90ddd4a089348f0a9155e8b8d"
+  },
+  "cases/cases_030.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b0bf6fb8d2f6959ec0d01671e42ca1f51e340c6ab1e938b46acc00dd1d300995"
+  },
+  "cases/cases_031.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "93f5f3e46c71f1c16c9ea7054892db7bb907fdf1899f3b119b23ad53bd35925e"
+  },
+  "cases/cases_032.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "8b865521ea4d898e6bb6c153b11de9db422ec2e21f64e8fa1463408c66b5e394"
+  },
+  "cases/cases_033.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b4b98e2d008125f4e517445ef1760d74c9a8219250c761d595c270d0927ec9f2"
+  },
+  "cases/cases_034.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "a39f914bfbf76ba0bc653476a8872f768e0b7a01baf5e2d977f66607d127a89e"
+  },
+  "cases/cases_035.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "b2837e4ebca84edf5770142c5b1d34ac30444d956b1d26a7dd86cb40f7007053"
+  },
+  "cases/cases_036.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6075ec5ebb3a8f7642a847381325cc9ac065298b7f905d7fe492759bc65eba70"
+  },
+  "cases/cases_037.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "d427f85217a3d623aaaef5ac3a8db05ebe84f569ee11ab5a8c9bd6ce9a6a6a6e"
+  },
+  "cases/cases_038.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "3c292442ab2e936f7ac7da7e0aef1477e98d7330a024c6c4f227108f1a014ba6"
+  },
+  "cases/cases_039.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "f8922ecef903d0e385c84e7e9e7f8e3f31ec7862044ce3e031387136d36b189e"
+  },
+  "cases/cases_040.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "1726160c19e6d73b6dd6009848f5a02fcc66b7686a065a74f2926133192ff4fc"
+  },
+  "reference/aggregate_stats.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "bbf1e2d38c4d97ff5a0ce1feac131bddfe1202ec7175053e2ac55c7474f63e45"
+  },
+  "reference/ontology.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "538db5ae4f803614c81f4fc9ea05836a54ef96c99dcc5502906625e88be8c9b3"
+  },
+  "reference/profiles.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "ec84ceb3edef55f964fa6c4bab89d79c3cf75f7880fdb1c9de7510ab3f82c18c"
+  },
+  "reference/response_playbooks_combined.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_as": "response_playbooks.md",
+   "ingested_at": "2026-10-06 (before the manifest existed)",
+   "job_id": "pre-manifest",
+   "sha256": "6afba8588acdb65767dd67d789ed8b15cc7c027f8f9880545a6d5e11f13a8d6a"
+  }
+ },
+ "supply_chain_disruptions_v2": {
+  "cases/cases_001.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:46",
+   "job_id": "01M4E61H7GPQF3N60CEC2FEM4X",
+   "sha256": "35f8ac8a5e012269600af81a902541a50b00d0127279582d553b16065a2ed76f"
+  },
+  "cases/cases_002.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:47",
+   "job_id": "01M4E61JDK1VK6MWWN3NPB22RZ",
+   "sha256": "ae04dcea3769e4535f0c1015acf110773480d5fb6724ab909b4be1296bff6858"
+  },
+  "cases/cases_003.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:48",
+   "job_id": "01M4E61KJ2YKP6METKXCZAFNXZ",
+   "sha256": "414141765f9cb5bd3987fd46abe0f868fbf6cde023d00cd6d0abb096a7c96f21"
+  },
+  "cases/cases_004.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:49",
+   "job_id": "01M4E61MJ69KDHJRJGJK009JJ9",
+   "sha256": "6384ea9d5474b681e3dba8ddfc8640b367eb130aabd562dc4101ffdf226f486d"
+  },
+  "cases/cases_005.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:51",
+   "job_id": "01M4E61NN0SWYJ6P966RJK99VQ",
+   "sha256": "476a93f1f0d75ef9f8f226e672543b7f3fda9b4ca172072e916838a802d0265b"
+  },
+  "cases/cases_006.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:52",
+   "job_id": "01M4E61PPM334594X5EWAA0XTF",
+   "sha256": "095e18568b17d97325651b37373f94596b3bac73bd1474d7b6504a02d0f69031"
+  },
+  "cases/cases_007.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:53",
+   "job_id": "01M4E61QQGM8TQMCCJ5V1CB2BE",
+   "sha256": "d850ad0af168d29f9849850742f81c1389db43d70f66553d91daf1ab1c5b17de"
+  },
+  "cases/cases_008.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:54",
+   "job_id": "01M4E61RY6KE0V2VBDS7X6EGWV",
+   "sha256": "e33b7c3889efc76f77d3a3fbf511ec64c07a448b7e3f63e946b198c2f8b6d0d8"
+  },
+  "cases/cases_009.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:55",
+   "job_id": "01M4E61SYJZKHQES1XHF66XMAW",
+   "sha256": "bc2192a9a72f520bcfb48cf5908f207617e3f61a6a6b12a7a0599338cc9166e5"
+  },
+  "cases/cases_010.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:56",
+   "job_id": "01M4E61TXP0RWE92SGM6ZZ3TF7",
+   "sha256": "d17c08611befa1c0d2527ef3df58fef423bc69b91ce10f4dfd753ca8772dfc15"
+  },
+  "cases/cases_011.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:57",
+   "job_id": "01M4E61VYZXPV3MTPFBPNZ15AP",
+   "sha256": "c632090a9f508cd3b388f1889610842948c7d38d2f81386919c6a4e6567bb7fe"
+  },
+  "cases/cases_012.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:58",
+   "job_id": "01M4E61X0BFA8XMDF5JFYZ5RQ5",
+   "sha256": "e3736e3092372f9ad535a3d9f808ef55f3af453296ba1a380636228991781971"
+  },
+  "cases/cases_013.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:07:59",
+   "job_id": "01M4E61Y17Z80DQP3NK7RK74XK",
+   "sha256": "eeaece5b96977b312fcc3c80fc919553f497ce0c14ea2acad42e5dce38e1e2a1"
+  },
+  "cases/cases_014.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:00",
+   "job_id": "01M4E61Z2ACWSSQYQNZFPTB8ND",
+   "sha256": "6924e2327448e238f0351c0035dff68404328da88ced61e3e8f86e1b39ea2c68"
+  },
+  "cases/cases_015.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:01",
+   "job_id": "01M4E6202PB9J39EVFK2S7RGRH",
+   "sha256": "08c5b9bbdcecabb6ce25e03ce0cb791216f9c6f4d3c704d892b487f75dfb902d"
+  },
+  "cases/cases_016.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:02",
+   "job_id": "01M4E6219WBMT6FEA7YVC0PM46",
+   "sha256": "c9afcf0fbd6e76b67596378ecd0c559397b33f49e4dcf8a4cbbe5596bd459ac9"
+  },
+  "cases/cases_017.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:04",
+   "job_id": "01M4E622SXTZXG75C4S4NNBY2N",
+   "sha256": "8cb26646f939220c73732cab762164b76d0afd667663970e3dacc01d19be2f35"
+  },
+  "cases/cases_018.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:05",
+   "job_id": "01M4E623TCEXD6KFNJHTSCG927",
+   "sha256": "90acbeec852b0c3939a2a8b27ec4dab596afd0cd2fa5bacb2f46aeaf11c99691"
+  },
+  "cases/cases_019.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:06",
+   "job_id": "01M4E624SP309X0F7B9AEKTFCJ",
+   "sha256": "44329df3f531ae9b038a273f8728a94c58133c18eacba5693fdc2310aecdda9a"
+  },
+  "cases/cases_020.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:07",
+   "job_id": "01M4E625VSCGFCP0NY1MPG71BY",
+   "sha256": "a6f6dd8128a019c0c3112fe8976f64a4319b57ec581871bfd81eea6855ceb592"
+  },
+  "cases/cases_021.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:08",
+   "job_id": "01M4E626WNEF1JB85YY99Y830M",
+   "sha256": "8e87ad9b73a87d20f6ba4671ae9e2d98f6a068bbc65d7ff855e19b8f28dd738f"
+  },
+  "cases/cases_022.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:09",
+   "job_id": "01M4E627W56SX96HHS68JHTEE2",
+   "sha256": "3b43d8ca49d81ec7f0c9fe22a52b26bfe080934546c4c7a7c4af60c87ccc5dd0"
+  },
+  "cases/cases_023.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:10",
+   "job_id": "01M4E628WKBHNVNNARXR44HHZ5",
+   "sha256": "94de150fed6d24394f2fe84e2657c8d2036918c9b20b935eb0413ce20d92f023"
+  },
+  "cases/cases_024.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:11",
+   "job_id": "01M4E629WBN6J2620JSA33MGJP",
+   "sha256": "13c844934fd93cdee2557fce1b0915360d41e04e7ec1840785d6538a9ac54eae"
+  },
+  "cases/cases_025.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:12",
+   "job_id": "01M4E62AXG118YRKR59QXTYHE8",
+   "sha256": "046887784f613f8ecb53463eeaa0d3fdb0cb81a8d236731b74405d04e55dd4d9"
+  },
+  "cases/cases_026.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:13",
+   "job_id": "01M4E62BYXMZQDPEF9XAERNA8C",
+   "sha256": "ba12cd57ce5180712ef48861ef6d4b672236a5754040af4b398c8e945e19c233"
+  },
+  "cases/cases_027.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:14",
+   "job_id": "01M4E62D01HNDR2CFZSRFEM0A5",
+   "sha256": "82c2f83610a8cae1e79e6f0aae0660fe56c75c43f2b2e58a7d8191a85314f6f9"
+  },
+  "cases/cases_028.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:34",
+   "job_id": "01M4E66MWMQZ9FPBWHEX1CA76G",
+   "sha256": "8ecdcf3eeae4e948e059044d50305e9b60e559449e6b9933e38ba3c20c95950a"
+  },
+  "cases/cases_029.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:16",
+   "job_id": "01M4E62EMNYRA2N2F0GWWWJKMR",
+   "sha256": "2badd0cf1ae00e7a24dd30b9a8b6f8d3acee96f03eeaed2d5302325d6ddf0f72"
+  },
+  "cases/cases_030.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:35",
+   "job_id": "01M4E66NWY12293TNRTMVTMFE7",
+   "sha256": "300d209c406a75752a770fae53af35c5bea35209fc1ad95b7faf2382cdde5726"
+  },
+  "cases/cases_031.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:36",
+   "job_id": "01M4E66PXAFKT0F9B8JTF2HCT4",
+   "sha256": "90b6621a345620b74ecae03343bdd9d6288f108a91d1a23fa228409236701c15"
+  },
+  "cases/cases_032.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:19",
+   "job_id": "01M4E62HCBE2JMW3FCCNN55GXV",
+   "sha256": "a57b88bd939f5eab8ea6326a034f6e943a6772b39f5377fea0697db560b35a13"
+  },
+  "cases/cases_033.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:37",
+   "job_id": "01M4E66QWB8DXDQH4Q30JYAG8M",
+   "sha256": "a9ad22de3772628af322ecfd1066ea59aa7395e8068564bda8a7beffe78e4791"
+  },
+  "cases/cases_034.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:38",
+   "job_id": "01M4E66RW6XG437ZKDPKE0APAS",
+   "sha256": "3fa96564c0380c8a6b857d5ed3b5751cec3a06e0866a0ca2844228803ea88dce"
+  },
+  "cases/cases_035.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:08:21",
+   "job_id": "01M4E62KPT2BTT67DRJ0EABP9Q",
+   "sha256": "25b404f4ba2185bfafb309f7c3082f477f9e14067274e5358a9856f1fd77e172"
+  },
+  "cases/cases_036.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:39",
+   "job_id": "01M4E66SV1KS1D4KZG73VAV8KY",
+   "sha256": "918d551695f0c85bcd3ba2884202f7c902e442c96bee0f98ea1076b912b51045"
+  },
+  "cases/cases_037.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:40",
+   "job_id": "01M4E66TTKW7KXN94W9CMJXEQ8",
+   "sha256": "3691d13f5dc36dbe0cb3df33b34e30b428680075b399760c13eac83f4940a2ef"
+  },
+  "cases/cases_038.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:41",
+   "job_id": "01M4E66VXP1AST3ESHCW48FGV5",
+   "sha256": "e4b01f72776d12f3b2fa0f3107fb904c2450804fa812ce0f0df3c7f11155bffa"
+  },
+  "cases/cases_039.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:42",
+   "job_id": "01M4E66WY9CGC2RSQTQSK6XQYJ",
+   "sha256": "5e559b1f2b0dc621cab45a2a83e15dc3cb6690776d9c2506dab8040e0d94bf92"
+  },
+  "cases/cases_040.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:43",
+   "job_id": "01M4E66XZ5C5CXF9B8590J911M",
+   "sha256": "5906092a663b677b1f8537b16ce44bbdbb0436cbe8047d14d8a8c4e604c5b782"
+  },
+  "reference/aggregate_stats.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:50",
+   "job_id": "01M4E675835J96K0Q39SSHJG5F",
+   "sha256": "bbf1e2d38c4d97ff5a0ce1feac131bddfe1202ec7175053e2ac55c7474f63e45"
+  },
+  "reference/profiles.md": {
+   "document_type": "text",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:51",
+   "job_id": "01M4E67692B2FVJZ2ZHQ97MGVA",
+   "sha256": "ec84ceb3edef55f964fa6c4bab89d79c3cf75f7880fdb1c9de7510ab3f82c18c"
+  },
+  "sops/SOP_001_Cyber_Attack_Response.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:44",
+   "job_id": "01M4E66YX50V3ZNTVM2TZK24KH",
+   "sha256": "ed922412bfdcb739a6fa554f5c06fa47d3bb03cbc9e6630c492c9f36ec35457c"
+  },
+  "sops/SOP_002_Factory_Incident_Response.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:45",
+   "job_id": "01M4E66ZXB23WQ00WQ1T395GPM",
+   "sha256": "51ffeaa4bd757d40fa66a424f3550ac9d7e5e0a67e68eede13b860ef61019ad0"
+  },
+  "sops/SOP_003_Geopolitical_Response.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:46",
+   "job_id": "01M4E670VBB7JABCP4SBM3RT1W",
+   "sha256": "213b4c6b9de3b288bf0a455a63e1281e9bc827e5f5f220c76651d482817bd09b"
+  },
+  "sops/SOP_004_Labor_Strike_Response.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:47",
+   "job_id": "01M4E671WGWCA2B76SMF9DPCKM",
+   "sha256": "ae4515b17b3f5203464fc62866f91320d3276705c3ddbe3f35f2172f1154438f"
+  },
+  "sops/SOP_005_Natural_Disaster_Response.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:48",
+   "job_id": "01M4E673A5CS90561MFM84AN4D",
+   "sha256": "d5874a0b660596099cdcb0fdd9be7204a661d5ee63361cb5c72368e084d1b8d1"
+  },
+  "sops/SOP_006_Port_Congestion_Response.md": {
+   "document_type": "sop",
+   "extraction_mode": "comprehensive",
+   "ingested_at": "2026-10-08 22:10:49",
+   "job_id": "01M4E6748D7EFSNXH5SVQZW2NW",
+   "sha256": "16eeebd00f25b375cd528903f4dffba880d37e1582dad4dc403d1cf9d5a416ba"
+  }
+ }
+}
