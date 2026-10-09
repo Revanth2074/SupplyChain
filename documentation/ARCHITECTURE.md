@@ -75,8 +75,8 @@ choices into tracked work whose real outcomes retrain the models.
 
 ```mermaid
 flowchart TD
-    subgraph Client_Layer ["Operations Console (React, frontend/)"]
-        UI["Incident Cockpit · Search & Ask · Knowledge Graph · Simulator<br/>Decision Studio · Incident Desk · Quality · Fallback Lab"]
+    subgraph Client_Layer ["Operations Console (backend/static: index.html · style.css · app.js)"]
+        UI["12 views: 3D Control Tower · Incident Cockpit · Search & Ask · Knowledge Graph · Impact Simulator<br/>Decision Studio + Triage · Early Warning · Portfolio & Network · Incident Desk · Quality & Learning · History · Fallback Lab"]
     end
 
     subgraph Service_Layer ["FastAPI Service Layer (backend/server.py + routes/)"]
@@ -227,8 +227,8 @@ SupplyChain/
 │   ├── synapt/                      # synapt_connector.py · ingest_to_synapt.py · test_connection.py
 │   ├── scripts/                     # build_knowledge_base · train_prediction_model · deepeval_suite · smoke_test
 │   ├── models/                      # disruption_predictors.joblib · prediction_metrics.json
-│   └── artifacts/                   # feedback.db · synapt_region_tokens.json · eval_results.json
-├── frontend/                        # React 19 + Vite operations console
+│   ├── artifacts/                   # feedback.db · synapt_region_tokens.json · eval_results.json
+│   └── static/                      # console: index.html · style.css · app.js (served at /)
 ├── knowledge_base/                  # cases/ · sops/ · reference/ · tickets/ (ingested into Synapt)
 ├── documentation/                   # this folder (+ visual/ HTML pages)
 └── supply_chain_disruption_recovery.csv
@@ -254,3 +254,4 @@ All routes are mounted under `/api`; interactive OpenAPI docs at `/docs`.
 | Operator Feedback | `POST /feedback`, `GET /feedback/stats` |
 | Evaluation | `POST /judge`, `POST /evaluate`, `GET /evaluate/status`, `GET /evaluate/results` |
 | Fallback Lab | `GET /fallback-lab`, `PUT /fallback-lab/{switch}`, `POST /fallback-lab/reset`, `POST /fallback-lab/selftest` |
+| History | `GET /history`, `POST /history`, `GET /history/{id}`, `DELETE /history/{id}`, `DELETE /history` (stored in `artifacts/history.json`) |

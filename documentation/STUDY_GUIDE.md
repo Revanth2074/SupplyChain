@@ -69,9 +69,9 @@ Spend the most time on items 1–6; they are what the panel will ask about.
 | 8 | `backend/agents/guardrails.py` | Patterns and why each exists; `guardrails_node` routes invalid input straight to END |
 | 9 | `backend/services/decision.py`, `risk_watch.py`, `ops.py` | Scenario money model, early-warning heuristic, SLA/escalation/actions |
 | 10 | `backend/services/feedback.py`, `evaluation.py`, `faults.py`, `fallback_lab.py` | Strategy boosts (×0.85–1.15), outcomes → retraining, golden set, outage switches + self-test |
-| 11 | `backend/server.py` + `routes/` + `schemas/` | How the 14 routers mount under `/api`; know `/api/analyze/stream`, `/api/search`, `/api/predict`, `/api/health` |
+| 11 | `backend/server.py` + `routes/` + `schemas/` | How the 15 routers mount under `/api`; know `/api/analyze/stream`, `/api/search`, `/api/predict`, `/api/health` |
 | 12 | `backend/scripts/build_knowledge_base.py`, `synapt/ingest_to_synapt.py`, `synapt/test_connection.py` | How the knowledge base is generated, loaded into Synapt and verified |
-| 13 | `frontend/src/App.jsx`, `guide.js` | Page map and how pages are grouped by stage |
+| 13 | `backend/static/index.html`, `app.js` | The console: 12 views grouped by stage (incl. the 3D Control Tower and History), one loader per view, `track()` history logging, the SSE stream reader for the 7 agents |
 
 Exercise: run one incident in the cockpit, open the browser dev tools Network tab, and match each SSE event to the agent code that produced it.
 
@@ -116,7 +116,7 @@ Exercise: run one incident in the cockpit, open the browser dev tools Network ta
 - All 25 analyses ran to completion with no LLM. The judge gateway ran out of credits after 16 cases, so DeepEval and the LLM judge cover **16**; the analyses themselves were unaffected, which is the point of keeping the LLM out of the workflow.
 - DeepEval (16): answer relevancy **0.985**, faithfulness **0.90**, contextual relevancy **0.88**, impact correctness **0.75**, recommendation quality **0.75**.
 - Independent LLM-as-Judge benchmark (`scripts/llm_judge.py`, 10 cases): **9/10 pass**, grounding **0.98**, impact accuracy **1.00**, remediation **1.00**, evidence separation **0.975**. The one fail is Synapt's own answer naming a strategy not in its returned chunks.
-- Rule classification **100%** (98/98 fields). Fact-check pass rate **100%** (all 25). Rule audit **0.90**. Guardrail suite **10/10**. Retrieval type precision **98%**. 25 pytest unit tests.
+- Rule classification **100%** (98/98 fields). Fact-check pass rate **100%** (all 25). Rule audit **0.90**. Guardrail suite **10/10**. Retrieval type precision **98%**. 28 pytest unit tests.
 - Synapt over all 25: answer confidence **0.755**, knowledge **0.89**, procedural **0.80**, graph **0.576**, degraded flag on **100%** of answers (thin typed graph).
 - Re-run the full 25 after topping up credits: Quality page → Run evaluation, or `POST /api/evaluate`.
 
@@ -217,7 +217,7 @@ Nothing in the workflow changes. Only evaluation is affected: `POST /api/judge` 
 A full run takes ~13 s, mostly Synapt graph-RAG time. Streaming shows each agent's result as soon as it is ready, so the operator starts reading after ~2 s.
 
 **Q26b. Which judge model, and why keep it separate?**
-`gpt-4o-mini` through the aicredits.in OpenAI-compatible gateway (`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `MODEL_NAME`). Keeping the judge outside the pipeline means no model grades its own text, a gateway outage or budget limit cannot break an analysis, and an analysis costs no credits.
+Any OpenAI-compatible endpoint, set by `OPENAI_API_KEY`, `OPENAI_BASE_URL` and `MODEL_NAME`: `gpt-4o-mini` through the aicredits.in gateway, or an NVIDIA-hosted model (e.g. `nvidia/nemotron-3-super-120b-a12b` at `integrate.api.nvidia.com`; `meta/llama-3.3-70b-instruct` was retired by NVIDIA in August 2026). Swapping the judge is a config change, no code. Keeping the judge outside the pipeline means no model grades its own text, a gateway outage or budget limit cannot break an analysis, and an analysis costs no credits.
 
 ### Evaluation and quality
 
@@ -232,6 +232,12 @@ Less than before: the LLM no longer grades its own text, because our output is b
 
 **Q30. How big is your evaluation set?**
 25 golden incidents covering all 6 types, 5 industries and 5 regions, plus 10 guardrail cases and up to 3 replayed low-rated inputs; and a separate 10-case LLM-as-Judge benchmark. In the last run the judge's credits ran out after 16 cases, so DeepEval covers 16 while all 25 analyses completed. It's a regression suite, not a benchmark; I'd grow it from real feedback.
+
+**Q30b. You created two Synapt providers. Which one does the app use, and why?**
+`supply_chain_disruptions`, the original (set in `backend/.env`). I rebuilt the knowledge base with corrected impact bands and richer case cards in `supply_chain_disruptions_v2` and compared both on the 25 golden incidents: v2 retrieved the right disruption type slightly more often (75.1% vs 72.3%) and was faster (8.7 s vs 11.7 s), but Synapt's own confidence was lower (0.714 vs 0.736 answer, 0.559 vs 0.604 graph), because the larger graph has even more unconnected entities while entity creation is broken. All reported numbers come from the original, so I kept it; v2 is one `.env` line away (EVALUATION_REPORT §5).
+
+**Q30c. What does Synapt's own console say about your provider?**
+Context Status: 174 queries, 74.8% average confidence (platform 73.9%), 0 low-confidence answers, 95% grounded, 0% likely hallucinated. Graph Evals: 99% consistency, 99.96% provenance, 0% duplicates, but 87.9% isolated entities, so coverage is 15% — the same entity-creation bug I reported, confirmed by Synapt's own report card. The console also shows the stack behind MCP: gpt-5.4-mini as its LLM, Milvus 2.6.5 for vectors, Neo4j 5.26 for the graph (see `visual/synapt-explained.html`).
 
 ### Architecture, security, operations
 

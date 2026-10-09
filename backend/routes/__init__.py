@@ -8,6 +8,7 @@ from routes.evaluation import router as evaluation_router
 from routes.fallback_lab import router as fallback_lab_router
 from routes.feedback import router as feedback_router
 from routes.health import router as health_router
+from routes.history import router as history_router
 from routes.incidents import router as incidents_router
 from routes.portfolio import router as portfolio_router
 from routes.predict import router as predict_router
@@ -33,4 +34,5 @@ __all__ = [
     "feedback_router",
     "evaluation_router",
     "fallback_lab_router",
+    "history_router",
 ]

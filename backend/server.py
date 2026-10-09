@@ -1,6 +1,6 @@
 """
 Supply-Chain Disruption Assistant — FastAPI Microservice Entrypoint.
-Assembles modular routes, schemas and the built React console for supply-chain disruption
+Assembles modular routes, schemas and the static frontend assets for supply-chain disruption
 investigation, prediction and response planning powered by the Synapt Context Substrate.
 """
 
@@ -9,6 +9,8 @@ import os
 import sys
 
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 # Ensure the service root (backend/) is on sys.path
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -21,6 +23,7 @@ from routes import (  # noqa: E402
     fallback_lab_router,
     feedback_router,
     health_router,
+    history_router,
     incidents_router,
     portfolio_router,
     predict_router,
@@ -31,6 +34,7 @@ from routes import (  # noqa: E402
     stats_router,
     synapt_router,
 )
+from config import get_static_dir  # noqa: E402
 from services import webapp  # noqa: E402
 from services.bootstrap import startup  # noqa: E402
 
@@ -61,6 +65,7 @@ app.include_router(sops_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
 app.include_router(evaluation_router, prefix="/api")
 app.include_router(fallback_lab_router, prefix="/api")
+app.include_router(history_router, prefix="/api")
 
 
 @app.on_event("startup")
@@ -69,8 +74,20 @@ def on_startup():
     startup()
 
 
-# Built React console (FRONTEND_DIST): mounted last so /api routes win; unknown paths fall back to index.html
-webapp.serve_frontend(app)
+# Static Dashboard Assets Mounting (static/index.html · style.css · app.js)
+static_dir = get_static_dir()
+if os.path.exists(static_dir):
+    app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+@app.get("/", include_in_schema=False)
+def serve_dashboard():
+    """Serves the frontend single-page operations dashboard."""
+    index_path = os.path.join(static_dir, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path, headers={"Cache-Control": "no-cache"})  # always pick up new asset versions
+    return {"message": "Supply-Chain Disruption Assistant API active. Visit /docs for OpenAPI specs."}
+
 
 if __name__ == "__main__":
     import uvicorn

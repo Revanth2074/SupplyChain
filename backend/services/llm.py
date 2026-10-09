@@ -26,7 +26,7 @@ def client() -> OpenAI:
     global _client
     if _client is None:
         _client = OpenAI(base_url=settings.LLM_BASE_URL, api_key=settings.LLM_API_KEY or "none",
-                         timeout=90, max_retries=2)
+                         timeout=120, max_retries=5)  # rate-limited free tiers (e.g. NVIDIA) return 429s
     return _client
 
 

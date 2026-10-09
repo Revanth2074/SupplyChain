@@ -22,7 +22,7 @@ via aicredits.in) is only the judge.
 | | Retrieval type precision (hybrid, top 8) | **98 %** |
 | | Guardrail suite (10 cases) | **10 / 10** |
 | | Latency per analysis (0 LLM calls) | **13.4 s** |
-| Unit tests | `pytest tests` | **25 / 25** |
+| Unit tests | `pytest tests` | **28 / 28** |
 | Prediction models (held-out 20 %) | Production impact R² / MAE | **0.70 / 7.8 pts** |
 | | Full recovery R² / MAE | **0.40 / 31 days** |
 | | Revenue loss R² | **0.33** |
@@ -116,3 +116,24 @@ followed by a rerank: 0.5 × fused score + 0.5 × attribute similarity to the in
 | Full hybrid without Synapt | 100 % | 0.990 |
 
 The profile leg raised exact-profile matches in the top results from 14 % to 83 %.
+
+## 5. Knowledge-Base Re-Ingestion: Original vs Enriched Provider
+
+The enriched knowledge base (case cards with priority, drivers, outcome verdict and playbook link; runbook SOPs;
+corrected impact bands) was ingested into a fresh provider, `supply_chain_disruptions_v2`, and compared with the
+original provider on the 25 golden incidents (region masking off for both, so the queries are identical).
+
+| Measure | Original | Enriched (v2) |
+|---|---|---|
+| Graph size (nodes / chunks / edges) | 894 / 688 / 1,038 | 1,568 / 1,380 / 1,935 |
+| Semantic type precision (`trident_get_chunks`) | 72.3 % | **75.1 %** |
+| Answer / knowledge / procedural confidence | **0.736 / 0.832 / 0.746** | 0.714 / 0.822 / 0.709 |
+| Graph confidence | **0.604** | 0.559 |
+| Playbook found per type (steps) | 100 % (7) | 100 % (7) |
+| Answers flagged degraded | 100 % | 100 % |
+| Time per query | 11.7 s | **8.7 s** |
+
+Result: mixed. Retrieval is slightly more precise and faster, but Synapt's own confidence signals are slightly
+lower, likely because the larger graph spreads relevance over more nodes while typed entities still cannot be
+created (`trident_create_entity` fails server-side), so every answer stays flagged degraded. The app keeps the
+original provider as default; v2 is available by setting `SYNAPT_PROVIDER_ID=supply_chain_disruptions_v2`.

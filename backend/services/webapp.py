@@ -1,7 +1,6 @@
-"""Production wiring: optional password gate and serving the built React app from FastAPI.
+"""Production wiring: optional password gate and CORS allow-list (the static UI is served by server.py).
 
 * APP_PASSWORD   - when set, every page and API call needs a login (cookie). Leave unset for local dev.
-* FRONTEND_DIST  - path to the Vite build (frontend/dist); when set, the UI is served at / (one container, one URL).
 * CORS_ORIGINS   - comma-separated origins allowed to call the API from another site (default: none).
 """
 from __future__ import annotations
@@ -9,12 +8,10 @@ from __future__ import annotations
 import hashlib
 import hmac
 import os
-from pathlib import Path
 
 from fastapi import FastAPI, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 
 COOKIE = "sc_session"
 OPEN_PATHS = {"/login", "/logout", "/api/health"}
@@ -51,7 +48,7 @@ def install(app: FastAPI) -> None:
         @app.middleware("http")
         async def gate(request: Request, call_next):
             path = request.url.path
-            if path in OPEN_PATHS or path.startswith("/assets/") or path.endswith((".svg", ".ico")):
+            if path in OPEN_PATHS or path.startswith("/static/") or path.endswith((".svg", ".ico")):
                 return await call_next(request)
             if hmac.compare_digest(request.cookies.get(COOKIE, ""), good):
                 return await call_next(request)
@@ -81,21 +78,3 @@ def install(app: FastAPI) -> None:
             r = RedirectResponse("/login", status_code=303)
             r.delete_cookie(COOKIE)
             return r
-
-
-def serve_frontend(app: FastAPI) -> None:
-    """Mount the built React app last, so /api routes win; unknown paths fall back to index.html."""
-    dist = os.getenv("FRONTEND_DIST", "")
-    if not dist or not Path(dist, "index.html").exists():
-        return
-    root = Path(dist)
-    app.mount("/assets", StaticFiles(directory=root / "assets"), name="assets")
-
-    @app.get("/{path:path}", include_in_schema=False)
-    def spa(path: str):
-        if path.startswith("api/"):
-            return JSONResponse({"detail": "Not found"}, status_code=404)
-        f = root / path
-        if path and f.is_file() and root in f.resolve().parents:
-            return FileResponse(f)
-        return FileResponse(root / "index.html")

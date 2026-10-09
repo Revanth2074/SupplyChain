@@ -127,8 +127,8 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     <div class="stat"><b>100,000</b><span>historical disruptions</span></div>
     <div class="stat"><b>15</b><span>Synapt MCP tools wired in</span></div>
     <div class="stat"><b>7</b><span>agents in the workflow</span></div>
-    <div class="stat"><b>57</b><span>REST endpoints in 14 routers</span></div>
-    <div class="stat"><b>15</b><span>console pages (React)</span></div>
+    <div class="stat"><b>62</b><span>REST endpoints in 15 routers</span></div>
+    <div class="stat"><b>12</b><span>console views (HTML/CSS/JS)</span></div>
     <div class="stat"><b>3</b><span>fallback layers</span></div>
   </div>
 </div>
@@ -147,13 +147,13 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     <text x="20" y="388" class="dg-lab">ENGINES &amp; STORES</text>
     <!-- client -->
     <rect x="300" y="18" width="500" height="74" rx="14" class="dg-box"/>
-    <text x="320" y="44" class="dg-t">React 19 console (Vite)</text>
-    <text x="320" y="64" class="dg-s">15 pages · Detect → Investigate → Predict → Decide → Act &amp; learn</text>
-    <text x="320" y="80" class="dg-s">recharts · framer-motion · three.js Control Tower · SSE stream viewer</text>
+    <text x="320" y="44" class="dg-t">Static console (HTML · CSS · JS)</text>
+    <text x="320" y="64" class="dg-s">12 views · Detect → Investigate → Predict → Decide → Act &amp; learn</text>
+    <text x="320" y="80" class="dg-s">11 views · 3D control tower (three.js) · SVG graph · SSE stream viewer</text>
     <!-- gateway -->
     <rect x="300" y="130" width="500" height="54" rx="14" class="dg-box" style="stroke:var(--blue)"/>
     <text x="320" y="153" class="dg-t">FastAPI microservice · webapp gate</text>
-    <text x="320" y="171" class="dg-s">14 routers under /api · password gate · serves built UI</text>
+    <text x="320" y="171" class="dg-s">15 routers under /api · password gate · serves built UI</text>
     <!-- modules -->
     <g>
       <rect x="60" y="214" width="190" height="120" rx="12" class="dg-box"/>
@@ -347,10 +347,10 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
 
 <script>
 const COMPONENTS=[
- {k:"ui",ic:"🖥️",c:"blue",t:"React console",f:"frontend/src/App.jsx",d:"Single-page app with a sidebar grouped by stage. Every page has an info drawer that explains it in plain language.",b:["15 pages, hash routing","Glossary terms with hover help","Talks only to /api/*"]},
- {k:"ui",ic:"🛰️",c:"cyan",t:"Control Tower (3D)",f:"ControlTower.jsx · logistics/",d:"Live 3D view of suppliers, ports, roads, ships and 747 freighters. Lazy-loaded so it never slows the rest of the app.",b:["three.js / react-three-fiber","Flight paths with taxi, take-off, landing","Shows open incidents on the map"]},
- {k:"ui",ic:"📡",c:"violet",t:"Workflow viewer",f:"TabWorkflow.jsx",d:"Opens a Server-Sent Events stream and animates each agent as it starts and finishes.",b:["Shows each agent's output","Hand-off to Incident Desk","Feedback form on the result"]},
- {k:"svc",ic:"🚪",c:"blue",t:"FastAPI service",f:"server.py · routes/ · schemas/",d:"The microservice. 57 endpoints in 14 routers (health, copilot, search, prediction, decisions, portfolio, early warning, incidents, statistics, Synapt, playbooks, feedback, evaluation, fallback lab).",b:["Bootstraps data + models in a background thread","Returns 503 while warming up","OpenAPI docs at /docs"]},
+ {k:"ui",ic:"🖥️",c:"blue",t:"Operations console",f:"backend/static/index.html · style.css · app.js",d:"Three static files served by FastAPI at /, the same pattern as the reference Synapt capstone. A sidebar groups 11 views by stage.",b:["No build step, no Node.js","Hash routing, light + dark theme","Talks only to /api/*"]},
+ {k:"ui",ic:"🛰️",c:"cyan",t:"Control Tower (3D)",f:"static/app.js · Tower",d:"Live 3D view of the supplier portfolio: regional islands, ports with gantry cranes, trucks, container ships and 747 freighters sequenced through your hub. three.js loads from the CDN only when the view opens.",b:["Simulate a disruption type: halted sea lanes, air routes and ports","Click a site: risk by type, then run the 7 agents for it","KPIs, early warning and top risks below the scene"]},
+ {k:"ui",ic:"📡",c:"violet",t:"Workflow viewer",f:"static/app.js · streamAnalyze",d:"Opens a Server-Sent Events stream and animates each agent as it starts and finishes.",b:["Shows each agent's output","Hand-off to Incident Desk","Feedback form on the result"]},
+ {k:"svc",ic:"🚪",c:"blue",t:"FastAPI service",f:"server.py · routes/ · schemas/",d:"The microservice. 62 endpoints in 15 routers (health, copilot, search, prediction, decisions, portfolio, early warning, incidents, statistics, Synapt, playbooks, feedback, evaluation, fallback lab, history).",b:["Bootstraps data + models in a background thread","Returns 503 while warming up","OpenAPI docs at /docs"]},
  {k:"svc",ic:"🔐",c:"amber",t:"Web gate",f:"services/webapp.py",d:"Production wiring: optional password sign-in, CORS allow-list and serving the built UI from the same origin.",b:["HMAC session cookie","401 for API, redirect for pages","Off in local development"]},
  {k:"svc",ic:"🛡️",c:"red",t:"Guardrails",f:"agents/guardrails.py",d:"Every free-text input is validated before any model sees it.",b:["Blocks prompt injection & secrets","Redacts e-mails, cards, SSNs","Rejects off-topic text","Checks field values against the dataset vocabulary"]},
  {k:"ai",ic:"🤖",c:"violet",t:"7-agent LangGraph",f:"agents/graph.py · agents/state.py",d:"A LangGraph StateGraph: Guardrails → Classifier → (Hybrid retriever ∥ Synapt worker) → Evidence fusion → Impact → Planner → Recovery → Synthesis → Judge. Each node has one job and passes a typed state to the next.",b:["Synapt calls start in parallel at intake","Report is fact-checked and rewritten once if needed","No LLM inside: rules, Synapt, ML, templates"]},

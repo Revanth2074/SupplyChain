@@ -19,11 +19,14 @@ An intelligent, multi-agent operations platform that helps supply-chain teams **
   - Production impact **R² = 0.70** (MAE 7.8 pts), full recovery R² 0.40, revenue loss R² 0.33, high-impact risk **AUC = 0.87**; local and global explanations; what-if counterfactuals.
 - **Prioritisation, Decision Support & Incident Desk**: P1–P4 priority (35 % severity · 30 % impact · 25 % loss · 10 % risk) with SLAs, scenario comparison in money (net benefit, ROI), root-cause chains, early warning, supplier network outage simulation, tracked actions.
 - **Domain Safety & Prompt-Injection Guardrails**: injection, secrets, script tags and off-topic text are blocked and PII redacted before any model or Synapt call (guardrail suite **10/10**).
-- **Evaluation**: DeepEval (faithfulness **0.90**, answer relevancy **0.985**), independent LLM-as-Judge benchmark **9/10** (grounding 0.98), deterministic fact-check **100 %**, rule classification **100 %** (98/98 fields), **25 pytest** unit tests.
+- **Evaluation**: DeepEval (faithfulness **0.90**, answer relevancy **0.985**), independent LLM-as-Judge benchmark **9/10** (grounding 0.98), deterministic fact-check **100 %**, rule classification **100 %** (98/98 fields), **28 pytest** unit tests.
 - **Graceful Degradation (Fallback Lab)**: per-tool circuit breakers and local fallbacks for Synapt, the LLM judge and the models; a live switchboard and self-test prove them (**15/15** checks with everything on, with Synapt off, and with the judge LLM + models + feed off).
 - **External LLM only as the judge** (same pattern as the reference capstone): the workflow runs on rules, Synapt MCP,
   ML and templates; the aicredits.in model is called only by the evaluation (`scripts/llm_judge.py`,
   `scripts/deepeval_suite.py`, `POST /api/judge`).
+- **History**: every analysis, question, search, simulation, decision, incident action, evaluation and Fallback
+  Lab run is saved on the server in `backend/artifacts/history.json`, so the History tab shows the same list on any
+  device; past analyses re-open in full without re-running the agents.
 - **Operator-in-the-Loop Feedback**: ratings re-weight strategies, real outcomes retrain the models, verdicts go back to Synapt via `trident_feedback`.
 
 ---
@@ -32,8 +35,8 @@ An intelligent, multi-agent operations platform that helps supply-chain teams **
 
 ```mermaid
 flowchart TD
-    subgraph Client_Layer ["Operations Console (frontend/, React + Vite)"]
-        UI["15 pages: Incident Cockpit · Search & Ask · Knowledge Graph · Simulator · Root Cause<br/>Decision Studio · Portfolio · Network · Triage · Incident Desk · Quality · Fallback Lab"]
+    subgraph Client_Layer ["Operations Console (backend/static: index.html · style.css · app.js)"]
+        UI["12 views: 3D Control Tower · Incident Cockpit · Search & Ask · Knowledge Graph · Impact Simulator<br/>Decision Studio + Triage · Early Warning · Portfolio & Network · Incident Desk · Quality & Learning · History · Fallback Lab"]
     end
 
     subgraph Service_Layer ["FastAPI Service Layer (backend/server.py + routes/)"]
@@ -128,8 +131,8 @@ SupplyChain/
 │   ├── artifacts/                       # feedback.db · synapt_region_tokens.json · eval_results.json ·
 │   │                                    # synapt_ingest_manifest.json
 │   ├── requirements.txt · constraints.txt
+│   ├── static/                          # Operations console: index.html · style.css · app.js (no build step)
 │   └── .env                             # Configuration & credentials (git-ignored)
-├── frontend/                            # React 19 + Vite operations console
 ├── knowledge_base/
 │   ├── cases/                           # 40 files, 4,000 enriched case cards (+ case_sample_ids.csv)
 │   ├── sops/                            # SOP_001…006 disruption-response runbooks
@@ -144,7 +147,7 @@ SupplyChain/
 │   ├── PRESENTATION_GUIDE.md            # 10-minute presentation & demo script
 │   ├── STUDY_GUIDE.md                   # Concepts, code reading order, mock Q&A
 │   ├── deepeval_benchmark_results.json  # Full evaluation logs
-│   ├── visual/                          # how-it-works deck · architecture · design · synapt-modes (HTML)
+│   ├── visual/                          # deck · architecture · design · synapt-modes · synapt-explained · console-cheatsheet
 │   └── Project_9_…_with_Synapt.pdf      # Problem statement
 └── supply_chain_disruption_recovery.csv # 100,000-case dataset
 ```
@@ -152,6 +155,11 @@ SupplyChain/
 ---
 
 ## 🚀 Quickstart Guide
+
+**Fastest path (Windows, new machine):** unzip, put your `backend/.env` in place (or let the script create it from
+`.env.example`), then run `powershell -ExecutionPolicy Bypass -File .\run.ps1` in the project folder. It creates
+the virtual environment, installs the pinned dependencies and opens the app on http://127.0.0.1:8000. Requires
+Python 3.11+ (developed on 3.13).
 
 ### 1. Environment Setup
 
@@ -176,6 +184,10 @@ SYNAPT_MCP_URL=https://beta.synapt.ai/tristore/mcp/
 # (scripts/llm_judge.py, scripts/deepeval_suite.py, POST /api/judge). The workflow never calls it.
 OPENAI_API_KEY=your_key
 OPENAI_BASE_URL=https://api.aicredits.in/v1
+# NVIDIA alternative (build.nvidia.com key; the endpoint is OpenAI-compatible):
+#   OPENAI_API_KEY=nvapi-...
+#   OPENAI_BASE_URL=https://integrate.api.nvidia.com/v1
+#   MODEL_NAME=nvidia/nemotron-3-super-120b-a12b
 MODEL_NAME=gpt-4o-mini
 # (the older LLM_API_KEY / LLM_BASE_URL / LLM_MODEL names are still accepted)
 ```
@@ -212,13 +224,10 @@ python scripts/train_prediction_model.py            # ~15 s; writes models/
 python -m uvicorn server:app --host 127.0.0.1 --port 8000      # in backend/
 ```
 
-```powershell
-cd frontend
-npm install
-npm run dev -- --host 127.0.0.1 --port 3000                    # API_PORT=8010 if the backend runs elsewhere
-```
+The operations console is three static files (`backend/static/index.html`, `style.css`, `app.js`) served by
+FastAPI itself, so there is no Node.js, npm or build step.
 
-- **Operations Console**: [http://127.0.0.1:3000](http://127.0.0.1:3000)
+- **Operations Console**: [http://127.0.0.1:8000](http://127.0.0.1:8000)
 - **Interactive OpenAPI Documentation**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
 ---
@@ -226,7 +235,7 @@ npm run dev -- --host 127.0.0.1 --port 3000                    # API_PORT=8010 i
 ## 📊 Running Evaluation & Benchmarks
 
 ```powershell
-python -m pytest tests -q                           # 25 unit tests (guardrails, classifier, RRF, priority, fact-check, plan, manifest, data contract)
+python -m pytest tests -q                           # 28 unit tests (guardrails, classifier, RRF, priority, fact-check, plan, manifest, data contract, history)
 python scripts/deepeval_suite.py                    # 25 golden incidents + 10-case guardrail suite (DeepEval, LLM judge)
 python scripts/llm_judge.py                         # independent LLM-as-Judge benchmark, 10 cases x 4 rubrics
 python scripts/smoke_test.py basic ask analyze      # API smoke test against a running server
@@ -270,11 +279,13 @@ Sidebar → **System → Fallback Lab** switches off Synapt (all tools, graph-RA
 | [EVALUATION_REPORT.md](documentation/EVALUATION_REPORT.md) | Measured benchmarks and honest gaps |
 | [TRADE_OFFS.md](documentation/TRADE_OFFS.md) | Design decisions and the trade-offs accepted |
 | [PRESENTATION_GUIDE.md](documentation/PRESENTATION_GUIDE.md) | 10-minute talk + demo script |
-| [STUDY_GUIDE.md](documentation/STUDY_GUIDE.md) | Concepts, code reading order, 38-question mock Q&A |
+| [STUDY_GUIDE.md](documentation/STUDY_GUIDE.md) | Concepts, code reading order, 41-question mock Q&A |
 | [visual/how-it-works.html](documentation/visual/how-it-works.html) | 11-slide deck (← → to move, **F** for full screen) |
 | [visual/architecture.html](documentation/visual/architecture.html) · [design.html](documentation/visual/design.html) · [synapt-modes.html](documentation/visual/synapt-modes.html) | Interactive architecture, design and with/without-Synapt pages |
+| [visual/synapt-explained.html](documentation/visual/synapt-explained.html) | The Synapt MCP connector explained simply: the 17 tools, how each is used, and what the Synapt console reports for our provider |
+| [visual/console-cheatsheet.html](documentation/visual/console-cheatsheet.html) | Page-by-page cheat sheet: what to click and ask on every console page, plus a 10-minute demo route |
 
-**Known Synapt limitation:** `trident_create_entity` / `trident_create_concept` fail server-side (`index_node() missing 'neo4j_id'`), so the graph has few typed entities (graph confidence ≈ 0.57, answers flagged *degraded*). `synapt/ingest_to_synapt.py --ontology` ingests an ontology document as a workaround. Graph-RAG, procedures, episodes and the ticket store all work.
+**Known Synapt limitation:** `trident_create_entity` / `trident_create_concept` fail server-side (`index_node() missing 'neo4j_id'`), so the graph has few typed entities (graph confidence ≈ 0.57, answers flagged *degraded*). Synapt's own Graph Evals confirm it for our provider: 99 % consistency but 87.9 % isolated entities (coverage 15 %). `synapt/ingest_to_synapt.py --ontology` ingests an ontology document as a workaround. Graph-RAG, procedures, episodes and the ticket store all work.
 
 ---
 

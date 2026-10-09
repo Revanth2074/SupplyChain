@@ -3,7 +3,7 @@
 
 Slides: open [`visual/how-it-works.html`](visual/how-it-works.html) in a browser and press **F** for full screen; use ← → to move.
 Back-up pages for questions: [`visual/architecture.html`](visual/architecture.html), [`visual/design.html`](visual/design.html), [`visual/synapt-modes.html`](visual/synapt-modes.html).
-Preparation and likely questions: [`STUDY_GUIDE.md`](STUDY_GUIDE.md).
+Preparation and likely questions: [`STUDY_GUIDE.md`](STUDY_GUIDE.md). What to click and ask on every page: [`visual/console-cheatsheet.html`](visual/console-cheatsheet.html). Synapt in plain words: [`visual/synapt-explained.html`](visual/synapt-explained.html).
 
 Every number in this script is real: from `backend/models/prediction_metrics.json`, `backend/artifacts/eval_results.json`, `documentation/llm_judge_benchmark_results.json`, or measured on the 25-case golden set. Do not add numbers you cannot show.
 
@@ -90,7 +90,7 @@ Backup plan if the network fails: say "this is exactly the fallback case," open 
 - Decision engine compares options in money, scaled by outage days; cost assumptions are editable.
 
 ### 9 · Trust (50 s)
-Read the numbers from the slide: DeepEval on 16 judged golden cases (relevancy 0.985, faithfulness 0.90, contextual relevancy 0.88, impact 0.75, recommendation 0.75); independent LLM-as-Judge benchmark 9/10 (grounding 0.98); rule classification 100%; 25 unit tests. Then the key line: "No agent calls an LLM. Synapt does the reasoning; the external model only grades. When the judge ran out of credits after 16 cases, all 25 analyses still completed, because the workflow doesn't depend on it." Then:
+Read the numbers from the slide: DeepEval on 16 judged golden cases (relevancy 0.985, faithfulness 0.90, contextual relevancy 0.88, impact 0.75, recommendation 0.75); independent LLM-as-Judge benchmark 9/10 (grounding 0.98); rule classification 100%; 28 unit tests. Then the key line: "No agent calls an LLM. Synapt does the reasoning; the external model only grades. When the judge ran out of credits after 16 cases, all 25 analyses still completed, because the workflow doesn't depend on it." Then:
 - Fact-check pass rate and guardrail suite: both on the slide.
 - "If Synapt is down, a circuit breaker opens after three failures and search switches to a local index. On the golden set, Synapt's semantic search finds the right disruption type 87% of the time versus 68.5% for the fallback. With all three legs fused, both reach 100%, so the app degrades instead of breaking."
 
@@ -131,5 +131,5 @@ Run through this once the day before and once an hour before.
    - *"Why not let the LLM write the plan?"* An earlier version did. When the gateway ran out of credits mid-evaluation, plans silently fell back to templates. Now an analysis costs no credits, can't be broken by the gateway, and the judge never grades its own text. The cost: briefings read like structured reports rather than prose.
    - *"What did you find in Synapt?"* Slide 10, the four findings, each with its workaround.
 4. **Failure drills:** pull the network cable (or switch Synapt off in the Fallback Lab) and run the demo incident: it must still finish with "via local" badges. Then switch everything back on.
-5. **Numbers card** (keep on paper): DeepEval relevancy 0.985 / faithfulness 0.90 (16 judged); LLM-judge 9/10, grounding 0.98; classification 100%; fact-check 100%; guardrails 10/10; 25 unit tests; Fallback Lab 15/15 ×3; impact R² 0.70, risk AUC 0.87; Synapt semantic 87% vs 68.5% local.
+5. **Numbers card** (keep on paper): DeepEval relevancy 0.985 / faithfulness 0.90 (16 judged); LLM-judge 9/10, grounding 0.98; classification 100%; fact-check 100%; guardrails 10/10; 28 unit tests; Fallback Lab 15/15 ×3; impact R² 0.70, risk AUC 0.87; Synapt semantic 87% vs 68.5% local.
 6. **Reset after rehearsal:** Fallback Lab → **Restore all**, so no switch is left off for the real session.

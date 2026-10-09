@@ -58,9 +58,9 @@ def get_documentation_dir() -> Path:
     return REPO_DIR / "documentation"
 
 
-def get_frontend_dist() -> str:
-    """Built React console (frontend/dist); served at / when FRONTEND_DIST is set."""
-    return os.getenv("FRONTEND_DIST", "")
+def get_static_dir() -> str:
+    """Static frontend (index.html, style.css, app.js), served at / by server.py."""
+    return str(BASE_DIR / "static")
 
 
 class Settings:

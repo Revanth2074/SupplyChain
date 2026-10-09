@@ -53,9 +53,11 @@ sys.path.insert(0, os.path.join(os.path.dirname(_here), "scripts"))
 from build_knowledge_base import CONCEPTS, agg, fmt, strategy_ranking  # noqa: E402
 
 
-def call(tool: str, args: dict, retries: int = 2) -> Any:
-    """Call a Trident tool and parse its JSON text; retries transient failures."""
-    for i in range(retries + 1):
+def call(tool: str, args: dict, retries: int = 2, rate_limit_waits: int = 8) -> Any:
+    """Call a Trident tool and parse its JSON text; retries transient failures and waits out
+    Synapt's ingest rate limit ({"error": "rate_limited", "retry_after_seconds": N} comes back as a result)."""
+    i = 0
+    while True:
         try:
             r = _connector.call_tool(tool, {"provider_id": P, **args})
             if isinstance(r, str):
@@ -63,6 +65,12 @@ def call(tool: str, args: dict, retries: int = 2) -> Any:
                     r = json.loads(r)
                 except json.JSONDecodeError:
                     return r
+            if isinstance(r, dict) and r.get("error") == "rate_limited" and rate_limit_waits > 0:
+                rate_limit_waits -= 1
+                wait = int(r.get("retry_after_seconds") or 30) + 3
+                print(f"rate-limited, waiting {wait}s...", end=" ", flush=True)
+                time.sleep(wait)
+                continue
             if isinstance(r, dict) and set(r) == {"result"} and isinstance(r["result"], str):
                 try:
                     return json.loads(r["result"])
@@ -70,10 +78,11 @@ def call(tool: str, args: dict, retries: int = 2) -> Any:
                     return r["result"]
             return r
         except SynaptError as e:
-            if i == retries:
+            if i >= retries:
                 raise
+            i += 1
             print(f"  retry {tool}: {e}")
-            time.sleep(2 * (i + 1))
+            time.sleep(2 * i)
 
 
 def load_dataset() -> pd.DataFrame:
@@ -193,6 +202,8 @@ def ingest_assets(items: List[Dict[str, Any]], extraction_mode: str, manifest: D
         }
         try:
             res_obj = call("trident_ingest", tool_args)
+            if isinstance(res_obj, dict) and res_obj.get("error"):  # never record a rejected file as ingested
+                raise SynaptError(f"{res_obj['error']}: {res_obj.get('message', '')}")
             resp_list = res_obj.get("response", []) if isinstance(res_obj, dict) else []
             job_id = resp_list[0].get("job_id", "ACCEPTED") if resp_list else "QUEUED"
             print(f"[OK] (Job: {job_id})")

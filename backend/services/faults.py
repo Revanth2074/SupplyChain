@@ -32,7 +32,7 @@ SWITCHES = {
         "fallback": "The planner ranks strategies from historical statistics without the SOP steps.",
     },
     "llm": {
-        "label": "LLM judge (aicredits.in)",
+        "label": "LLM judge (external)",
         "outage": "The external judge LLM fails. It is used only for evaluation (LLM-as-judge, DeepEval).",
         "fallback": "The workflow is unaffected (it never calls the LLM); judging falls back to the rule rubric.",
     },
