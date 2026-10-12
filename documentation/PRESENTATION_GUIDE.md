@@ -5,7 +5,7 @@ Slides: open [`visual/how-it-works.html`](visual/how-it-works.html) in a browser
 Back-up pages for questions: [`visual/architecture.html`](visual/architecture.html), [`visual/design.html`](visual/design.html), [`visual/synapt-mode.html`](visual/synapt-mode.html).
 Preparation and likely questions: [`STUDY_GUIDE.md`](STUDY_GUIDE.md). What to click and ask on every page: [`visual/console-cheatsheet.html`](visual/console-cheatsheet.html). Synapt in plain words: [`visual/synapt-explained.html`](visual/synapt-explained.html).
 
-Every number in this script is real: from `backend/models/prediction_metrics.json`, `backend/artifacts/eval_results.json`, `documentation/llm_judge_benchmark_results.json`, or measured on the 25-case golden set. Do not add numbers you cannot show.
+Every number in this script is real: from `backend/artifacts/precedent_validation.json`, `backend/artifacts/eval_results.json`, `documentation/llm_judge_benchmark_results.json`, or measured on the 25-case golden set. Do not add numbers you cannot show.
 
 ---
 
@@ -18,9 +18,9 @@ Every number in this script is real: from `backend/models/prediction_metrics.jso
 | 3 | The loop | 1:20–2:00 | Detect → Investigate → Predict → Decide → Act → Learn |
 | 4 | Synapt at the core | 2:00–2:50 | Tri-store + MCP, why it is more than a vector DB |
 | 5 | Hybrid search | 2:50–3:30 | Three legs, RRF, 14% → 83% |
-| 6 | Seven agents | 3:30–4:10 | One job each, streamed live |
+| 6 | Supervisor + agents | 3:30–4:10 | Goal-driven agents, decisions streamed live |
 | — | **Live demo** | 4:10–7:10 | Cockpit → Decision Studio → Incident Desk |
-| 7 | Predict & explain | 7:10–7:40 | Ranges, honest R², drivers |
+| 7 | Estimate & explain | 7:10–7:40 | Past cases, not a model; honest R², drivers |
 | 8 | Decide & act | (skip if demo covered it) | Priority, money, SLA |
 | 9 | Trust | 7:40–8:30 | DeepEval + fact-check + LLM-judge numbers |
 | 10 | What I found in Synapt | 8:30–9:30 | Product feedback |
@@ -33,7 +33,7 @@ If time is short, drop slide 8 (the demo already shows it) and shorten slide 7.
 ## Script
 
 ### 1 · Title (40 s)
-> "Supply-chain teams lose days answering three questions every time a supplier goes down. I built an assistant on Synapt that answers them in about twelve seconds, grounded in 100,000 historical disruptions. Synapt does the reasoning, ML models produce every number, every claim is checked against evidence, and no agent calls an LLM: an external model is used only to grade the output."
+> "Supply-chain teams lose days answering three questions every time a supplier goes down. I built an assistant on Synapt that answers them in about twelve seconds, grounded in 100,000 historical disruptions. Synapt does the reasoning and finds the precedents, every number comes from comparable past cases rather than a trained model, every claim is checked against evidence, and no agent calls an LLM: an external model is used only to grade the output."
 
 ### 2 · The problem (40 s)
 - The three questions come straight from the brief: *has this happened before and how was it resolved; what drives impact and loss; which response worked and how fast.*
@@ -54,8 +54,10 @@ If time is short, drop slide 8 (the demo already shows it) and shorten slide 7.
 - Fused by **Reciprocal Rank Fusion**: score = Σ w / (60 + rank). Fusing by rank avoids calibrating scores that use different scales.
 - "Adding the profile leg raised exact-profile matches in the top results from 14% to 83%."
 
-### 6 · Seven agents (40 s)
-- Intake → Investigator → Impact → Planner → Recovery → Report → Judge. Each has one job and a typed output.
+### 6 · Supervisor + goal-driven agents (40 s)
+- A **Supervisor** and eight agents: Intake, case search, Synapt, evidence fusion, Impact, Planner, Recovery, Report, Judge. "They are not if/else steps: each has a goal and tools, decides its own next step, checks its own result and reports its confidence."
+- Point at examples on screen: the case-search agent widens its own search when evidence is thin; the Report agent fact-checks and rewrites its own draft; the Impact agent asks Synapt for the nearest past cases and cross-checks its cohort estimate against them; the Judge sends its weakest criterion back to the agent responsible.
+- "The supervisor schedules by goal and dependency, so case search, Synapt and impact prediction start together."
 - None of them calls an LLM: intake is vocabulary-constrained rules, the plan is strategy statistics plus the Synapt playbook steps, the briefing is built from the evidence plus Synapt's graph-RAG answer, and the judge is a six-criterion rule audit. "That is the same split the reference Synapt capstone uses: Synapt reasons, the LLM only judges."
 - Synapt calls start in parallel at intake, so they overlap with the local work. A run takes ~12 s, ~10 s of it Synapt graph-RAG. Results stream over Server-Sent Events.
 
@@ -64,24 +66,26 @@ Have the app open and **warmed up** (first request after start-up takes ~30 s wh
 
 > *Ransomware attack on our Tier 2 electronics supplier in Asia-Pacific has halted their ERP and shipments. No backup supplier is qualified. Severity 4.*
 
-1. **Incident Cockpit** → Analyse. Narrate the agents as they light up. Point at:
+1. **Incident Cockpit** → Analyse. Narrate the supervisor's decisions and each agent's step list as they appear. Point at:
+   - the supervisor starting three agents together ("Open goals with inputs ready, run in parallel");
+   - an agent card's own steps (thought → tool → observation) and its confidence;
    - classified fields + confidence;
    - similar cases with **"via Synapt"** badges and the Synapt confidence chip;
    - P10–P90 ranges and the priority badge;
    - the plan's first actions are the Synapt playbook steps ("Step 1, Step 2 …"), and the rationale says why the top strategy beat the fastest one;
    - the briefing sections are labelled evidence / prediction / recommendation / Synapt answer;
    - the **fact-check passed** badge and the rule-audit verdict.
-2. Click **What-if → add backup supplier**: recovery drops; "this is the ML model; no LLM is involved anywhere in the workflow."
-3. **Decision Studio**: same incident. "Releasing the buffer is recommended: +$390k net benefit vs doing nothing, 18 days sooner. A qualified backup would be worth +$537k, which is the business case for dual-sourcing."
-4. **Open incident & track actions** → Incident Desk: SLA clock, escalation chain; close an action with a real outcome → "this becomes training data and a `trident_feedback` verdict."
+2. Click **What-if → add backup supplier**: recovery drops by about 34 days; "these are two groups of real past cases, 327 with a backup and the same profile without; there is no trained model and no LLM anywhere in the workflow."
+3. **Decision Studio**: same incident. "Spot-buying from an alternative supplier is recommended: about +$939k net benefit vs doing nothing and 71 days sooner. Activating a qualified backup would be worth about +$452k, but we don't have one, so it is marked hypothetical."
+4. **Open incident & track actions** → Incident Desk: SLA clock, escalation chain; close an action with a real outcome → "this joins the precedent pool and sends a `trident_feedback` verdict."
 5. (If time) **Knowledge Graph**: the reasoning subgraph Synapt walked.
 
 Backup plan if the network fails: the app runs only on Synapt, so there is no offline demo. Say so plainly, show the clear error in the console banner and `/api/health` (last Synapt error), and switch to the slides and screenshots.
 
-### 7 · Predict & explain (30 s)
-- Models: HistGradientBoosting on all 100,000 rows, 80/20 split.
-- Honest numbers: production impact R² 0.70; full recovery R² 0.40; revenue R² 0.33; risk AUC 0.87.
-- "That is why every prediction is a P10–P90 range. On held-out data the range contains the real value about 79% of the time, against an 80% target."
+### 7 · Estimate & explain (30 s)
+- No trained model: the Impact agent asks Synapt for the nearest past cases, then takes the median and P10–P90 of the closest cohort of past cases (at least 30). Synapt's precedents are shown with the estimate and cross-check it.
+- Honest numbers on 19,921 held-out cases: production impact R² 0.68; full recovery R² 0.35; revenue R² 0.33; risk AUC 0.87, within a few points of the gradient-boosting models it replaced.
+- "That is why every estimate is a P10–P90 range. On held-out data the range contains the real value about 78% of the time, against an 80% target."
 - Drivers: severity dominates; a backup supplier saves about 26 days on average (90 → 64). Disruption type matters mostly *through* severity.
 
 ### 8 · Decide & act (optional, 30 s)
@@ -113,9 +117,10 @@ Read the numbers from the slide: DeepEval on 16 judged golden cases (relevancy 0
 | "The LLM judge says it's perfect" | "An independent model passed 9 of 10 cases; the one fail was Synapt's answer naming a strategy not in its chunks" |
 | "100% uptime" / "works without Synapt" | "Synapt is required; if it fails, the request returns a clear error instead of a silently weaker answer" |
 | "90% faster triage", "$250B industry loss" | Nothing; there is no source |
-| "R² 0.70" (alone) | "0.70 for production impact; 0.27–0.40 for recovery and revenue, so we show ranges" |
+| "R² 0.68" (alone) | "0.68 for production impact; 0.17–0.35 for recovery and revenue, so we show ranges" |
+| "Synapt predicts the impact" | "Synapt finds the comparable past cases and cross-checks; the numbers are statistics over the closest cohort" |
 | "Synapt knows all 100k cases" | "Full narratives for 4k, compact profiles for all 100k; local search covers every row" |
-| "The graph proves causality" | "The graph shows the reasoning path; the models give correlations; root-cause chains are templates filled with model outputs" |
+| "The graph proves causality" | "The graph shows the reasoning path; past cases give correlations; root-cause chains are templates filled with precedent estimates" |
 
 ---
 
@@ -123,11 +128,11 @@ Read the numbers from the slide: DeepEval on 16 judged golden cases (relevancy 0
 
 Run through this once the day before and once an hour before.
 
-1. **Warm-up (5 min before):** start the backend and frontend, open the Incident Cockpit and run the sample incident once (first run builds indexes). Check the header: Synapt **Connected**, Models **Ready**.
+1. **Warm-up (5 min before):** start the backend and frontend, open the Incident Cockpit and run the sample incident once (first run builds indexes). Check the header: Synapt **Connected**, Estimates **precedents**.
 2. **Timing pass:** read the script aloud with a timer; the live demo must fit 3:00. Cut slide 8 first, then shorten slide 7.
 3. **Three answers to say without notes:**
    - *"Where is the LLM?"* Only as the independent judge: `scripts/llm_judge.py` (10 cases, 4 rubrics, 9/10 pass), DeepEval, and `POST /api/judge`. No agent calls it.
    - *"Why not let the LLM write the plan?"* An earlier version did. When the gateway ran out of credits mid-evaluation, plans silently fell back to templates. Now an analysis costs no credits, can't be broken by the gateway, and the judge never grades its own text. The cost: briefings read like structured reports rather than prose.
    - *"What did you find in Synapt?"* Slide 10, the four findings, each with its workaround.
 4. **Connection check:** confirm Synapt credentials and network before the session; the app will not start without Synapt. Know where the error shows (console banner, `/api/health` → `synapt.last_error`) in case the connection drops.
-5. **Numbers card** (keep on paper): DeepEval relevancy 0.985 / faithfulness 0.90 (16 judged); LLM-judge 9/10, grounding 0.98; classification 100%; fact-check 100%; guardrails 10/10; 28 unit tests; impact R² 0.70, risk AUC 0.87; Synapt semantic leg 87% type precision.
+5. **Numbers card** (keep on paper): DeepEval relevancy 0.985 / faithfulness 0.90 (16 judged); LLM-judge 9/10, grounding 0.98; classification 100%; fact-check 100%; guardrails 10/10; 51 unit tests; precedent estimates impact R² 0.68, risk AUC 0.87 (no trained model); Synapt semantic leg 87% type precision; agents on 25 golden incidents: 25/25 approve, 8 supervisor decisions, 12.5 s; Impact agent used ~40 Synapt precedents per incident and flagged 4/25

@@ -109,8 +109,8 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 16px}
 
 <section id="steps">
   <h2>Step by step: what each node runs on</h2>
-  <p class="sub">The ten LangGraph nodes, in order. The hybrid retriever and the Synapt worker run in parallel after the classifier.
-  <span class="pill syn">Synapt</span> steps call Synapt tools; <span class="pill loc">local</span> steps are rules, statistics or ML on the local dataset.
+  <p class="sub">The supervisor and its agents. There is no fixed order: once the incident is classified, case search, the Synapt agent and the Impact agent start in parallel, and each later agent starts as soon as its inputs are ready.
+  <span class="pill syn">Synapt</span> steps call Synapt tools; <span class="pill loc">local</span> steps are rules or statistics on the local dataset (there is no trained model).
   If a Synapt step fails, the workflow stops with an error.</p>
   <div class="filt" id="filt">
     <button class="btn on" data-f="all">All steps</button>
@@ -138,7 +138,7 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 16px}
       <div class="flow">
         <div class="fstep"><b>1 · connecting to Synapt</b>checks <code>SYNAPT_USERNAME</code>, <code>SYNAPT_PASSWORD</code>, <code>SYNAPT_PROVIDER_ID</code>, authenticates, MCP handshake</div>
         <div class="fstep"><b>2 · loading data</b>CSV + BM25 index</div>
-        <div class="fstep"><b>3 · loading models</b>load or train the ML predictors</div>
+        <div class="fstep"><b>3 · building precedent pool</b>cohort columns, thresholds, outcome spread (no model to train)</div>
         <div class="fstep"><b>4 · ready</b>all endpoints serve</div>
       </div>
       <div class="flow" style="margin-top:10px">
@@ -214,15 +214,16 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 16px}
 // [step, kind, what it runs on, synapt tools]
 const STEPS=[
  ["Guardrails","loc","Local regex + vocabulary checks on the incident text; invalid input ends the run.",[]],
- ["Classifier","loc","Keyword rules per field with confidence, constrained to the dataset vocabulary (no LLM).",[]],
- ["Hybrid retriever","syn","Synapt semantic leg (chunks joined to the CSV by DIS- id) + BM25 keyword leg + attribute-profile leg over all 100k rows, fused with RRF; knowledge-graph nodes added.",["trident_get_chunks","trident_search"]],
- ["Synapt worker","syn","Graph-RAG answer + subgraph and the response playbook, in parallel. Skips graph-RAG only when use_graph=false.",["trident_query","trident_get_procedures"]],
- ["Evidence fusion","loc","Merges retrieved cases, graph answer and playbook into one evidence package.",[]],
- ["Impact","loc","Local HistGradientBoosting models (P10–P90) + P1–P4 priority and SLA formula.",[]],
- ["Planner","loc","Strategy statistics from similar cases; actions taken from the Synapt playbook fetched by the worker.",[]],
- ["Recovery","loc","ML counterfactual timeline, cohort recovery percentiles, milestones.",[]],
- ["Synthesis","loc","Evidence template + Synapt graph-RAG answer, deterministic fact-check (no LLM).",[]],
- ["Judge","loc","Rule rubric over report, evidence and fact-check (no LLM at runtime).",[]],
+ ["Supervisor","loc","Goal table × dependencies × agent requests: runs every agent whose goal is open and whose inputs are ready, in parallel; states a reason for each decision.",[]],
+ ["Intake agent","syn","Keyword rules first; only if type / industry / region is missing or unsure does it ask Synapt how the nearest past cases are labelled (keeps a label only at ≥ 50% agreement).",["trident_get_chunks (when unsure)"]],
+ ["Case-search agent","syn","Synapt semantic leg + BM25 + profile leg, fused with RRF; judges its own evidence and widens the search (up to 3 strategies) until ≥ 3 cases at ≥ 60% similarity.",["trident_get_chunks","trident_search"]],
+ ["Synapt agent","syn","Graph-RAG answer + subgraph and the playbook, in parallel; re-asks a broader question when the answer is missing or below 0.5 confidence.",["trident_query","trident_get_procedures"]],
+ ["Impact agent","syn","Asks Synapt for the nearest past cases, then estimates from the closest cohort of past cases (median + P10–P90, no trained model) + P1–P4 priority; lowers its confidence if Synapt's precedents and the cohort disagree. Runs in parallel with the two above.",["trident_get_chunks"]],
+ ["Evidence fusion","loc","Adds the cases Synapt cited that search missed; grades the evidence from similarity and Synapt's confidence.",[]],
+ ["Planner agent","syn","Strategy statistics; rejects strategies with < 30 comparable cases; uses the Synapt playbook steps as actions, fetching the playbook itself if it is missing.",["trident_get_procedures (if missing)"]],
+ ["Recovery agent","loc","Precedent counterfactual timeline (same profile, chosen strategy) + cohort percentiles; flags a projection outside the cohort's P10–P90.",[]],
+ ["Report agent","loc","Evidence template, fact-checks its own draft and rewrites until it passes; Synapt's answer attached as its own section.",[]],
+ ["Judge agent","loc","Rule rubric; on 'revise' sends its weakest criterion back to the agent responsible (no LLM at runtime).",[]],
 ];
 const MATRIX=[
  ["Similar-case search","syn","Synapt semantic (trident_get_chunks) + BM25 + profile match, RRF; keyword-only mode uses BM25 + profile"],
@@ -230,21 +231,21 @@ const MATRIX=[
  ["Reasoning graph explorer","syn","Synapt subgraph, rings by hop"],
  ["Ask the graph (analytics)","syn","6 provider-pinned Cypher templates (trident_cypher)"],
  ["Response playbooks","syn","trident_get_procedures steps become the plan actions"],
- ["Classification","loc","Rules; Synapt ticket labels (trident_label_ticket) as a second opinion"],
- ["Predictions & ranges","loc","Local ML models (cohort statistics if the model file is absent)"],
- ["Explainability","loc","Local contributions + feature importance"],
+ ["Classification","syn","Intake agent: rules, then Synapt nearest-case labels when unsure (trident_get_chunks); trident_label_ticket via /api/synapt/label"],
+ ["Estimates & ranges","syn","Synapt nearest past cases (trident_get_chunks) + cohort median and P10–P90 over the case history; no trained model"],
+ ["Explainability","loc","Drivers from paired cohorts + share of outcome variance (η²)"],
  ["Prioritisation & SLA","loc","Local formula"],
  ["Decision engine, early warning, root cause","syn","Local analytics + Synapt evidence"],
  ["Executive briefing","syn","Evidence template + Synapt graph-RAG answer, fact-checked"],
  ["Judge agent (runtime)","loc","Rule rubric"],
  ["LLM-as-Judge (evaluation)","loc","External LLM rubric (rule rubric if the key is missing or unreachable)"],
- ["Feedback loop","syn","Local re-weighting + retrain + trident_feedback"],
+ ["Feedback loop","syn","Local re-weighting + outcomes into the precedent pool + trident_feedback"],
 ];
 const LLM=[
- ["Classifier","Keyword rules per field with confidence, constrained to the dataset vocabulary","none"],
- ["Planner","Strategy statistics + Synapt playbook steps (trident_get_procedures)","none"],
- ["Report","Evidence template + Synapt graph-RAG answer, deterministic fact-check","none"],
- ["Judge","Runtime: rule rubric. Evaluation: external LLM judge (llm_judge.py, DeepEval, /api/judge)","evaluation only"],
+ ["Intake","Keyword rules, then Synapt nearest-case labels when unsure","none"],
+ ["Planner","Strategy statistics, weak-strategy rejection, Synapt playbook steps","none"],
+ ["Report","Evidence template, own fact-check + rewrite loop, Synapt answer section","none"],
+ ["Judge","Runtime: rule rubric + targeted redo requests. Evaluation: external LLM judge (llm_judge.py, DeepEval, /api/judge)","evaluation only"],
 ];
 
 const $=id=>document.getElementById(id);
@@ -252,7 +253,7 @@ const lbl=k=>k==='syn'?'Synapt':'local';
 $('pipe').innerHTML=STEPS.map((r,i)=>`<div class="node ${r[1]}" data-k="${r[1]}"><span class="pill ${r[1]} st">${lbl(r[1])}</span><div class="n">STEP ${i+1}</div><b>${r[0]}</b><div class="src">${r[2]}</div>${r[3].length?`<div class="tools">${r[3].map(t=>`<code>${t}</code>`).join('')}</div>`:''}</div>`).join('');
 const nSyn=STEPS.filter(r=>r[1]==='syn').length;
 const nTools=new Set(STEPS.flatMap(r=>r[3])).size;
-$('summ').innerHTML=`<div class="sbox"><b style="color:var(--cyan)">${nSyn}</b><span>steps call Synapt directly</span></div><div class="sbox"><b style="color:var(--cyan)">${nTools}</b><span>Synapt tools used per analysis</span></div><div class="sbox"><b>${STEPS.length-nSyn}</b><span>steps on local rules, statistics or ML</span></div>`;
+$('summ').innerHTML=`<div class="sbox"><b style="color:var(--cyan)">${nSyn}</b><span>steps call Synapt directly</span></div><div class="sbox"><b style="color:var(--cyan)">${nTools}</b><span>Synapt tools used per analysis</span></div><div class="sbox"><b>${STEPS.length-nSyn}</b><span>steps on local rules or statistics</span></div>`;
 document.querySelectorAll('#filt .btn').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#filt .btn').forEach(x=>x.classList.toggle('on',x===b));
   const f=b.dataset.f;

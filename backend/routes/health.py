@@ -6,7 +6,7 @@ data and model status, and the dataset vocabulary for the console.
 
 from fastapi import APIRouter
 
-from agents.prediction import registry
+from agents.precedent import estimator
 from agents import synapt_tools as syn
 from agents.state import AGENTS
 from config import settings
@@ -19,13 +19,13 @@ router = APIRouter(tags=["Health"])
 
 @router.get("/health")
 def health():
-    """Health check endpoint verifying data, models, Synapt MCP and LLM status."""
+    """Health check endpoint verifying data, the precedent pool, Synapt MCP and LLM status."""
     return {"status": boot["stage"], "error": boot["error"], "synapt": syn.status(),
             "llm": {"configured": llm.available(), "base_url": settings.LLM_BASE_URL, "model": settings.LLM_MODEL,
                     "judge_model": settings.JUDGE_MODEL},
             "data": {"ready": store.ready, "rows": int(len(store.df)) if store.df is not None else 0},
-            "models": {"ready": registry.ready, "training": registry.training,
-                       "trained_at": registry.meta.get("trained_at"), "fallback": registry.fallback()}}
+            "estimates": {"ready": estimator.ready, "refreshing": estimator.refreshing, "method": "precedent statistics",
+                          "built_at": estimator.meta.get("built_at"), "cases": estimator.meta.get("n_cases")}}
 
 
 @router.get("/meta")

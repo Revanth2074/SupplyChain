@@ -18,12 +18,14 @@ import time
 from typing import Any
 
 from config import settings
+from agents.base import Action, Agent, Tool
 from synapt.synapt_connector import SynaptConfig, SynaptError, SynaptMCPConnector
 
 log = logging.getLogger("synapt.svc")
 
 CASE_SPLIT = re.compile(r"#{2,3}\s*(DIS-\d{6})")
 _pool = cf.ThreadPoolExecutor(max_workers=4)
+_agent_pool = cf.ThreadPoolExecutor(max_workers=4)  # agent-level fan-out; tool calls inside use _pool
 
 
 _last_error = {"tool": None, "error": ""}
@@ -393,29 +395,95 @@ def status() -> dict:
             "region_tokens_learned": len(regions.tokens)}
 
 
-def synapt_worker_node(state: dict) -> dict:
-    """LangGraph node (Synapt worker, part of the Investigation agent): queries the Synapt Context
-    Substrate for grounded reasoning (trident_query graph-RAG) and the response playbook for this
-    disruption type (trident_get_procedures), in parallel. When the supervisor sends it back because
-    graph-RAG gave no answer, it asks a broader question (type + industry only) and keeps the playbook.
-    Synapt is required: a failure stops the workflow with a SynaptError."""
-    from agents.state import describe
+MIN_GRAPH_CONFIDENCE = 0.5   # a graph-RAG answer below this is treated as weak
 
-    require_configured()
-    payload, incident = state["payload"], state["incident"]
-    rnd = state.get("synapt_round", 0) + 1
-    desc = state.get("description") or ""
-    graph_fut = proc_fut = None
-    if payload.get("use_graph", True):
-        if rnd == 1:
-            gq = (f"{describe(incident)}. {desc[:300]} Has a similar disruption occurred and how was it resolved, "
-                  f"which response strategy recovered fastest?")
-        else:
-            core = {k: incident.get(k) for k in ("disruption_type", "industry")}
-            gq = f"How are {describe(core)}s usually resolved, and which response strategy recovers fastest?"
-        graph_fut = _pool.submit(fetch_synapt_rag, gq, None, None, 75, "workflow")
-    if rnd == 1 or state.get("procedure") is None:
-        proc_fut = _pool.submit(procedure_for, incident["disruption_type"])
-    graph = graph_fut.result(timeout=80) if graph_fut else None
-    procedure = proc_fut.result(timeout=30) if proc_fut else state.get("procedure")
-    return {"graph": graph, "procedure": procedure, "synapt_round": rnd}
+
+def _graph_and_playbook(question: str | None, disruption_type: str | None) -> dict:
+    """Ask graph-RAG and fetch the playbook in parallel (either may be skipped)."""
+    gf = _agent_pool.submit(fetch_synapt_rag, question, None, None, 75, "workflow") if question else None
+    pf = _agent_pool.submit(procedure_for, disruption_type) if disruption_type else None
+    return {"graph": gf.result(timeout=80) if gf else None, "procedure": pf.result(timeout=30) if pf else None}
+
+
+class SynaptAgent(Agent):
+    """Goal: a confident, grounded graph-RAG answer for this incident plus the response playbook for its
+    disruption type. Tools: trident_query (graph-RAG) and trident_get_procedures, run in parallel. The
+    agent grades Synapt's own confidence; when the answer is missing or weak it re-asks one broader
+    question (type + industry) and keeps the stronger answer. Synapt is required: a failure stops the
+    workflow with SynaptError (there is no local fallback)."""
+
+    id, node = "investigator", "synapt_worker"
+    goal = f"Get a graph-RAG answer with confidence >= {MIN_GRAPH_CONFIDENCE:.0%} and the response playbook"
+    max_steps = 2
+    reports_done = False  # reported together with the case search by the Evidence-fusion step
+
+    def make_tools(self) -> list[Tool]:
+        return [Tool("graph_rag_and_playbook", "trident_query + trident_get_procedures in parallel",
+                     lambda question, disruption_type: _graph_and_playbook(question, disruption_type)),
+                Tool("graph_rag", "trident_query: grounded answer, subgraph and quality signals",
+                     lambda question: _graph_and_playbook(question, None))]
+
+    def perceive(self, state: dict) -> dict:
+        from agents.state import describe
+        require_configured()
+        payload, incident = state["payload"], state["incident"]
+        desc = state.get("description") or ""
+        core = {k: incident.get(k) for k in ("disruption_type", "industry")}
+        return {"use_graph": payload.get("use_graph", True), "incident": incident,
+                "specific": (f"{describe(incident)}. {desc[:300]} Has a similar disruption occurred and how was it "
+                             f"resolved, which response strategy recovered fastest?"),
+                "broad": f"How are {describe(core)}s usually resolved, and which response strategy recovers fastest?",
+                "graph": None, "procedure": state.get("procedure"), "asked": 0,
+                "round": state.get("synapt_round", 0) + 1}
+
+    @staticmethod
+    def _strong(g: dict | None) -> bool:
+        return bool(g and g.get("answer") and (g.get("confidence") or 0) >= MIN_GRAPH_CONFIDENCE)
+
+    def decide(self, obs: dict, steps: list[dict]) -> Action | None:
+        if not steps:
+            q = obs["specific"] if obs["use_graph"] else None
+            what = "Ask graph-RAG about this incident" if q else "Graph-RAG is off for this run"
+            return Action("graph_rag_and_playbook", {"question": q, "disruption_type": obs["incident"]["disruption_type"]},
+                          f"{what} and fetch the {obs['incident']['disruption_type']} playbook, in parallel")
+        if obs["use_graph"] and not self._strong(obs["graph"]) and obs["asked"] < 2:
+            g = obs["graph"] or {}
+            why = "no answer" if not g.get("answer") else f"confidence {g.get('confidence', 0):.0%} is weak"
+            return Action("graph_rag", {"question": obs["broad"]}, f"Graph-RAG gave {why}: ask a broader question")
+        return None
+
+    def observe(self, obs: dict, action, result, error):
+        if action.tool == "graph_rag_and_playbook":
+            obs["procedure"] = result["procedure"] or obs["procedure"]
+        g = result["graph"]
+        if g is not None:
+            obs["asked"] += 1
+            old = obs["graph"]
+            if old is None or (g.get("answer") and (g.get("confidence") or 0) > (old.get("confidence") or 0)) or not old.get("answer"):
+                g["question_kind"] = "specific" if action.tool == "graph_rag_and_playbook" else "broad"
+                obs["graph"] = g
+        return obs
+
+    def summarise(self, action, result, error):
+        g, p = result.get("graph"), result.get("procedure")
+        parts = []
+        if g is not None:
+            parts.append(f"answer {'received' if g.get('answer') else 'missing'}, confidence {g.get('confidence') or 0:.2f}")
+        if action.tool == "graph_rag_and_playbook":
+            parts.append(f"playbook: {p['name']} ({len(p['steps'])} steps)" if p else "no playbook found")
+        return " · ".join(parts)
+
+    def reflect(self, obs: dict, steps: list[dict]) -> dict:
+        g, p = obs["graph"], obs["procedure"]
+        ok = (self._strong(g) or not obs["use_graph"]) and p is not None
+        return {"status": "done" if ok else "partial", "confidence": (g or {}).get("confidence"),
+                "summary": (("graph-RAG answer" + (f" (confidence {g.get('confidence') or 0:.2f})" if g else "")
+                             if g and g.get("answer") else "no graph-RAG answer")
+                            + (f" · playbook {p['name']}" if p else " · no playbook")),
+                "requests": []}
+
+    def commit(self, obs: dict, message: dict, state: dict) -> dict:
+        return {"graph": obs["graph"], "procedure": obs["procedure"], "synapt_round": obs["round"]}
+
+
+synapt_worker_node = SynaptAgent()

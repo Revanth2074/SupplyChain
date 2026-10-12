@@ -109,7 +109,7 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
 <header class="top"><div class="in">
   <div class="brand"><span class="logo"></span>Architecture</div>
   <nav>
-    <a href="#overview">Overview</a><a href="#diagram">Diagram</a><a href="#components">Components</a>
+    <a href="#overview">Overview</a><a href="#diagram">Diagram</a><a href="#agents">Agents</a><a href="#components">Components</a>
     <a href="#synapt">How Synapt works</a><a href="#usage">Synapt tools</a><a href="#advantages">Advantages</a>
     <a href="#limits">Limits &amp; workarounds</a><a href="#lifecycle">Request lifecycle</a>
   </nav>
@@ -121,12 +121,13 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
   <div class="eyebrow">AI-Powered Supply-Chain Disruption Assistant · built on Synapt</div>
   <h1>One microservice, three engines, one knowledge substrate.</h1>
   <p class="lead">Synapt holds what the organisation <em>knows</em> (past cases, playbooks, the knowledge graph).
-  Local ML models produce the <em>numbers</em>. Rules and templates assemble the <em>briefing</em> from that
+  Comparable past cases produce the <em>numbers</em>: Synapt finds the precedents, statistics over the closest
+  cohort give the estimate, and there is no trained model. Rules and templates assemble the <em>briefing</em> from that
   evidence, and every claim is checked before anyone sees it. The external LLM is only the <em>judge</em>.</p>
   <div class="stats">
     <div class="stat"><b>100,000</b><span>historical disruptions</span></div>
     <div class="stat"><b>15</b><span>Synapt MCP tools wired in</span></div>
-    <div class="stat"><b>7</b><span>agents in the workflow</span></div>
+    <div class="stat"><b>1 + 8</b><span>supervisor + goal-driven agents</span></div>
     <div class="stat"><b>53</b><span>API paths in 14 routers</span></div>
     <div class="stat"><b>11</b><span>console views (HTML/CSS/JS)</span></div>
     <div class="stat"><b>1</b><span>operating mode: on Synapt</span></div>
@@ -136,7 +137,7 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
 <section id="diagram">
   <h2>System diagram</h2>
   <p class="sub">The browser talks to one FastAPI service. The service fans out to Synapt over MCP, to a local
-  data + ML engine. An OpenAI-compatible LLM gateway is used only by the evaluation, as the independent judge.
+  data + statistics engine (no trained model). An OpenAI-compatible LLM gateway is used only by the evaluation, as the independent judge.
   The dashed lines move in the direction data flows.</p>
   <div class="card diagram">
   <svg viewBox="0 0 1100 560" role="img" aria-label="Architecture diagram">
@@ -165,11 +166,11 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     </g>
     <g>
       <rect x="270" y="214" width="270" height="120" rx="12" class="dg-box" style="stroke:var(--violet)"/>
-      <text x="284" y="238" class="dg-t">7-agent LangGraph (SSE)</text>
-      <text x="284" y="258" class="dg-s">Intake → Investigator → Impact →</text>
-      <text x="284" y="274" class="dg-s">Planner → Recovery → Report →</text>
-      <text x="284" y="290" class="dg-s">Judge (+ fact-check &amp; one rewrite)</text>
-      <text x="284" y="316" class="dg-s mono">agents/graph.py (LangGraph)</text>
+      <text x="284" y="238" class="dg-t">Supervisor + 8 agents (SSE)</text>
+      <text x="284" y="258" class="dg-s">goal-driven agents: own tools,</text>
+      <text x="284" y="274" class="dg-s">own steps, self-check, confidence;</text>
+      <text x="284" y="290" class="dg-s">supervisor: goals × deps × requests</text>
+      <text x="284" y="316" class="dg-s mono">agents/base.py · supervisor.py</text>
     </g>
     <g>
       <rect x="560" y="214" width="240" height="120" rx="12" class="dg-box"/>
@@ -183,7 +184,7 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
       <rect x="820" y="214" width="220" height="120" rx="12" class="dg-box"/>
       <text x="834" y="238" class="dg-t">Quality &amp; learning</text>
       <text x="834" y="258" class="dg-s">DeepEval (5 metrics)</text>
-      <text x="834" y="274" class="dg-s">feedback → boosts, retrain</text>
+      <text x="834" y="274" class="dg-s">feedback → boosts, precedent pool</text>
       <text x="834" y="290" class="dg-s">feedback → trident_feedback</text>
       <text x="834" y="316" class="dg-s mono">services/evaluation · feedback</text>
     </g>
@@ -199,12 +200,12 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     </g>
     <g>
       <rect x="410" y="400" width="320" height="140" rx="14" class="dg-box" style="stroke:var(--green)"/>
-      <text x="426" y="426" class="dg-t" style="fill:var(--green)">Local data + ML engine</text>
+      <text x="426" y="426" class="dg-t" style="fill:var(--green)">Local data + statistics engine</text>
       <text x="426" y="448" class="dg-s">pandas store of all 100k cases</text>
       <text x="426" y="465" class="dg-s">BM25 keyword index (hybrid leg)</text>
-      <text x="426" y="482" class="dg-s">HistGradientBoosting × 5 + P10/P90</text>
+      <text x="426" y="482" class="dg-s">Precedent cohorts: median + P10/P90</text>
       <text x="426" y="499" class="dg-s">SQLite: feedback, incidents, signals</text>
-      <text x="426" y="522" class="dg-s mono">agents/retrieval · prediction · services/data_store</text>
+      <text x="426" y="522" class="dg-s mono">agents/retrieval · precedent · services/data_store</text>
     </g>
     <g>
       <rect x="750" y="400" width="290" height="140" rx="14" class="dg-box" style="stroke:var(--amber)"/>
@@ -223,11 +224,149 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     <path d="M800 157 H930 V214" class="flow"/>
     <path d="M405 334 L225 400" class="flow c"/>
     <path d="M405 334 L570 400" class="flow g"/>
-    <path d="M405 334 L895 400" class="flow" style="stroke:var(--amber)"/>
     <path d="M680 334 L570 400" class="flow g"/>
     <path d="M930 334 L895 400" class="flow" style="stroke:var(--amber)"/>
     <path d="M930 334 Q620 370 260 400" class="flow c"/>
   </svg>
+  </div>
+</section>
+
+<section id="agents">
+  <h2>Agent architecture: a supervisor and goal-driven agents</h2>
+  <p class="sub">Inside the analysis there is no fixed pipeline. A <b>Supervisor</b> sits at the centre of a shared state (the blackboard).
+    After every step it runs <b>every agent whose goal is still open and whose inputs are ready</b>, in parallel, and acts on the
+    <b>requests</b> agents post. Each agent has its own goal and tools and decides its own next step. No LLM is involved.</p>
+  <div class="card diagram">
+  <svg viewBox="0 0 1100 680" role="img" aria-label="Agent architecture: supervisor hub, shared state and eight goal-driven agents">
+    <defs>
+      <marker id="ag" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--violet)"/></marker>
+      <marker id="agr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--red)"/></marker>
+      <marker id="agb" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--blue)"/></marker>
+    </defs>
+
+    <!-- parallel group -->
+    <rect x="290" y="14" width="790" height="150" rx="16" fill="none" stroke="var(--cyan)" stroke-dasharray="4 5"/>
+    <text x="304" y="32" class="dg-lab" style="fill:var(--cyan)">STARTED TOGETHER ONCE THE INCIDENT EXISTS</text>
+
+    <!-- top row agents -->
+    <g><rect x="40" y="44" width="230" height="110" rx="12" class="dg-box"/>
+      <text x="54" y="68" class="dg-t">Intake agent</text>
+      <text x="54" y="88" class="dg-s">goal: a confident, valid incident</text>
+      <text x="54" y="104" class="dg-s">rules first; asks Synapt to label</text>
+      <text x="54" y="118" class="dg-s">fields only when it is unsure</text>
+      <text x="54" y="142" class="dg-s mono">classifier.py</text></g>
+    <g><rect x="300" y="44" width="250" height="110" rx="12" class="dg-box" style="stroke:var(--cyan)"/>
+      <text x="314" y="68" class="dg-t">Case-search agent</text>
+      <text x="314" y="88" class="dg-s">goal: ≥ 3 cases, ≥ 60% similar</text>
+      <text x="314" y="104" class="dg-s">widens its own search (focused →</text>
+      <text x="314" y="118" class="dg-s">broadened → type-only), keeps best</text>
+      <text x="314" y="142" class="dg-s mono">retrieval.py · trident_get_chunks</text></g>
+    <g><rect x="565" y="44" width="250" height="110" rx="12" class="dg-box" style="stroke:var(--cyan)"/>
+      <text x="579" y="68" class="dg-t">Synapt agent</text>
+      <text x="579" y="88" class="dg-s">goal: answer ≥ 0.5 + playbook</text>
+      <text x="579" y="104" class="dg-s">graph-RAG + playbook in parallel;</text>
+      <text x="579" y="118" class="dg-s">re-asks a broader question if weak</text>
+      <text x="579" y="142" class="dg-s mono">synapt_tools.py · trident_query</text></g>
+    <g><rect x="830" y="44" width="240" height="110" rx="12" class="dg-box" style="stroke:var(--cyan)"/>
+      <text x="844" y="68" class="dg-t">Impact agent</text>
+      <text x="844" y="88" class="dg-s">goal: an estimate it can stand by</text>
+      <text x="844" y="104" class="dg-s">asks Synapt for nearest past cases;</text>
+      <text x="844" y="118" class="dg-s">cohort median + P10–P90, cross-checked</text>
+      <text x="844" y="142" class="dg-s mono">precedent.py · trident_get_chunks</text></g>
+
+    <!-- middle row: guardrails, supervisor, blackboard, end -->
+    <g><rect x="40" y="240" width="170" height="104" rx="12" class="dg-box" style="stroke:var(--red)"/>
+      <text x="54" y="264" class="dg-t">Guardrails</text>
+      <text x="54" y="284" class="dg-s">injection · off-topic</text>
+      <text x="54" y="300" class="dg-s">PII · vocabulary</text>
+      <text x="54" y="320" class="dg-s" style="fill:var(--red)">invalid → END</text>
+      <text x="54" y="336" class="dg-s mono">guardrails.py</text></g>
+    <g><rect x="270" y="214" width="340" height="160" rx="16" class="dg-box" style="stroke:var(--violet);stroke-width:2.4"/>
+      <text x="288" y="240" class="dg-t" style="fill:var(--violet)">Supervisor</text>
+      <text x="288" y="262" class="dg-s">1. act on agents' requests (within budgets)</text>
+      <text x="288" y="280" class="dg-s">2. fact-check backstop (strict rewrite)</text>
+      <text x="288" y="298" class="dg-s">3. run every open goal whose inputs are</text>
+      <text x="288" y="314" class="dg-s">    ready — all of them, in parallel</text>
+      <text x="288" y="332" class="dg-s">4. finish when all goals are met (max 25)</text>
+      <text x="288" y="360" class="dg-s mono">supervisor.py · a reason for every decision</text></g>
+    <g><rect x="650" y="228" width="260" height="132" rx="12" class="dg-box" style="stroke:var(--blue)"/>
+      <text x="664" y="252" class="dg-t" style="fill:var(--blue)">Shared state (blackboard)</text>
+      <text x="664" y="272" class="dg-s">incident · search · graph · impact</text>
+      <text x="664" y="288" class="dg-s">plan · recovery · summary · verdict</text>
+      <text x="664" y="304" class="dg-s">messages: status · confidence ·</text>
+      <text x="664" y="320" class="dg-s">steps · requests · decisions</text>
+      <text x="664" y="346" class="dg-s mono">state.py</text></g>
+    <g><rect x="940" y="258" width="130" height="72" rx="36" class="dg-box" style="stroke:var(--green)"/>
+      <text x="964" y="288" class="dg-t" style="fill:var(--green)">END</text>
+      <text x="964" y="306" class="dg-s">all goals met</text></g>
+
+    <!-- bottom row agents -->
+    <g><rect x="40" y="440" width="196" height="110" rx="12" class="dg-box"/>
+      <text x="52" y="464" class="dg-t">Evidence fusion</text>
+      <text x="52" y="484" class="dg-s">goal: one graded evidence</text>
+      <text x="52" y="500" class="dg-s">set; adds cases Synapt</text>
+      <text x="52" y="514" class="dg-s">cited that search missed</text>
+      <text x="52" y="538" class="dg-s mono">retrieval.py</text></g>
+    <g><rect x="248" y="440" width="196" height="110" rx="12" class="dg-box"/>
+      <text x="260" y="464" class="dg-t">Planner agent</text>
+      <text x="260" y="484" class="dg-s">goal: well-supported plan</text>
+      <text x="260" y="500" class="dg-s">rejects &lt; 30-case strategies;</text>
+      <text x="260" y="514" class="dg-s">fetches playbook if missing</text>
+      <text x="260" y="538" class="dg-s mono">planner.py</text></g>
+    <g><rect x="456" y="440" width="196" height="110" rx="12" class="dg-box"/>
+      <text x="468" y="464" class="dg-t">Recovery agent</text>
+      <text x="468" y="484" class="dg-s">goal: timeline that fits</text>
+      <text x="468" y="500" class="dg-s">the cohort; flags anything</text>
+      <text x="468" y="514" class="dg-s">outside its P10–P90</text>
+      <text x="468" y="538" class="dg-s mono">recovery.py</text></g>
+    <g><rect x="664" y="440" width="196" height="110" rx="12" class="dg-box"/>
+      <text x="676" y="464" class="dg-t">Report agent</text>
+      <text x="676" y="484" class="dg-s">goal: every figure verified</text>
+      <text x="676" y="500" class="dg-s">draft → fact-check →</text>
+      <text x="676" y="514" class="dg-s">rewrite until it passes</text>
+      <text x="676" y="538" class="dg-s mono">synthesis.py</text></g>
+    <g><rect x="872" y="440" width="196" height="110" rx="12" class="dg-box" style="stroke:var(--red)"/>
+      <text x="884" y="464" class="dg-t">Judge agent</text>
+      <text x="884" y="484" class="dg-s">goal: verdict + precise redo</text>
+      <text x="884" y="500" class="dg-s">sends the weakest criterion</text>
+      <text x="884" y="514" class="dg-s">to the agent responsible</text>
+      <text x="884" y="538" class="dg-s mono">judge.py</text></g>
+
+    <!-- dispatch / report-back links (both directions) -->
+    <path d="M330 214 L155 154" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M410 214 L425 154" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M490 214 L690 154" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M570 214 L950 154" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M300 374 L138 440" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M380 374 L346 440" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M440 374 L554 440" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M510 374 L762 440" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <path d="M580 374 L920 440" class="flow v" marker-start="url(#ag)" marker-end="url(#ag)"/>
+    <!-- guardrails -> supervisor, supervisor <-> blackboard, supervisor -> end -->
+    <path d="M210 292 L268 292" class="flow" marker-end="url(#agb)"/>
+    <path d="M610 294 L648 294" class="flow" marker-start="url(#agb)" marker-end="url(#agb)"/>
+    <path d="M910 294 L938 294" class="flow g" marker-end="url(#agb)"/>
+    <!-- judge redo request -->
+    <path d="M1000 440 C1000 400 760 405 612 368" fill="none" stroke="var(--red)" stroke-width="1.8" stroke-dasharray="6 5" marker-end="url(#agr)"/>
+    <text x="760" y="400" class="dg-s" style="fill:var(--red)">redo request: weakest criterion → responsible agent</text>
+
+    <!-- inside every agent -->
+    <rect x="40" y="580" width="1030" height="84" rx="14" class="dg-box" style="stroke:var(--violet);stroke-dasharray:5 5"/>
+    <text x="58" y="606" class="dg-t" style="fill:var(--violet)">Inside every agent (agents/base.py)</text>
+    <text x="58" y="630" class="dg-s">perceive the shared state  →  decide the next tool (and say why)  →  act  →  observe  →  … repeat until the goal is met</text>
+    <text x="58" y="650" class="dg-s">→  reflect (status done / partial, confidence)  →  post a message: summary · steps · requests for other agents. Every step is streamed to the console.</text>
+  </svg>
+  </div>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><h3>Why these are agents</h3><p style="margin:0;color:var(--ink-2);font-size:.9rem">Each has a goal it checks, tools it chooses between,
+      and a loop that adapts to what it observes. It grades its own result and can ask another agent for work. Their policies are rules
+      we wrote, so they are reproducible and unit-tested.</p></div>
+    <div class="card"><h3>What runs in parallel</h3><p style="margin:0;color:var(--ink-2);font-size:.9rem">Case search, the Synapt agent and the Impact agent all
+      need only the incident, so the supervisor starts them together. Fusion waits for both investigation branches; the Planner waits
+      for evidence and impact; then Recovery, Report and Judge.</p></div>
+    <div class="card"><h3>What a redo looks like</h3><p style="margin:0;color:var(--ink-2);font-size:.9rem">If the Judge scores "consistency" low, it asks the
+      Planner to re-plan without the current primary strategy. The supervisor resets only the plan and what depends on it, so recovery,
+      the briefing and the audit re-run while the evidence is reused. One revision round is allowed.</p></div>
   </div>
 </section>
 
@@ -236,7 +375,7 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
   <p class="sub">Grouped by layer. Each card says what the piece is responsible for, the file that implements it, and what it hands to the next piece.</p>
   <div class="tabs" id="compTabs">
     <button data-k="all" class="on">All</button><button data-k="ui">Console</button><button data-k="svc">Service</button>
-    <button data-k="ai">AI &amp; ML</button><button data-k="syn">Synapt</button><button data-k="ops">Ops &amp; quality</button>
+    <button data-k="ai">Agents &amp; estimates</button><button data-k="syn">Synapt</button><button data-k="ops">Ops &amp; quality</button>
   </div>
   <div class="grid g3" id="compGrid"></div>
 </section>
@@ -306,14 +445,14 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
   <div class="card" style="margin-top:14px">
     <h3>Division of labour</h3>
     <div class="tw"><table>
-      <thead><tr><th>Job</th><th>Synapt</th><th>Local ML + rules</th><th>Judge LLM</th></tr></thead>
+      <thead><tr><th>Job</th><th>Synapt</th><th>Local statistics + rules</th><th>Judge LLM</th></tr></thead>
       <tbody>
         <tr><td>Find similar past disruptions</td><td>✔ semantic + graph</td><td>✔ BM25 + profile match (all 100k)</td><td>—</td></tr>
         <tr><td>"How was it resolved?"</td><td>✔ procedures, graph answer</td><td>✔ strategy statistics</td><td>—</td></tr>
-        <tr><td>Predict impact, loss, recovery</td><td>—</td><td>✔ 5 models with P10–P90</td><td>—</td></tr>
-        <tr><td>Explain why</td><td>✔ reasoning subgraph, graph-RAG answer</td><td>✔ feature contributions</td><td>—</td></tr>
+        <tr><td>Estimate impact, loss, recovery</td><td>✔ nearest past cases (precedents, cross-check)</td><td>✔ cohort median + P10–P90 (no trained model)</td><td>—</td></tr>
+        <tr><td>Explain why</td><td>✔ reasoning subgraph, graph-RAG answer</td><td>✔ drivers from paired cohorts</td><td>—</td></tr>
         <tr><td>Grade the output</td><td>quality signals</td><td>✔ fact-check, rule audit</td><td>✔ independent judge (evaluation)</td></tr>
-        <tr><td>Remember outcomes</td><td>✔ episodes, feedback</td><td>✔ retrain from outcomes</td><td>—</td></tr>
+        <tr><td>Remember outcomes</td><td>✔ episodes, feedback</td><td>✔ outcomes join the precedent pool</td><td>—</td></tr>
       </tbody>
     </table></div>
   </div>
@@ -338,7 +477,7 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     <div class="card">
       <h3>Timing (typical)</h3>
       <svg viewBox="0 0 460 260" style="width:100%;height:auto" id="timing"></svg>
-      <p style="color:var(--ink-2);font-size:.85rem;margin:6px 0 0">Synapt and the local search run in parallel; Synapt graph-RAG dominates wall time (≈ 10.6 s of an 11.5 s run). No LLM call. Each step streams to the UI as soon as it finishes (Server-Sent Events), so the operator sees results within seconds.</p>
+      <p style="color:var(--ink-2);font-size:.85rem;margin:6px 0 0">The supervisor starts case search, the Synapt agent and the Impact agent (Synapt precedents + cohort estimate) together; Synapt graph-RAG dominates wall time (≈ 10.5 s of an 11.8 s run). No LLM call. Each step streams to the UI as soon as it finishes (Server-Sent Events), so the operator sees results within seconds.</p>
     </div>
   </div>
 </section>
@@ -348,23 +487,23 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
 <script>
 const COMPONENTS=[
  {k:"ui",ic:"🖥️",c:"blue",t:"Operations console",f:"backend/static/index.html · style.css · app.js",d:"Three static files served by FastAPI at /, the same pattern as the reference Synapt capstone. A sidebar groups 11 views by stage.",b:["No build step, no Node.js","Hash routing, light + dark theme","Talks only to /api/*"]},
- {k:"ui",ic:"🛰️",c:"cyan",t:"Control Tower (3D)",f:"static/app.js · Tower",d:"Live 3D view of the supplier portfolio: regional islands, ports with gantry cranes, trucks, container ships and 747 freighters sequenced through your hub. three.js loads from the CDN only when the view opens.",b:["Simulate a disruption type: halted sea lanes, air routes and ports","Click a site: risk by type, then run the 7 agents for it","KPIs, early warning and top risks below the scene"]},
+ {k:"ui",ic:"🛰️",c:"cyan",t:"Control Tower (3D)",f:"static/app.js · Tower",d:"Live 3D view of the supplier portfolio: regional islands, ports with gantry cranes, trucks, container ships and 747 freighters sequenced through your hub. three.js loads from the CDN only when the view opens.",b:["Simulate a disruption type: halted sea lanes, air routes and ports","Click a site: risk by type, then run the agents for it","KPIs, early warning and top risks below the scene"]},
  {k:"ui",ic:"📡",c:"violet",t:"Workflow viewer",f:"static/app.js · streamAnalyze",d:"Opens a Server-Sent Events stream and animates each agent as it starts and finishes.",b:["Shows each agent's output","Hand-off to Incident Desk","Feedback form on the result"]},
  {k:"svc",ic:"🚪",c:"blue",t:"FastAPI service",f:"server.py · routes/ · schemas/",d:"The microservice. 53 API paths in 14 routers (health, copilot, search, prediction, decisions, portfolio, early warning, incidents, statistics, Synapt, playbooks, feedback, evaluation, history).",b:["Bootstraps in a background thread: connect to Synapt → data → models","Returns 503 while warming up, or if Synapt is not configured / unreachable at start-up","OpenAPI docs at /docs"]},
  {k:"svc",ic:"🔐",c:"amber",t:"Web gate",f:"services/webapp.py",d:"Production wiring: optional password sign-in, CORS allow-list and serving the built UI from the same origin.",b:["HMAC session cookie","401 for API, redirect for pages","Off in local development"]},
  {k:"svc",ic:"🛡️",c:"red",t:"Guardrails",f:"agents/guardrails.py",d:"Every free-text input is validated before any model sees it.",b:["Blocks prompt injection & secrets","Redacts e-mails, cards, SSNs","Rejects off-topic text","Checks field values against the dataset vocabulary"]},
- {k:"ai",ic:"🤖",c:"violet",t:"7-agent LangGraph",f:"agents/graph.py · agents/state.py",d:"A LangGraph StateGraph: Guardrails → Classifier → (Hybrid retriever ∥ Synapt worker) → Evidence fusion → Impact → Planner → Recovery → Synthesis → Judge. Each node has one job and passes a typed state to the next.",b:["Synapt calls start in parallel at intake","Report is fact-checked and rewritten once if needed","No LLM inside: rules, Synapt, ML, templates"]},
+ {k:"ai",ic:"🤖",c:"violet",t:"Supervisor + goal-driven agents",f:"agents/base.py · agents/supervisor.py · agents/graph.py",d:"Each agent has a goal and tools and runs its own loop (perceive → decide → act → observe), then reflects on its result and posts a message with its confidence and any requests. The supervisor runs every goal whose inputs are ready, in parallel, and acts on requests; the Judge sends its weakest criterion back to the agent responsible.",b:["Case search widens itself; Report rewrites itself","Search, Synapt and Impact start together","No LLM or trained model inside: rules, Synapt, statistics, templates"]},
  {k:"ai",ic:"🔎",c:"blue",t:"Hybrid retrieval",f:"agents/retrieval.py · services/data_store.py",d:"Three ranked lists fused with Reciprocal Rank Fusion: Synapt semantic, BM25 keyword, and a profile match over all 100k cases. Then re-ranked by attribute similarity.",b:["RRF k = 60, semantic weight α = 0.6","Faceted filters on 6 attributes","Synapt is the only semantic leg (semantic_source = synapt)"]},
- {k:"ai",ic:"📈",c:"green",t:"Prediction models",f:"agents/prediction.py",d:"HistGradientBoosting models for production impact, revenue loss, partial and full recovery, plus a high-impact risk classifier.",b:["Quantile models give P10–P90 ranges","'Insufficient history' warning","What-if counterfactuals"]},
+ {k:"ai",ic:"📈",c:"green",t:"Precedent estimates",f:"agents/precedent.py",d:"No trained model. Synapt (trident_get_chunks) finds the nearest past cases; the estimate is the median and P10–P90 of the closest cohort of past cases, with risk as the cohort's share of high-impact outcomes.",b:["Synapt precedents shown with every estimate","'Insufficient history' warning","What-if = two paired cohorts, ≥ 100 cases each"]},
  {k:"ai",ic:"🧩",c:"cyan",t:"Classifier",f:"agents/classifier.py",d:"Turns a free-text description into structured fields (type, industry, tier, region, severity, backup) with per-field confidence.",b:["Keyword rules constrained to allowed values","Industry hints (avionics → Aerospace …)","98/98 fields on the golden set"]},
  {k:"ai",ic:"⚖️",c:"amber",t:"Judge + fact-check",f:"agents/judge.py · agents/synthesis.py · scripts/llm_judge.py",d:"At runtime a rule rubric (6 criteria) scores the briefing and a deterministic checker rejects unknown case IDs and numbers not in the evidence. The external LLM is the independent judge in evaluation only.",b:["Approve / revise verdict","LLM judge: llm_judge.py, DeepEval, /api/judge","Fact-check pass rate tracked in eval"]},
  {k:"syn",ic:"🧠",c:"cyan",t:"Synapt MCP connector",f:"synapt/synapt_connector.py",d:"SynaptConfig + SynaptMCPConnector over Streamable-HTTP JSON-RPC 2.0: authenticate, initialize_mcp, list_remote_tools, call_tool (injects provider_id/top_k from the live tool schema), handles SSE or JSON replies, re-authenticates on 401.",b:["Token refreshed every 50 min","Thread-safe session"]},
- {k:"syn",ic:"🔌",c:"cyan",t:"Synapt tools & worker node",f:"agents/synapt_tools.py",d:"Wraps each tool in a typed function with a per-call timeout, maps masked regions back, and normalises answers + quality signals. Synapt is required: a failed call raises SynaptError.",b:["Failures surface as errors (stream error / HTTP 502), never hidden","Region token bridge","Fixed, provider-pinned Cypher templates"]},
+ {k:"syn",ic:"🔌",c:"cyan",t:"Synapt tools & Synapt agent",f:"agents/synapt_tools.py",d:"Wraps each tool in a typed function with a per-call timeout, maps masked regions back, and normalises answers + quality signals. The Synapt agent uses them: graph-RAG and the playbook in parallel, re-asking when the answer is weak. Synapt is required: a failed call raises SynaptError.",b:["Failures surface as errors (stream error / HTTP 502), never hidden","Region token bridge","Fixed, provider-pinned Cypher templates"]},
  {k:"syn",ic:"📥",c:"green",t:"Knowledge loader",f:"synapt/ingest_to_synapt.py · test_connection.py",d:"Builds knowledge_base/ (scripts/build_knowledge_base.py), ingests cases, SOPs and reference docs with a dry-run manifest, learns region tokens and verifies the connection; the .xlsx ticket store is loaded in the console. Checks what Synapt holds.",b:["docs · ingest · tickets · check","Idempotent, safe to re-run"]},
- {k:"ops",ic:"🚨",c:"red",t:"Early warning & signals",f:"services/risk_watch.py",d:"Scores each region × disruption type from external signals (live GDACS feed + manual) blended with ML impact.",b:["60% likelihood + 40% impact","Watchlist with drill-down"]},
+ {k:"ops",ic:"🚨",c:"red",t:"Early warning & signals",f:"services/risk_watch.py",d:"Scores each region × disruption type from external signals (live GDACS feed + manual) blended with the precedent impact.",b:["60% likelihood + 40% impact","Watchlist with drill-down"]},
  {k:"ops",ic:"💰",c:"blue",t:"Decision engine",f:"services/decision.py",d:"Compares response options in money: expected loss avoided vs. cost of acting, scaled by outage days. Editable cost assumptions.",b:["Net benefit and ROI per option","Root-cause chains with evidence"]},
- {k:"ops",ic:"📋",c:"violet",t:"Incident desk",f:"services/ops.py",d:"Turns an analysis into a tracked incident with an SLA clock, an escalation chain and action items. Closing actions writes outcomes back as feedback.",b:["P1 4h · P2 24h · P3 72h · P4 7d","Outcome → retraining data"]},
- {k:"ops",ic:"✅",c:"green",t:"Evaluation & feedback",f:"services/evaluation.py · feedback.py",d:"25-case DeepEval suite + guardrail suite. Ratings adjust strategy weights (×0.85–1.15); reported outcomes retrain models; verdicts go to trident_feedback.",b:["5 DeepEval metrics","Synapt confidence logged next to them"]},
+ {k:"ops",ic:"📋",c:"violet",t:"Incident desk",f:"services/ops.py",d:"Turns an analysis into a tracked incident with an SLA clock, an escalation chain and action items. Closing actions writes outcomes back as feedback.",b:["P1 4h · P2 24h · P3 72h · P4 7d","Outcome → precedent pool"]},
+ {k:"ops",ic:"✅",c:"green",t:"Evaluation & feedback",f:"services/evaluation.py · feedback.py",d:"25-case DeepEval suite + guardrail suite. Ratings adjust strategy weights (×0.85–1.15); reported outcomes join the precedent pool; verdicts go to trident_feedback.",b:["5 DeepEval metrics","Synapt confidence logged next to them"]},
 ];
 const TOOLS=[
  ["trident_get_chunks","Knowledge","Semantic leg of hybrid search; kNN labelling of a new incident","retrieval, classifier","SynaptError: search / analysis returns an error"],
@@ -393,21 +532,21 @@ const LIMITS=[
  {s:"a",t:"Regions are masked as PII",p:"'Asia-Pacific' comes back as [LOCATION_ab12], which breaks region filters.",w:"A bridge learns token ↔ region from cases we already know, masks outgoing queries and unmasks answers (artifacts/synapt_region_tokens.json)."},
  {s:"a",t:"Ticket mining accepts .xlsx only",p:"CSV / JSON uploads are rejected by the ticket gateway.",w:"The loader writes 5,000 labelled tickets to disruption_tickets.xlsx."},
  {s:"a",t:"label_ticket needs a JSON string",p:"Passing an object fails silently.",w:"The service json.dumps the ticket and merges ticket labels with chunk-kNN labels."},
- {s:"b",t:"Only part of the 100k cases as narrative text",p:"Ingesting 100k long narratives is slow and costly.",w:"4,000 narratives + compact profiles for all 100k + statistics in Synapt; BM25, profile match and ML cover every row locally (exact-profile hit rate 14% → 83%)."},
+ {s:"b",t:"Only part of the 100k cases as narrative text",p:"Ingesting 100k long narratives is slow and costly.",w:"4,000 narratives + compact profiles for all 100k + statistics in Synapt; BM25, profile match and precedent statistics cover every row locally (exact-profile hit rate 14% → 83%)."},
 ];
 const SEQ=[
  ["Console","Operator types a free-text incident and presses Analyse; an SSE stream opens."],
  ["Guardrails","Text is checked for injection, off-topic and PII; e-mails are redacted."],
- ["Intake agent","Keyword rules classify it into fields; Synapt graph-RAG and playbook calls start in parallel."],
- ["Investigator","Hybrid search: Synapt chunks + BM25 + profile match, fused by RRF, re-ranked by similarity."],
- ["Impact agent","ML models predict impact, loss, recovery (P10–P90) and risk; priority P1–P4 is computed."],
- ["Planner","Strategies ranked by historical effectiveness; the Synapt playbook steps become the action plan."],
- ["Recovery agent","Counterfactual prediction for the chosen strategy; cohort percentiles and milestones."],
- ["Report agent","Briefing built from the evidence plus the Synapt graph answer; fact-check rejects unknown IDs / numbers."],
- ["Judge","Six-criterion rule rubric scores it and returns approve / revise. Result + quality signals stream back."],
- ["Act & learn","Operator opens an incident, tracks actions; outcomes and ratings flow to retraining and trident_feedback."],
+ ["Supervisor","Only one goal is ready (classify), so it sends the text to the Intake agent and says why."],
+ ["Intake agent","Keyword rules first; if type, industry or region is missing or unsure, it asks Synapt how the nearest past cases are labelled."],
+ ["Supervisor","Three goals are now ready: it starts case search, the Synapt agent and the Impact agent in parallel."],
+ ["Case search · Synapt · Impact","Search widens itself if evidence is thin; Synapt re-asks if its answer is weak; Impact asks Synapt for the nearest past cases and cross-checks its cohort estimate against them."],
+ ["Evidence fusion → Planner","Evidence merged and graded; the Planner rejects weakly supported strategies and follows the Synapt playbook."],
+ ["Recovery → Report","Timeline checked against the cohort; the Report agent drafts, fact-checks and rewrites its own briefing until it passes."],
+ ["Judge","Six-criterion audit. On 'revise' it asks the agent behind the weakest criterion to redo its part; the supervisor re-opens only what depends on it."],
+ ["Act & learn","Operator opens an incident, tracks actions; outcomes join the precedent pool and ratings and verdicts flow to trident_feedback."],
 ];
-const TIMING=[["Guardrails + classify",0,0.1,"--blue"],["Synapt graph-RAG",0.1,10.7,"--cyan"],["Hybrid search",0.1,3,"--green"],["ML predict + explain",10.7,11,"--green"],["Planner (stats + playbook)",11,11.4,"--amber"],["Recovery",11.4,11.5,"--green"],["Report + fact-check",11.5,11.5,"--amber"],["Judge (rules)",11.5,11.5,"--violet"]];
+const TIMING=[["Guardrails + Intake",0,0.15,"--blue"],["Synapt agent (graph-RAG)",0.15,10.7,"--cyan"],["Case search",0.15,3,"--green"],["Impact (Synapt + cohort)",0.15,2.3,"--green"],["Fusion + Planner",10.7,11.5,"--amber"],["Recovery",11.5,11.65,"--green"],["Report (draft·check)",11.65,11.7,"--amber"],["Judge",11.7,11.8,"--violet"]];
 
 const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 function renderComps(k){

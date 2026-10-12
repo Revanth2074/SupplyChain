@@ -3,7 +3,8 @@
 ## Executive Summary
 
 The assistant splits work by what each engine is good at: **Synapt** holds the organisational knowledge
-(cases, playbooks, graph, graph-RAG answers, episodic memory), **local ML** produces every number, rules
+(cases, playbooks, graph, graph-RAG answers, episodic memory) and finds the precedents for every estimate,
+**precedent statistics** over the full case history produce every number (no trained model), rules
 and templates assemble the briefing, and the external **LLM** is used only as the independent judge. The decisions below explain each choice and what
 was given up for it.
 
@@ -33,7 +34,7 @@ The app runs in a single mode, on Synapt; there is no local or degraded mode (se
 ## 2. Storage Architecture: Hybrid Dual-Persistence (Synapt + Local Store)
 
 ### The Trade-Off
-Ingesting 100,000 long narratives into Synapt is slow and costly, but the ML models and statistics need
+Ingesting 100,000 long narratives into Synapt is slow and costly, but the precedent statistics need
 every row.
 
 ### The Solution: Hybrid Dual-Persistence
@@ -48,7 +49,7 @@ every row.
   keyword rules (98/98 fields on the golden set), the plan comes from strategy statistics plus the Synapt
   playbook steps, the briefing is built from the evidence plus Synapt's graph-RAG answer, and `/ask` returns
   Synapt's `trident_query` answer.
-- Numbers come from gradient-boosting models (P10–P90 ranges) and the dataset; a deterministic fact-check
+- Numbers come from comparable past cases (cohort median and P10–P90, cross-checked against Synapt's nearest precedents); a deterministic fact-check
   rejects unknown case IDs, placeholders and amounts/percentages not in the evidence or the Synapt playbook.
 - The aicredits.in model is the independent judge: `scripts/llm_judge.py` (4 rubrics), DeepEval and
   `POST /api/judge`. Keeping the judge separate from the generator avoids a model grading its own text.
@@ -63,26 +64,40 @@ every row.
 - One prompt mixing retrieval, prediction and writing invites hallucinated numbers.
 - Latency is unbounded (the agent decides how many tool calls to make).
 
-### Why LangGraph StateGraph Was Chosen
-- Explicit nodes with one responsibility each and a typed `DisruptionAgentState`.
-- **Parallel fan-out:** hybrid retrieval and the Synapt worker (graph-RAG + playbook) run concurrently and
-  join in `evidence_fusion`.
+### Why a Supervisor with Goal-Driven Agents Was Chosen
+- **Agents decide locally, the supervisor decides globally.** Each agent (`agents/base.py`) has a goal, tools
+  and its own perceive → decide → act → observe loop; it checks its own work (the case-search agent widens its
+  search until the evidence is good, the Report agent rewrites until the fact-check passes, the Impact agent
+  cross-checks its cohort estimate against the past cases Synapt finds) and reports a message with status, confidence and requests.
+- **Supervisor = goals × dependencies × requests** (`agents/supervisor.py`), not a fixed order: every goal
+  whose inputs are ready runs, in parallel (case search, Synapt and impact start together), and requests
+  such as the Judge's "consistency is weak, re-plan without the current primary" re-open exactly the
+  dependent goals.
+- **Bounded:** budgets on every loop (search ≤ 3 strategies, rewrites ≤ 2, one Judge revision, 25 supervisor
+  decisions), so latency and behaviour stay predictable.
 - **Conditional edge:** invalid input (guardrail violation) goes straight to END before any model call.
-- **Streaming:** each node emits `agent_start` / `agent_done` events (`stream_mode="custom"`) for the console.
-- **Trade-off:** less autonomy than a free-form agent; deliberate, because operational decisions need to be
-  reproducible.
+- **Streaming:** `route`, `agent_start`, `agent_step` and `agent_done` events (`stream_mode="custom"`).
+- **Trade-off:** the agents' policies are rules written by us, not an LLM planner. That is deliberate: the
+  behaviour is reproducible, testable (`tests/test_supervisor.py`) and costs nothing per run, and the agents
+  still adapt to what they observe instead of following one path.
 
 ## 5. Retrieval Fusion: Reciprocal Rank Fusion vs. Weighted Scores
 
 Cosine similarities, BM25 scores and profile scores live on different scales. RRF (k = 60) fuses by rank,
 needs no calibration, and rewards agreement between legs. **Trade-off:** it ignores score magnitude.
 
-## 6. Prediction: Gradient Boosting with Quantile Ranges
+## 6. Prediction: Precedent Statistics Instead of a Trained Model
 
-Tabular data, 100k rows, mostly categorical features → HistGradientBoosting (fast, accurate, explainable).
-Revenue (R² 0.33) and recovery (R² 0.27–0.40) are noisy, so every prediction carries a P10–P90 range
-(78–80 % coverage on held-out data) and an "insufficient history" warning when few cases match.
-**Fallback:** with the models unavailable, cohort statistics (median and P10/P90 of the most similar cases).
+**Decision:** no ML model. The Impact agent asks Synapt for the nearest past cases, and the estimate is the
+median and P10–P90 of the closest cohort of past cases (≥ 30 cases; attributes dropped least telling first).
+**Why:** every number traces back to real cases an operator can open, there is nothing to train, version or
+drift, and new outcomes count the moment they are reported.
+**Cost, measured on 19,921 held-out cases:** impact R² 0.68 vs 0.70, full recovery 0.35 vs 0.40, revenue
+0.33 vs 0.33, risk AUC 0.87 vs 0.87 for the gradient-boosting models it replaced; P10–P90 coverage 77–79 %.
+**Why Synapt's neighbours are not the estimate on their own:** on 40 held-out cases they were less accurate
+(recovery MAE 35 d vs 25 d) and blending did not help, so Synapt supplies the precedents and the
+cross-check, and the cohort the numbers. Counterfactuals compare two cohorts that differ only in the lever
+(≥ 100 cases each side); with less history the answer widens and an "insufficient history" warning shows.
 
 ## 7. Safety Around Synapt
 
@@ -96,9 +111,9 @@ Revenue (R² 0.33) and recovery (R² 0.27–0.40) are noisy, so every prediction
 |---|---|---|
 | Synapt as knowledge substrate | Graph reasoning, playbooks, memory, quality signals | Network dependency on a beta service |
 | Synapt required (single mode) | Simpler, consistent answers, no silent quality drop | Synapt outage = app unavailable for analysis |
-| Dual persistence | Full-dataset ML + cheap ingestion | Two stores joined by ID |
+| Dual persistence | Full-dataset statistics + cheap ingestion | Two stores joined by ID |
 | LangGraph StateGraph | Auditable, parallel, streamable | Less agent autonomy |
 | RRF fusion | No score calibration | Ignores score magnitude |
-| Quantile ranges | Honest uncertainty | 2 extra models per target |
+| Precedent statistics, no model | Traceable numbers, nothing to train | ~5 pts lower R² on recovery |
 | Fixed Cypher templates | No cross-tenant reads | Less flexible analytics |
 | SQLite for operational state | Zero-ops | Single-instance only (swap for Postgres to scale) |

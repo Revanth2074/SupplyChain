@@ -12,7 +12,7 @@ import uuid
 from agents.impact_analysis import priority
 from agents.planner import strategy_table
 from services import feedback
-from agents.prediction import registry
+from agents.precedent import estimator
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS incidents (
@@ -211,7 +211,7 @@ def seed_demo() -> int:
     from agents.planner import statistics_plan  # template plan, no LLM call
     n = 0
     for inc, title, hours_ago in DEMO:
-        pred = registry.predict(inc)
+        pred = estimator.predict(inc)
         prio = priority(inc, pred)
         strat = strategy_table(inc)["strategies"]
         plan = statistics_plan(inc, strat, [])

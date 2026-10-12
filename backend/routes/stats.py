@@ -5,7 +5,7 @@ One-screen overview for the home page and historical factor insights across all 
 
 from fastapi import APIRouter
 
-from agents.prediction import registry
+from agents.precedent import estimator
 from agents import synapt_tools as syn
 from routes.portfolio import scored_portfolio
 from services import analytics, feedback, ops, risk_watch
@@ -34,7 +34,7 @@ def overview():
         "actions_open": sum(1 for i in open_incs for a in i["actions"] if a["status"] not in ("done", "rejected")),
         "feedback": {"total": fb["total"], "with_outcomes": fb["with_outcomes"], "avg_rating": fb["avg_rating"]},
         "synapt": {**syn.status(), "answers": q["n"], "avg_confidence": q["summary"].get("confidence")},
-        "models": {k: v.get("r2") for k, v in registry.meta.get("targets", {}).items() if "r2" in v},
+        "estimates": {k: v.get("r2") for k, v in (estimator.meta.get("validation") or {}).get("targets", {}).items() if "r2" in v},
     }
 
 

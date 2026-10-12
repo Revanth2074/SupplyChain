@@ -1,9 +1,9 @@
 # Supply-Chain Disruption Assistant — Empirical Evaluation Benchmark Report
 
 All figures are measured. Raw results: [`deepeval_benchmark_results.json`](deepeval_benchmark_results.json)
-(snapshot of `backend/artifacts/eval_results.json`) and `backend/models/prediction_metrics.json`.
+(snapshot of `backend/artifacts/eval_results.json`) and `backend/artifacts/precedent_validation.json`.
 Re-run with `python scripts/deepeval_suite.py`, `python scripts/llm_judge.py`, `python -m pytest tests` and
-`python scripts/train_prediction_model.py`. The workflow under test uses no LLM; the external LLM (`gpt-4o-mini`
+`python scripts/validate_precedent.py`. The workflow under test uses no LLM; the external LLM (`gpt-4o-mini`
 via aicredits.in) is only the judge.
 
 ## 1. Executive Summary & Benchmark Scorecard
@@ -23,8 +23,8 @@ via aicredits.in) is only the judge.
 | | Guardrail suite (10 cases) | **10 / 10** |
 | | Latency per analysis (0 LLM calls) | **13.4 s** |
 | Unit tests | `pytest tests` | **28 / 28** |
-| Prediction models (held-out 20 %) | Production impact R² / MAE | **0.70 / 7.8 pts** |
-| | Full recovery R² / MAE | **0.40 / 31 days** |
+| Precedent estimates, no trained model (held-out 20 %) | Production impact R² / MAE | **0.68 / 7.9 pts** |
+| | Full recovery R² / MAE | **0.35 / 31 days** |
 | | Revenue loss R² | **0.33** |
 | | High-impact risk AUC | **0.87** |
 | | P10–P90 interval coverage | **78–80 %** (target 80 %) |
@@ -57,8 +57,8 @@ via aicredits.in) is only the judge.
 
 ## 2b. Independent LLM-as-Judge Benchmark (`scripts/llm_judge.py`)
 
-Same method as the reference Synapt capstone: the assistant runs **without any LLM** (rules + Synapt MCP + ML +
-templates) and an external model (`gpt-4o-mini` via the aicredits.in gateway) grades each response against the
+Same method as the reference Synapt capstone: the assistant runs **without any LLM** (rules + Synapt MCP + precedent
+statistics + templates) and an external model (`gpt-4o-mini` via the aicredits.in gateway) grades each response against the
 grounding context it was given. Raw results: [`llm_judge_benchmark_results.json`](llm_judge_benchmark_results.json).
 
 | Metric (10 cases: 4 incident analyses, 2 playbook questions, 2 analytics questions, 2 guardrail probes) | Result |
@@ -80,24 +80,42 @@ grounding context it was given. Raw results: [`llm_judge_benchmark_results.json`
   separation rose from 0.76 to 0.975 after each briefing section was labelled (evidence / prediction /
   recommendation / Synapt answer).
 
-## 3. Prediction Baseline (ML Model Evaluation)
+## 3. Impact Estimates from Precedent (no trained model)
+
+### Method
+There is no ML model. The Impact agent asks Synapt (`trident_get_chunks`) for the nearest past cases, then
+estimates each outcome as the median and P10–P90 of the closest cohort of past cases (at least 30; attributes
+dropped least telling first). Synapt's precedents are attached to every estimate and cross-check it.
 
 ### Splitting Integrity
-Random 80/20 split with a fixed seed (the dataset has no timestamps, so a chronological split is not possible).
+Random 80/20 split with a fixed seed (the dataset has no timestamps, so a chronological split is not possible):
+cohorts are built from the 80 % and each of the 19,921 held-out cases is estimated from them
+(`scripts/validate_precedent.py`).
 
 ### Empirical Validation Metrics
 
-| Target | R² / AUC | MAE | P10–P90 coverage |
-|---|---|---|---|
-| Production impact (%) | 0.700 | 7.79 pts | 79.6 % |
-| Revenue loss (USD) | 0.326 | $1.59M | 78.8 % |
-| Full recovery (days) | 0.400 | 30.95 d | 79.7 % |
-| Partial recovery (days) | 0.274 | 15.25 d | 77.7 % |
-| High-impact risk | AUC 0.873 | — | — |
+| Target | R² / AUC | MAE | P10–P90 coverage | Gradient-boosting models it replaced |
+|---|---|---|---|---|
+| Production impact (%) | 0.683 | 7.93 pts | 78.9 % | 0.700 |
+| Revenue loss (USD) | 0.334 | $1.58M | 77.4 % | 0.326 |
+| Full recovery (days) | 0.354 | 31.0 d | 77.8 % | 0.400 |
+| Partial recovery (days) | 0.174 | 15.3 d | 78.6 % | 0.274 |
+| High-impact risk | AUC 0.867 | — | — | AUC 0.873 |
 
-### Feature Importance Hierarchy
-Severity dominates every target. Backup supplier (full recovery), response strategy (partial recovery) and
-supplier size (revenue) come next; disruption type and region add almost nothing once severity is known.
+**Honest reading:** within 2 points on impact, revenue and risk; 5–10 points lower R² on recovery. In exchange
+every number traces back to real cases, nothing is trained or versioned, and reported outcomes count at once.
+
+### Synapt precedents vs cohort
+On 40 held-out cases, the similarity-weighted median of Synapt's nearest cases alone gave impact MAE 9.9 pts
+and full-recovery MAE 35 d, against 7.8 pts and 25 d for the cohort on the same cases; blending the two did not
+improve the cohort. So Synapt supplies the precedents and the cross-check, the cohort the numbers. On the 25
+golden incidents the Impact agent used 40 close Synapt precedents on average (minimum 5) and flagged 4 incidents
+where Synapt's precedents and the cohort disagreed by more than 50 %.
+
+### What separates outcomes
+Share of outcome variance each attribute explains on its own (η²): severity dominates impact (0.57), full
+recovery (0.33) and risk (0.28); supplier size (0.16) and industry (0.07) drive revenue loss; response strategy,
+disruption type and backup supplier come next for recovery.
 
 ## 4. Hybrid Retrieval Architecture (Lexical + Synapt Semantic + Profile + RRF)
 
@@ -135,3 +153,30 @@ Result: mixed. Retrieval is slightly more precise and faster, but Synapt's own c
 lower, likely because the larger graph spreads relevance over more nodes while typed entities still cannot be
 created (`trident_create_entity` fails server-side), so every answer stays flagged degraded. The app keeps the
 original provider as default; v2 is available by setting `SYNAPT_PROVIDER_ID=supply_chain_disruptions_v2`.
+
+## 6. Supervisor and Goal-Driven Agents
+
+All 25 golden incidents were re-run through the supervisor and goal-driven agents (`agents/base.py`,
+`agents/supervisor.py`) against live Synapt, with the runtime rule-based Judge (no LLM).
+
+| Measure | Result |
+|---|---|
+| Classification (rules, 98 labelled fields) | **100 %** |
+| Fact-check passed | **25 / 25** |
+| Runtime Judge verdict | **25 / 25 approve** |
+| Supervisor decisions per analysis | **8** (every run) |
+| Average time per analysis | **12.5 s** (case search, Synapt and Impact start in parallel; Impact now asks Synapt too) |
+| Agent self-corrections triggered | **0** (no widened search, Synapt re-ask, rewrite or Intake label request) |
+| Impact agent flagged Synapt vs cohort disagreement | **4 / 25** (confidence lowered, message status `partial`) |
+
+**Honest reading:** the golden descriptions are explicit, so every agent met its goal on the first try and no
+self-correction was needed; the only adaptive signal was the Impact agent flagging 4 estimates its Synapt
+precedents disagreed with. The adaptive behaviour is exercised elsewhere:
+
+* a vague incident ("A fire stopped production at one of our small suppliers…") made the Intake agent ask Synapt for
+  labels; the nearest cases disagreed (Electronics 43 %, Asia-Pacific 34 %), so it left those fields unknown;
+* `tests/test_supervisor.py` checks the search agent widening itself when evidence is weak, keeping the best evidence
+  when the goal cannot be met, the Judge routing its weakest criterion to the responsible agent, the supervisor acting
+  on requests within the revision budget, dependency scheduling and the routing limit.
+
+A golden set with deliberately vague or conflicting incidents is the next step to measure how often the agents adapt.

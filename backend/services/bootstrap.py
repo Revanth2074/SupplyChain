@@ -1,6 +1,6 @@
 """
 Service Bootstrap & Readiness.
-Connects to Synapt, then loads the 100k-case store and the prediction models in a background thread
+Connects to Synapt, then loads the 100k-case store and builds the precedent pool in a background thread
 at start-up, so the API answers /api/health immediately and other endpoints return 503 until ready.
 Synapt is required: if it is not configured or unreachable, start-up stops in the "error" stage.
 """
@@ -13,7 +13,7 @@ import threading
 from fastapi import HTTPException
 
 from agents import synapt_tools as syn
-from agents.prediction import registry
+from agents.precedent import estimator
 from services import feedback, ops, risk_watch
 from services.data_store import store
 
@@ -30,8 +30,8 @@ def _bootstrap() -> None:
         boot["stage"] = "loading data"
         store.load()
         feedback.init()
-        boot["stage"] = "loading/training models"
-        registry.load_or_train()
+        boot["stage"] = "building precedent pool"
+        estimator.load(feedback.outcome_rows())
         boot["stage"] = "ready"
     except Exception as e:  # noqa: BLE001
         log.exception("bootstrap failed")

@@ -29,7 +29,7 @@ if workspace_dir not in sys.path:
 from openai import OpenAI  # noqa: E402
 
 from agents.graph import ask_disruption_assistant  # noqa: E402
-from agents.prediction import registry  # noqa: E402
+from agents.precedent import estimator  # noqa: E402
 from agents.synapt_tools import graph_query, procedures  # noqa: E402
 from config import get_documentation_dir, settings  # noqa: E402
 from services import feedback  # noqa: E402
@@ -158,7 +158,7 @@ def run_benchmark():
 
     store.load()
     feedback.init()
-    registry.load_or_train()
+    estimator.load()
     client = get_judge_client()
     model_name = settings.JUDGE_MODEL
     print(f"Independent Judge Model: {model_name}")

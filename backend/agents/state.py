@@ -12,14 +12,14 @@ from typing import Annotated, Any, Dict, List, Optional, TypedDict
 
 # The agents the console shows. Graph nodes report progress under these ids.
 AGENTS = [
-    ("supervisor", "Supervisor Agent", "Reads the shared state and decides which agent runs next, and when to stop"),
-    ("intake", "Intake & Classification Agent", "Validates input and classifies the disruption"),
-    ("investigator", "Investigation Agent", "Retrieves similar historical cases via Synapt hybrid + graph RAG"),
-    ("impact", "Impact Assessment Agent", "Predicts production, financial & recovery impact; prioritises"),
-    ("planner", "Response Planning Agent", "Ranks response strategies; plan from statistics + Synapt playbook"),
-    ("recovery", "Recovery Analysis Agent", "Projects recovery timeline and resilience actions"),
-    ("reporter", "Report Agent", "Builds the fact-checked briefing with the Synapt graph answer"),
-    ("judge", "Judge Agent", "Audits the analysis for groundedness and quality (rule rubric)"),
+    ("supervisor", "Supervisor Agent", "Schedules agents by goal and dependency, acts on their requests, decides when to stop"),
+    ("intake", "Intake & Classification Agent", "Classifies the disruption; asks Synapt to label fields it is unsure of"),
+    ("investigator", "Investigation Agent", "Searches until the evidence is strong enough; queries Synapt graph-RAG + playbook"),
+    ("impact", "Impact Assessment Agent", "Predicts impact, cross-checks it against similar cases, prioritises"),
+    ("planner", "Response Planning Agent", "Ranks strategies, rejects weakly supported ones, follows the Synapt playbook"),
+    ("recovery", "Recovery Analysis Agent", "Projects the recovery timeline and checks it against the cohort"),
+    ("reporter", "Report Agent", "Drafts the briefing, fact-checks it and rewrites until it passes"),
+    ("judge", "Judge Agent", "Audits six criteria; asks the right agent to redo its part when one is weak"),
 ]
 AGENT_NAMES = {a: n for a, n, _ in AGENTS}
 
@@ -59,12 +59,18 @@ class DisruptionAgentState(TypedDict, total=False):
     fact_check: Dict[str, Any]
     verdict: Optional[Dict[str, Any]]
 
+    # Agent messages on the blackboard: status, confidence, summary, steps and requests for other agents
+    messages: Annotated[List[Dict[str, Any]], operator.add]
+    msg_cursor: int                      # how many messages the supervisor has already acted on
+    report_mode: str                     # "strict" when the supervisor asks the Report agent for a strict rewrite
+    plan_hint: Dict[str, Any]            # e.g. {"exclude": [...]} when the Judge asks the Planner to reconsider
+
     # Supervisor routing: its decisions (with reasons), the agents it chose, and the loop counters
     decisions: Annotated[List[Dict[str, Any]], operator.add]
     next_agents: List[str]
     routes: int
     retrieval_round: int
-    retrieval_plan: Dict[str, Any]       # {"broaden": True} when the supervisor asks for wider retrieval
+    retrieval_plan: Dict[str, Any]       # {"broaden": True} / {"focus": True} when the supervisor asks for another search
     synapt_round: int
     report_round: int
     revision: int

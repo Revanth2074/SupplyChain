@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Synapt Supply Chain — Disruption Assistant</title>
-  <meta name="description" content="AI-Powered Supply-Chain Disruption Assistant: Synapt hybrid RAG, multi-agent analysis, impact prediction, decision support and incident management.">
+  <meta name="description" content="AI-Powered Supply-Chain Disruption Assistant: Synapt hybrid RAG, multi-agent analysis, impact estimates from past cases, decision support and incident management.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%232563eb'/%3E%3Cpath d='M6 8h4v4H6zM14 8h4v4h-4zM10 14h4v4h-4z' fill='white'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,7 +15,7 @@
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/" } }
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=8">
+  <link rel="stylesheet" href="/static/style.css?v=11">
 </head>
 <body>
   <div class="app-container">
@@ -55,7 +55,7 @@
 
       <div class="sidebar-footer">
         <div class="status-row"><span class="dot" id="dot-synapt"></span>Synapt <b id="st-synapt">—</b></div>
-        <div class="status-row"><span class="dot" id="dot-models"></span>Models <b id="st-models">—</b></div>
+        <div class="status-row"><span class="dot" id="dot-models"></span>Estimates <b id="st-models">—</b></div>
         <div class="status-row"><span class="dot" id="dot-llm"></span>Judge LLM <b id="st-llm">—</b></div>
         <button class="btn ghost small" id="themeBtn" type="button">Toggle theme</button>
       </div>
@@ -71,7 +71,7 @@
         <div class="topbar-right"><span class="pill" id="provider-pill">provider —</span></div>
       </header>
 
-      <div class="boot-banner" id="boot-banner" hidden>Connecting to Synapt and loading 100,000 cases and models… first request may take ~30 s.</div>
+      <div class="boot-banner" id="boot-banner" hidden>Connecting to Synapt and loading 100,000 cases… first request may take ~30 s.</div>
 
       <!-- ===================================================== CONTROL TOWER -->
       <section class="view-panel active" id="view-overview">
@@ -130,7 +130,7 @@
             <div class="card"><h3>Response plan <span class="pill" id="ck-plan-method"></span></h3><div id="ck-plan"></div></div>
           </div>
           <div class="grid g2">
-            <div class="card"><h3>Predicted impact (P10–P90)</h3><div id="ck-pred"></div></div>
+            <div class="card"><h3>Expected impact from past cases (P10–P90)</h3><div id="ck-pred"></div></div>
             <div class="card"><h3>Recovery outlook</h3><div id="ck-recovery"></div></div>
           </div>
           <div class="card"><h3>Similar historical cases</h3><div id="ck-cases" class="table-container"></div></div>
@@ -206,11 +206,11 @@
         <div class="card">
           <h3>Incident profile</h3>
           <div class="form-grid" id="sim-fields"></div>
-          <div class="row"><button class="btn primary" id="sim-run" type="button">Predict &amp; explain</button><span class="muted" id="sim-msg"></span></div>
+          <div class="row"><button class="btn primary" id="sim-run" type="button">Estimate &amp; explain</button><span class="muted" id="sim-msg"></span></div>
         </div>
         <div id="sim-out" hidden>
           <div class="grid g2">
-            <div class="card"><h3>Prediction with P10–P90 ranges</h3><div id="sim-pred"></div></div>
+            <div class="card"><h3>Estimate from comparable cases (P10–P90)</h3><div id="sim-pred"></div></div>
             <div class="card"><h3>Why: drivers of full recovery</h3><div id="sim-explain"></div></div>
           </div>
           <div class="grid g2">
@@ -289,7 +289,7 @@ Natural Disaster, Pharmaceuticals, 3, Asia-Pacific, 5, no</textarea>
           <div id="ev-summary"></div>
         </div>
         <div class="grid g2">
-          <div class="card"><h3>Prediction models</h3><div id="md-out" class="table-container"></div><div class="row"><button class="btn small" id="md-retrain" type="button">Retrain with outcomes</button><span id="md-msg" class="muted"></span></div></div>
+          <div class="card"><h3>Precedent estimates</h3><div id="md-out" class="table-container"></div><div class="row"><button class="btn small" id="md-retrain" type="button">Refresh with outcomes</button><span id="md-msg" class="muted"></span></div></div>
           <div class="card"><h3>Operator feedback</h3><div id="fb-stats"></div></div>
         </div>
         <div class="card"><h3>Synapt answer quality (logged per query)</h3><div id="sq-out"></div></div>
@@ -315,6 +315,6 @@ Natural Disaster, Pharmaceuticals, 3, Asia-Pacific, 5, no</textarea>
     </main>
   </div>
   <div class="toast" id="toast" hidden></div>
-  <script src="/static/app.js?v=8"></script>
+  <script src="/static/app.js?v=11"></script>
 </body>
 </html>

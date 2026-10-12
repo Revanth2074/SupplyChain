@@ -1,8 +1,9 @@
 """
 Disruption Classification Agent (Intake).
 Turns a free-text incident description into structured dataset fields (type, industry,
-tier, region, size, severity, backup) with per-field confidence: keyword rules constrained to the
-dataset vocabulary (no LLM at runtime; the external LLM is used only as the offline judge).
+tier, region, size, severity, backup) with per-field confidence. A goal-driven agent: keyword rules
+constrained to the dataset vocabulary first, then Synapt nearest-case labelling for any key field the
+rules missed or are unsure of (no LLM; the external LLM is used only as the offline judge).
 """
 
 from __future__ import annotations
@@ -10,6 +11,8 @@ from __future__ import annotations
 import logging
 import re
 
+from agents.base import Action, Agent, Tool
+from agents.state import describe
 from services.data_store import store
 
 log = logging.getLogger("classifier")
@@ -88,19 +91,106 @@ def classify(text: str) -> dict:
     return {**rules, "rationale": f"Keyword rules matched: {found}."}
 
 
-def classifier_node(state: dict) -> dict:
-    """LangGraph node (Intake agent): classify the description; explicit user fields override the classifier."""
-    from agents.guardrails import validate_incident
-    from agents.state import describe, done
+SYNAPT_FIELDS = ("disruption_type", "industry", "supplier_region")  # fields Synapt's nearest cases can label
+MIN_FIELD_CONFIDENCE = 0.6
+MIN_SYNAPT_LABEL_CONFIDENCE = 0.5
 
-    desc, given, warnings = state["description"], state["given_incident"], list(state.get("warnings") or [])
-    cls = classify(desc) if desc else {"fields": {}, "confidence": {}, "method": "structured"}
-    incident = {**cls["fields"], **given}
-    if not incident.get("disruption_type"):
-        incident["disruption_type"] = "Factory Incident"
-        warnings.append("Disruption type could not be inferred; defaulted to Factory Incident")
-    validate_incident(incident, store.options())
-    entry = done("intake", state["intake_t0"], describe(incident),
-                 {"incident": incident, "classification": cls, "warnings": warnings})
-    return {"incident": incident, "classification": cls, "warnings": warnings,
-            "query": desc or describe(incident), "trace": [entry]}
+
+def _synapt_labels(text: str) -> dict:
+    from agents.retrieval import synapt_label
+    return synapt_label(text)
+
+
+def _synapt_ready() -> bool:
+    from agents import synapt_tools as syn
+    return syn.configured()
+
+
+class IntakeAgent(Agent):
+    """Goal: a complete, valid incident with a confidence for every key field.
+    Tools: vocabulary-constrained keyword rules; Synapt nearest-case labelling (trident_get_chunks) for
+    fields the rules missed or are unsure of. Explicit user fields always win."""
+
+    id, node = "intake", "classifier"
+    goal = "Turn the description into a valid incident with every key field known and confident"
+    max_steps = 3
+
+    def make_tools(self) -> list[Tool]:
+        return [Tool("keyword_rules", "Read the text with vocabulary-constrained keyword rules", lambda text: classify(text)),
+                Tool("synapt_neighbour_labels", "Label fields from the most similar cases in Synapt (k-NN vote)",
+                     lambda text: _synapt_labels(text), soft=True)]
+
+    def started_at(self, state: dict) -> float:
+        return state.get("intake_t0") or super().started_at(state)
+
+    def perceive(self, state: dict) -> dict:
+        return {"desc": state["description"], "given": state["given_incident"], "warnings": list(state.get("warnings") or []),
+                "cls": None, "asked_synapt": False, "filled": [], "unsure": []}
+
+    def _uncertain(self, obs: dict) -> list[str]:
+        f, c = obs["cls"]["fields"], obs["cls"]["confidence"]
+        return [k for k in SYNAPT_FIELDS if k not in obs["given"] and (k not in f or c.get(k, 0) < MIN_FIELD_CONFIDENCE)]
+
+    def decide(self, obs: dict, steps: list[dict]) -> Action | None:
+        if not obs["desc"]:
+            return None  # structured input only: nothing to read
+        if obs["cls"] is None:
+            return Action("keyword_rules", {"text": obs["desc"]}, "Read the description with keyword rules first (fast, exact)")
+        weak = self._uncertain(obs)
+        if weak and not obs["asked_synapt"] and _synapt_ready():
+            return Action("synapt_neighbour_labels", {"text": obs["desc"]},
+                          f"{', '.join(weak)} missing or uncertain: ask Synapt how the most similar past cases are labelled")
+        return None
+
+    def observe(self, obs: dict, action: Action, result, error: str | None) -> dict:
+        if action.tool == "keyword_rules":
+            obs["cls"] = result
+        elif action.tool == "synapt_neighbour_labels":
+            obs["asked_synapt"] = True
+            opts = store.options()
+            for k in self._uncertain(obs) if result else []:
+                top = (result["fields"].get(k) or [None])[0]
+                if top and top["confidence"] < MIN_SYNAPT_LABEL_CONFIDENCE:
+                    obs["unsure"].append(f"{k} ({top['value']} {top['confidence']:.0%})")
+                if top and top["confidence"] >= MIN_SYNAPT_LABEL_CONFIDENCE and top["value"] in opts.get(k, []):
+                    obs["cls"]["fields"][k] = top["value"]
+                    obs["cls"]["confidence"][k] = round(float(top["confidence"]), 2)
+                    obs["filled"].append(k)
+            if obs["filled"]:
+                obs["cls"]["method"] = "rules+synapt-knn"
+                obs["cls"]["rationale"] += f" Synapt nearest cases filled: {', '.join(obs['filled'])}."
+        return obs
+
+    def summarise(self, action: Action, result, error: str | None) -> str:
+        if error:
+            return f"failed ({error}); keeping the rule result"
+        if action.tool == "keyword_rules":
+            return f"matched {', '.join(sorted(result['fields'])) or 'nothing'}"
+        return f"{result.get('neighbours', 0)} neighbour cases; labels for {', '.join(sorted(result.get('fields', {}))) or 'none'}"
+
+    def reflect(self, obs: dict, steps: list[dict]) -> dict:
+        from agents.guardrails import validate_incident
+        cls = obs["cls"] or {"fields": {}, "confidence": {}, "method": "structured", "rationale": "Structured input."}
+        incident = {**cls["fields"], **obs["given"]}
+        if not incident.get("disruption_type"):
+            incident["disruption_type"] = "Factory Incident"
+            obs["warnings"].append("Disruption type could not be inferred; defaulted to Factory Incident")
+        validate_incident(incident, store.options())
+        conf = {k: (1.0 if k in obs["given"] else cls["confidence"].get(k)) for k in incident}
+        known = [v for v in conf.values() if v is not None]
+        confidence = round(sum(known) / len(known), 2) if known else None
+        obs.update(incident=incident, cls=cls)
+        summary = (describe(incident) + (f" · Synapt filled {', '.join(obs['filled'])}" if obs["filled"] else "")
+                   + (f" · left unknown, Synapt's neighbours disagree: {', '.join(obs['unsure'])}" if obs["unsure"] else ""))
+        return {"status": "partial" if obs["warnings"] and "defaulted" in " ".join(obs["warnings"]) else "done",
+                "confidence": confidence, "summary": summary, "requests": []}
+
+    def commit(self, obs: dict, message: dict, state: dict) -> dict:
+        return {"incident": obs["incident"], "classification": obs["cls"], "warnings": obs["warnings"],
+                "query": obs["desc"] or describe(obs["incident"])}
+
+    def detail(self, obs: dict):
+        return {"incident": obs.get("incident"), "classification": obs.get("cls"), "warnings": obs["warnings"]}
+
+
+classifier_node = IntakeAgent()

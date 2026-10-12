@@ -264,13 +264,16 @@ footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
 <section id="day">
   <h2>What happens in one real analysis</h2>
   <p class="sub">A user types “Ransomware hit our Tier 2 electronics supplier in Asia, no backup, severity 4” and presses Analyse.
-    Seven helper robots (agents) take turns. Here is when each one talks to the library, measured on a real run (about 11.5 seconds in total).</p>
+    A boss robot (the supervisor) and eight helper robots (agents) work on it. The boss starts every helper whose job is ready,
+    several at once; each helper picks its own tools and checks its own work. Here is when each one talks to the library, measured on a real run (about 12 seconds).</p>
   <div class="card">
     <div class="tl" id="timeline"></div>
     <div class="axis"><span>0 s</span><span>3 s</span><span>6 s</span><span>9 s</span><span>12 s</span></div>
-    <div class="grown">Agents live in <code>backend/agents/</code>. The Investigation step runs two branches in parallel:
-      <code>hybrid_retriever</code> (calls <code>trident_get_chunks</code> + <code>trident_search</code>) and <code>synapt_worker</code>
-      (calls <code>trident_query</code> + <code>trident_get_procedures</code>). Everything after that is local maths, ML and rules — no LLM.</div>
+    <div class="grown">Agents live in <code>backend/agents/</code> (framework in <code>base.py</code>, scheduler in <code>supervisor.py</code>).
+      Once the incident is classified the supervisor starts three agents together: case search (<code>trident_get_chunks</code> +
+      <code>trident_search</code>, widening itself if evidence is thin), the Synapt agent (<code>trident_query</code> +
+      <code>trident_get_procedures</code>, re-asking if the answer is weak) and the Impact agent (<code>trident_get_chunks</code> for the nearest past cases, then statistics over the closest cohort; no trained model). When rules are unsure,
+      the Intake agent also asks Synapt (<code>trident_get_chunks</code>) how the nearest past cases are labelled. No LLM anywhere.</div>
   </div>
 </section>
 
@@ -461,11 +464,11 @@ footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
 const TOOLS = [
   { n: 'trident_query', ic: '🧙', s: 'used', kid: 'Ask the librarian a whole question. She reads, follows the web of ideas and answers with a "how sure am I" score.',
     real: 'Graph-RAG answer + confidence (overall, knowledge, procedural, graph) + reasoning subgraph + procedures and episodes it used.',
-    where: 'Investigation agent (agents/synapt_tools.synapt_worker_node → fetch_synapt_rag), the Search & Ask answer (/api/ask), the Knowledge Graph page, and the Control Tower site simulation.',
+    where: 'Synapt agent (agents/synapt_tools.SynaptAgent → fetch_synapt_rag; re-asks a broader question when the answer is weak), the Search & Ask answer (/api/ask), the Knowledge Graph page, and the Control Tower site simulation.',
     got: 'The "Synapt Knowledge Graph" section of every briefing and the drawn subgraph. Average confidence 0.755 over 25 test incidents.' },
   { n: 'trident_get_chunks', ic: '📄', s: 'used', kid: 'Find the pages whose meaning is closest to my question.',
     real: 'Semantic (embedding) search over raw ingested text; returns passages and scores.',
-    where: 'The Synapt leg of hybrid search (agents/retrieval.semantic_search_synapt), fused with BM25 and profile matching by Reciprocal Rank Fusion. Also test_connection.py and region learning.',
+    where: 'The Synapt leg of hybrid search (agents/retrieval.semantic_search_synapt), fused with BM25 and profile matching by Reciprocal Rank Fusion. Also the Impact agent (agents/precedent.synapt_precedents: the nearest past cases behind every estimate), test_connection.py and region learning.',
     got: 'Similar historical cases (joined back to the CSV by their DIS- id). Right disruption type 87% of the time.' },
   { n: 'trident_search', ic: '🕸️', s: 'used', kid: 'Find the knots in the spider web that match my words.',
     real: 'Semantic search across graph nodes (entities, concepts, procedures, steps); returns node ids.',
@@ -584,14 +587,15 @@ document.getElementById('resetBtn').onclick = () => { stop(); cur = -1; document
 
 // ------------------------------------------------------------------ one analysis timeline (measured run, seconds)
 const TL = [
-  ['🧩 Intake', 0, 0.05, 'var(--ink-3)', 'rules'],
-  ['🔎 Search', 0.05, 2.5, 'var(--sky)', 'get_chunks + search'],
-  ['🧙 Librarian', 0.05, 10.6, 'var(--sun)', 'trident_query'],
-  ['🧾 Recipes', 0.05, 1.2, 'var(--leaf)', 'get_procedures'],
-  ['📈 Impact', 10.6, 10.95, 'var(--grape)', 'ML'],
-  ['🧭 Plan', 10.95, 11.3, 'var(--leaf)', 'stats + playbook'],
-  ['⏱️ Recovery', 11.3, 11.4, 'var(--grape)', 'ML'],
-  ['📝 Report + judge', 11.4, 11.5, 'var(--berry)', 'template'],
+  ['🧑‍✈️ Supervisor', 0, 0.02, 'var(--ink-3)', 'decides'],
+  ['🧩 Intake', 0.02, 0.15, 'var(--ink-3)', 'rules'],
+  ['🔎 Case search', 0.15, 3.0, 'var(--sky)', 'get_chunks + search'],
+  ['🧙 Librarian', 0.15, 10.7, 'var(--sun)', 'trident_query'],
+  ['🧾 Recipes', 0.15, 1.3, 'var(--leaf)', 'get_procedures'],
+  ['📈 Impact', 0.15, 2.3, 'var(--grape)', 'get_chunks + cohort'],
+  ['🧭 Plan', 10.7, 11.45, 'var(--leaf)', 'stats + playbook'],
+  ['⏱️ Recovery', 11.45, 11.6, 'var(--grape)', 'cohort'],
+  ['📝 Report + judge', 11.6, 11.8, 'var(--berry)', 'check + audit'],
 ];
 const MAX = 12;
 document.getElementById('timeline').innerHTML = TL.map(([l, a, b, c, t]) => `<div class="tl-row"><span>${l}</span><div class="tl-track">

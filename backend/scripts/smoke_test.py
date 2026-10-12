@@ -26,7 +26,7 @@ def show(name, r, keys=None, n=900):
 which = sys.argv[1:] or ["basic"]
 if "basic" in which:
     show("health", c.get(f"{B}/health"))
-    m = show("models", c.get(f"{B}/models"), n=600)
+    m = show("precedent", c.get(f"{B}/precedent"), n=600)
     show("search hybrid", c.post(f"{B}/search", json={
         "query": "cyber attack aerospace tier 2 no backup supplier severe",
         "filters": {"industry": ["Aerospace"], "severity_min": 3}, "top_k": 5}),

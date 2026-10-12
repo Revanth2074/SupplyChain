@@ -9,7 +9,7 @@ from fastapi import APIRouter, HTTPException
 from agents.judge import judge
 from agents.guardrails import validate_text
 from agents.planner import strategy_table
-from agents.prediction import registry
+from agents.precedent import estimator
 from schemas import EvalRequest, JudgeRequest, compact
 from services import evaluation
 from services.bootstrap import ready
@@ -25,7 +25,7 @@ def judge_ep(req: JudgeRequest):
     validate_text(req.report, "report", require_domain=False)
     cases = [c for c in (store.get_case(i) for i in req.case_ids) if c]
     inc = compact(req.incident) or {}
-    pred = registry.predict(inc) if inc.get("disruption_type") else None
+    pred = estimator.predict(inc) if inc.get("disruption_type") else None
     strat = strategy_table(inc)["strategies"] if inc.get("disruption_type") else []
     return judge(req.report, {"incident": inc, "cases": cases, "strategies": strat, "prediction": pred})
 

@@ -40,11 +40,6 @@ def get_db_path() -> Path:
     return get_artifacts_dir() / "feedback.db"
 
 
-def get_models_dir() -> Path:
-    """Trained prediction models and their validation metrics."""
-    return BASE_DIR / "models"
-
-
 def get_knowledge_base_dir() -> Path:
     """Markdown knowledge assets ingested into Synapt (cases, SOP playbooks, reference, tickets)."""
     return REPO_DIR / "knowledge_base"
@@ -81,10 +76,8 @@ class Settings:
 
     DATA_CSV = get_dataset_path()
     ARTIFACT_DIR = get_artifacts_dir()
-    MODELS_DIR = get_models_dir()
     FEEDBACK_DB = get_db_path()
 
 
 settings = Settings()
 settings.ARTIFACT_DIR.mkdir(exist_ok=True)
-settings.MODELS_DIR.mkdir(exist_ok=True)

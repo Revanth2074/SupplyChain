@@ -11,7 +11,7 @@ so scaling by outage is what makes the scenarios comparable. Mitigation costs ar
 from __future__ import annotations
 
 from services.data_store import store
-from agents.prediction import registry
+from agents.precedent import estimator
 
 # Cost model per response: fixed set-up cost + running cost per day until full recovery (USD).
 DEFAULT_COSTS = {
@@ -39,7 +39,8 @@ def compare_scenarios(incident: dict, costs: dict | None = None) -> dict:
     inc = {**incident}
     inc.setdefault("response_time_days", 2)
     rows = []
-    preds = [(key, label, change, registry.predict({**inc, **change})) for key, label, change in SCENARIOS]
+    preds = [(key, label, change, estimator.predict({**inc, **change}, keep=tuple(change), pair={**inc, **SCENARIOS[0][2]}))
+             for key, label, change in SCENARIOS]
     outage = lambda p: p["partial_recovery_days"] + 0.5 * max(0.0, p["full_recovery_days"] - p["partial_recovery_days"])
     b = preds[0][3]
     base_exposure = max(1e-6, outage(b) * b["production_impact_pct"])
@@ -77,7 +78,7 @@ def compare_scenarios(incident: dict, costs: dict | None = None) -> dict:
                f"${best['avoided_loss_usd']:,.0f} of loss {extra}, a net benefit of ${best['net_benefit_usd']:,.0f}, "
                f"and recovers {best['days_saved']:.0f} days sooner than doing nothing.")
     out = {"incident": inc, "baseline": "do_nothing", "recommended": best["key"], "why": why, "scenarios": rows,
-           "assumptions": costs, "support": registry.support(inc)}
+           "assumptions": costs, "support": estimator.support(inc)}
     if best_any["hypothetical"]:
         out["hint"] = (f"If you qualified a backup supplier, '{best_any['label']}' would be cheaper still "
                        f"(total ${best_any['total_cost_usd']:,.0f}).")
@@ -110,8 +111,8 @@ FACTOR_TEXT = {
 def root_cause(incident: dict) -> dict:
     inc = {**incident}
     inc.setdefault("response_time_days", 2)
-    p = registry.predict(inc)
-    ex = registry.explain(inc)
+    p = estimator.predict(inc)
+    ex = estimator.explain(inc)
     t = inc.get("disruption_type") or "Factory Incident"
     first = CHAINS.get(t, CHAINS["Factory Incident"])
     rt = int(p["inputs_used"]["response_time_days"])

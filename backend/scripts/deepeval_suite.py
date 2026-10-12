@@ -17,7 +17,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from agents.prediction import registry  # noqa: E402
+from agents.precedent import estimator  # noqa: E402
 from services import evaluation, feedback  # noqa: E402
 from services.data_store import store  # noqa: E402
 
@@ -31,7 +31,7 @@ def main():
 
     store.load()
     feedback.init()
-    registry.load_or_train()
+    estimator.load()
     t0 = time.time()
     evaluation.start(args.limit, args.use_graph, not args.no_feedback)
     while evaluation.status()["running"]:

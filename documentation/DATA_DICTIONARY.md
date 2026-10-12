@@ -16,8 +16,8 @@
 
 - **Completeness:** no nulls, no duplicate IDs.
 - **Ranges:** all values are inside their domains (impact 1–100 %, tier 1–4, severity 1–5, recovery ≥ 3 days).
-- **Skew:** revenue loss is heavily right-skewed (median $875k, mean $2.52M, max $373M), so the loss model is trained on `log1p(revenue_loss_usd)` and priority uses a log scale capped at $50M.
-- **Synthetic signature:** disruption type and region add almost no information once severity, tier, size and backup are known (near-zero permutation importance), so the data is likely synthetic. Findings are reported honestly rather than over-fitted.
+- **Skew:** revenue loss is heavily right-skewed (median $875k, mean $2.52M, max $373M), so loss estimates use the cohort median (robust to the long tail) and priority uses a log scale capped at $50M.
+- **Synthetic signature:** disruption type and region add almost no information once severity, tier, size and backup are known (they explain little outcome variance beyond severity), so the data is likely synthetic. Findings are reported honestly rather than over-fitted.
 - **Class balance:** 55.6 % of cases had a backup supplier; 23.9 % ended in a permanent supplier change; Tier 4 is 10 % of rows.
 
 ## 3. Comprehensive Column Data Dictionary
@@ -28,7 +28,7 @@
 |---|---|---|
 | `disruption_id` | string | Unique case ID. Synapt chunks are joined back to the CSV by this ID. |
 
-### 3.2 Incident attributes (known at incident time → model inputs, filters)
+### 3.2 Incident attributes (known at incident time → cohort keys, filters)
 
 | Column | Type | Values / range | Distribution |
 |---|---|---|---|
@@ -44,19 +44,19 @@
 
 ### 3.3 Outcomes (prediction targets, evidence)
 
-| Column | Type | Range | Mean / median | Model |
+| Column | Type | Range | Mean / median | Precedent estimate (hold-out) |
 |---|---|---|---|---|
-| `production_impact_pct` | float | 1–100 % | 31.4 / 30.1 | Regressor + P10/P90 (R² 0.70) |
-| `revenue_loss_usd` | float | $10k – $373M | $2.52M / $0.88M | Regressor on log scale + P10/P90 (R² 0.33) |
-| `partial_recovery_days` | int | 3–337 | 27.5 / 20 | Regressor + P10/P90 (R² 0.27) |
-| `full_recovery_days` | int | 8–798 | 75.8 / 61 | Regressor + P10/P90 (R² 0.40) |
+| `production_impact_pct` | float | 1–100 % | 31.4 / 30.1 | Cohort median + P10/P90 (R² 0.68) |
+| `revenue_loss_usd` | float | $10k – $373M | $2.52M / $0.88M | Cohort median + P10/P90 (R² 0.33) |
+| `partial_recovery_days` | int | 3–337 | 27.5 / 20 | Cohort median + P10/P90 (R² 0.17) |
+| `full_recovery_days` | int | 8–798 | 75.8 / 61 | Cohort median + P10/P90 (R² 0.35) |
 | `permanent_supplier_change` | bool | true / false | 23.9 % true | Reported per cohort (supplier-change probability) |
 
 ### 3.4 Derived fields
 
 | Field | Definition | Used by |
 |---|---|---|
-| High-impact risk (label) | top-quartile loss (≥ $2.49M) OR top-quartile full recovery (≥ 100 days) OR ≥ 50 % production impact; 46.7 % positive | Risk classifier (AUC 0.87) |
+| High-impact risk (label) | top-quartile loss (≥ $2.49M) OR top-quartile full recovery (≥ 100 days) OR ≥ 50 % production impact; 46.7 % positive | Cohort share of high-impact cases (AUC 0.87) |
 | Impact band | Low < 20 %, Moderate 20–35 %, High 35–50 %, Severe ≥ 50 % | Case text for search |
 | Recovery band / `recovery_outcome` | Fast ≤ 30 d, Normal ≤ 60, Slow ≤ 120, Very Slow > 120 | Case text, Synapt ticket store label |
 | Priority score | 35 % severity + 30 % impact + 25 % log-loss + 10 % risk → P1 ≥ 70, P2 ≥ 50, P3 ≥ 30, P4 | Triage, SLA |

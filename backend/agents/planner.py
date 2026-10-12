@@ -1,7 +1,7 @@
 """
 Response Planning Agent.
 Ranks response strategies by historical effectiveness for comparable disruptions, blended
-with ML counterfactual predictions and operator feedback boosts, then builds the action plan from
+with precedent counterfactuals (the same profile handled with each strategy) and operator feedback boosts, then builds the action plan from
 those statistics and the Synapt response playbook (trident_get_procedures). No LLM at runtime.
 """
 
@@ -10,13 +10,14 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from agents.prediction import registry
+from agents.base import Action, Agent, Tool
+from agents.precedent import estimator
 from services import feedback
 from services.data_store import store
 
 def strategy_table(inc: dict) -> dict:
     """Historical effectiveness of each response strategy for comparable disruptions +
-    ML counterfactual predictions for this incident under each strategy."""
+    precedent estimates for this incident under each strategy (cohort statistics, strategy held fixed)."""
     df = store.df
     scope = {"disruption_type": inc.get("disruption_type")}
     sub = df[df["disruption_type"] == inc["disruption_type"]] if inc.get("disruption_type") else df
@@ -48,7 +49,7 @@ def strategy_table(inc: dict) -> dict:
     rows = []
     for _, r in g.iterrows():
         cf_inc = {**inc, "response_type": r["response_type"]}
-        p = registry.predict(cf_inc) if registry.ready else {}
+        p = estimator.predict(cf_inc, keep=("response_type",), pair=inc) if estimator.ready else {}
         rows.append({
             "strategy": r["response_type"], "cases": int(r["cases"]),
             "avg_full_recovery": round(r["avg_full_recovery"], 1), "median_full_recovery": float(r["median_full_recovery"]),
@@ -152,23 +153,106 @@ def apply_playbook(plan: dict, procedure: dict | None) -> dict:
     return plan
 
 
-def planner_node(state: dict) -> dict:
-    """LangGraph node (Planning agent): rank strategies, then build the plan from the statistics and the
-    Synapt playbook."""
-    import time
+MIN_SUPPORT = 30  # a primary strategy needs at least this many comparable cases behind it
 
-    from agents.state import done, emit
 
-    t0 = time.time()
-    emit("agent_start", "planner")
-    incident, cases = state["incident"], state["cases"]
-    procedure = state.get("procedure")
-    strat = strategy_table(incident)
-    evidence_cases = [{k: c.get(k) for k in EVIDENCE_FIELDS} for c in cases[:10]]
-    plan = apply_playbook(statistics_plan(incident, strat["strategies"], cases), procedure)
-    plan["procedure"] = procedure
-    summ = f"Primary: {plan.get('primary_strategy')} · Secondary: {plan.get('secondary_strategy')} ({plan.get('method')})"
-    if procedure:
-        summ += f" · Synapt playbook: {len(procedure['steps'])} steps"
-    entry = done("planner", t0, summ, {"strategies": strat, "plan": plan})
-    return {"strategies": strat, "plan": plan, "evidence_cases": evidence_cases, "trace": [entry]}
+class PlannerAgent(Agent):
+    """Goal: an executable plan whose primary strategy is well supported by comparable cases and follows
+    the Synapt playbook. Tools: the strategy-effectiveness table (history x ML counterfactuals x feedback),
+    the Synapt playbook (trident_get_procedures, fetched itself if the investigation did not bring one),
+    and the plan builder. The agent rejects a top-ranked strategy with too few comparable cases (or one the
+    Judge asked it to reconsider) and re-drafts with the next one."""
+
+    id, node = "planner", "planner"
+    goal = f"A plan whose primary strategy has at least {MIN_SUPPORT} comparable cases, with playbook steps"
+    max_steps = 5
+
+    def make_tools(self) -> list[Tool]:
+        return [Tool("rank_strategies", "Effectiveness of each response strategy for comparable disruptions",
+                     lambda incident: strategy_table(incident)),
+                Tool("fetch_playbook", "trident_get_procedures for this disruption type", lambda disruption_type: _playbook(disruption_type), soft=True),
+                Tool("draft_plan", "Build the plan from the ranked strategies and cited cases",
+                     lambda incident, strategies, cases: statistics_plan(incident, strategies, cases))]
+
+    def perceive(self, state: dict) -> dict:
+        return {"incident": state["incident"], "cases": state["cases"], "procedure": state.get("procedure"),
+                "fetched": False, "table": None, "ranked": None, "plan": None, "rejected": [],
+                "exclude": set((state.get("plan_hint") or {}).get("exclude") or [])}
+
+    def _candidates(self, obs: dict) -> list[dict]:
+        return [s for s in obs["table"]["strategies"] if s["strategy"] not in obs["rejected"]]
+
+    def decide(self, obs: dict, steps: list[dict]) -> Action | None:
+        if obs["table"] is None:
+            return Action("rank_strategies", {"incident": obs["incident"]}, "Rank the response strategies for comparable disruptions")
+        if obs["procedure"] is None and not obs["fetched"]:
+            from agents import synapt_tools as syn
+            if syn.configured():
+                return Action("fetch_playbook", {"disruption_type": obs["incident"]["disruption_type"]},
+                              "No playbook in the evidence yet: fetch it from Synapt's Procedure Store")
+        cands = self._candidates(obs)
+        if obs["plan"] is None or (obs["plan"]["primary_strategy"] in obs["rejected"] and cands):
+            top = cands[0] if cands else None
+            thought = ("Draft the plan from the best-ranked strategy" if not obs["rejected"]
+                       else f"Re-draft without {', '.join(obs['rejected'])}")
+            if top:
+                thought += f" ({top['strategy']}, {top['cases']} cases)"
+            return Action("draft_plan", {"incident": obs["incident"], "strategies": cands or obs["table"]["strategies"],
+                                         "cases": obs["cases"]}, thought)
+        return None
+
+    def observe(self, obs: dict, action: Action, result, error: str | None) -> dict:
+        if action.tool == "rank_strategies":
+            obs["table"] = result
+            for s in result["strategies"]:
+                low = s["cases"] < MIN_SUPPORT
+                if (s["strategy"] in obs["exclude"] or low) and len(self._candidates(obs)) > 2:
+                    obs["rejected"].append(s["strategy"])
+        elif action.tool == "fetch_playbook":
+            obs["fetched"] = True
+            obs["procedure"] = result or obs["procedure"]
+        else:
+            obs["plan"] = apply_playbook(result, obs["procedure"])
+        return obs
+
+    def summarise(self, action: Action, result, error: str | None) -> str:
+        if error:
+            return f"failed ({error})"
+        if action.tool == "rank_strategies":
+            top = result["strategies"][:3]
+            return "top: " + ", ".join(f"{s['strategy']} {s['effectiveness']} ({s['cases']} cases)" for s in top)
+        if action.tool == "fetch_playbook":
+            return f"{result['name']} ({len(result['steps'])} steps)" if result else "no playbook found"
+        return f"primary {result['primary_strategy']}, secondary {result['secondary_strategy']}"
+
+    def reflect(self, obs: dict, steps: list[dict]) -> dict:
+        plan = obs["plan"]
+        top = next((s for s in obs["table"]["strategies"] if s["strategy"] == plan["primary_strategy"]), {})
+        support = top.get("cases", 0)
+        conf = min(1.0, 0.5 + 0.5 * min(1.0, support / 200)) - (0 if obs["procedure"] else 0.1)
+        summ = f"Primary: {plan.get('primary_strategy')} · Secondary: {plan.get('secondary_strategy')} ({plan.get('method')})"
+        if obs["procedure"]:
+            summ += f" · Synapt playbook: {len(obs['procedure']['steps'])} steps"
+        if obs["rejected"]:
+            summ += f" · rejected {', '.join(obs['rejected'])}"
+        return {"status": "done" if support >= MIN_SUPPORT else "partial", "confidence": round(conf, 2),
+                "summary": summ, "requests": []}
+
+    def commit(self, obs: dict, message: dict, state: dict) -> dict:
+        plan = obs["plan"]
+        plan["procedure"] = obs["procedure"]
+        plan["rejected_strategies"] = obs["rejected"]
+        obs["out"] = {"strategies": obs["table"], "plan": plan}
+        return {"strategies": obs["table"], "plan": plan, "procedure": obs["procedure"], "plan_hint": {},
+                "evidence_cases": [{k: c.get(k) for k in EVIDENCE_FIELDS} for c in obs["cases"][:10]]}
+
+    def detail(self, obs: dict):
+        return obs.get("out")
+
+
+def _playbook(disruption_type: str):
+    from agents import synapt_tools as syn
+    return syn.procedure_for(disruption_type)
+
+
+planner_node = PlannerAgent()

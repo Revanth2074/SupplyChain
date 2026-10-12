@@ -13,7 +13,7 @@ from agents import synapt_tools as syn
 from agents.classifier import classify
 from agents.guardrails import validate_text
 from agents.planner import strategy_table
-from agents.prediction import registry
+from agents.precedent import estimator
 from agents.retrieval import synapt_label
 from agents.state import describe
 from config import settings
@@ -118,7 +118,7 @@ def synapt_label_ep(req: LabelRequest):
     best = strat[0]["strategy"] if strat else None
     app_view = {**{k: inc.get(k) for k in ("disruption_type", "industry", "supplier_region")}, "response_type": best}
     if inc.get("disruption_type"):
-        days = registry.predict({**inc, **({"response_type": best} if best else {})})["full_recovery_days"]
+        days = estimator.predict({**inc, **({"response_type": best} if best else {})}, keep=("response_type",))["full_recovery_days"]
         app_view["recovery_outcome"] = ("Fast" if days <= 30 else "Normal" if days <= 60 else
                                         "Slow" if days <= 120 else "Very Slow")
         app_view["predicted_full_recovery_days"] = days

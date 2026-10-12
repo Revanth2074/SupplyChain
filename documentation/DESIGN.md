@@ -11,9 +11,9 @@ Modern supply chains operate under extreme volatility. Unanticipated events—ra
 The **AI-Powered Supply Chain Disruption Assistant** unites:
 1. **Synapt Knowledge Substrate (MCP Connector)**: Dense semantic vectors, entity resolution, and tri-store graph-RAG reasoning (`beta.synapt.ai`).
 2. **Hybrid RAG Engine**: Reciprocal Rank Fusion (RRF) combining Synapt semantic retrieval with sparse BM25 keyword matching and strict metadata filtering across 100,000 historical disruption records.
-3. **Machine Learning Predictive Engine**: Multi-target `HistGradientBoosting` regressors predicting Production Impact %, Financial Loss $, and Recovery Days, alongside high-impact risk probability and a composite Supply Chain Resilience Score (0–100).
-4. **Autonomous 7-Agent Disruption Workflow**: Coordinated investigation, impact quantification, tactical action planning, executive synthesis, and rule-based judge verification streamed via Server-Sent Events (SSE).
-5. **DeepEval & Continuous Learning Loop**: Automated evaluation across Faithfulness, Answer Relevancy, and GEval rubrics, coupled with operational feedback multipliers and automated model retraining.
+3. **Precedent Estimation Engine (no trained model)**: the Impact agent asks Synapt (`trident_get_chunks`) for the nearest past cases, then estimates Production Impact %, Financial Loss $ and Recovery Days as the median and P10–P90 of the closest cohort of past cases, with the high-impact risk as the cohort's share of severe outcomes and a composite Supply Chain Resilience Score (0–100). Synapt's precedents are shown with every estimate and cross-check it.
+4. **Supervisor + Goal-Driven Agents**: a supervisor schedules eight agents by goal and dependency (running independent ones in parallel) and acts on their requests; each agent has a goal and tools, chooses its own steps, checks its own result and reports its confidence. Streamed via Server-Sent Events (SSE), no LLM inside.
+5. **DeepEval & Continuous Learning Loop**: Automated evaluation across Faithfulness, Answer Relevancy, and GEval rubrics, coupled with operational feedback multipliers and real outcomes added to the precedent pool.
 
 ---
 
@@ -25,13 +25,13 @@ The **AI-Powered Supply Chain Disruption Assistant** unites:
 - **Entity & Metadata Hydration**: Case IDs matched via Synapt (e.g. `DIS-079895`) are immediately re-hydrated against the dataset master store to restore de-anonymized metadata and enable exact faceted filtering.
 
 ### 2.2 Explainable & Auditable Intelligence
-- **No Black Boxes**: Predictions are accompanied by local feature attribution waterfalls ($\Delta_f$ contribution vs dataset median baseline) and global permutation feature importances.
+- **No Black Boxes**: There is no trained model. Every estimate names the past cases behind it (cohort size, matched attributes, example IDs and Synapt's nearest precedents), with local drivers ($\Delta_f$: cohort outcome vs the same cohort with that attribute at its most common value) and the share of outcome variance each attribute explains (η²).
 - **Judge**: Every executive briefing is audited by a deterministic judge agent against a 6-dimension rubric (Groundedness, Relevance, Actionability, Completeness, Consistency, Safety) with citation verification. The external LLM (aicredits.in) is used only as the independent judge in evaluation
   (`scripts/llm_judge.py`, DeepEval, `POST /api/judge`), never inside the workflow.
 
 ### 2.3 Continuous Learning & Feedback
 - User actions (accepting/modifying a strategy or rating recommendations 1–5 stars) compute dynamic multiplier boosts $w \in [0.85, 1.15]$ applied to strategy effectiveness ranking.
-- Post-disruption actual recovery days and financial outcomes are persisted in SQLite (`feedback.db`) to enable on-demand incremental retraining of ML models.
+- Post-disruption actual recovery days and financial outcomes are persisted in SQLite (`feedback.db`) and join the precedent pool on refresh (`POST /api/precedent/refresh`).
 - Operational feedback is forwarded back to Synapt MCP via `trident_feedback` with task/query tracking.
 
 ---

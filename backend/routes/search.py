@@ -10,7 +10,7 @@ from agents.classifier import classify as classify_text
 from agents.guardrails import validate_incident, validate_text
 from agents.impact_analysis import priority
 from agents.planner import strategy_table
-from agents.prediction import registry
+from agents.precedent import estimator
 from agents.retrieval import hybrid_search
 from agents.state import describe
 from schemas import AnalyzeRequest, ClassifyRequest, Incident, PrioritizeRequest, SearchRequest, compact
@@ -74,7 +74,7 @@ def prioritize(req: PrioritizeRequest):
     for i, inc in enumerate(req.incidents):
         d = {k: v for k, v in inc.model_dump().items() if v is not None}
         validate_incident(d, opts)
-        pred = registry.predict(d)
+        pred = estimator.predict(d)
         p = priority(d, pred)
         out.append({"index": i, "label": d.get("label") or f"Incident {i + 1}", "incident": d, "priority": p,
                     "prediction": {k: pred[k] for k in ("production_impact_pct", "revenue_loss_usd",

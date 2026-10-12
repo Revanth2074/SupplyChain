@@ -110,7 +110,7 @@ def strategy_boosts() -> dict[tuple[str, str], float]:
 
 
 def outcome_rows() -> pd.DataFrame:
-    """Feedback with actual outcomes -> labelled training rows for model retraining."""
+    """Feedback with actual outcomes -> extra precedents for the estimator pool."""
     rows = []
     for r in all_feedback():
         if r.get("actual_full_recovery_days") is None or not r.get("analysis_id"):

@@ -140,7 +140,7 @@ h3{font-size:1.02rem;margin:0 0 .3em}
   <div>
     <div class="kicker rv">Capstone · Project 9</div>
     <h1 class="rv">Supply-chain disruption assistant, <span class="grad">built on Synapt</span></h1>
-    <p class="lead rv">Describe a disruption in plain words. In about 20 seconds you get similar past cases, predicted impact with ranges, a ranked response plan, and a fact-checked briefing, all grounded in 100,000 historical disruptions.</p>
+    <p class="lead rv">Describe a disruption in plain words. In about 20 seconds you get similar past cases, impact estimated from comparable past cases with ranges, a ranked response plan, and a fact-checked briefing, all grounded in 100,000 historical disruptions.</p>
     <p class="muted small rv">Use ← → or the dots to move · press <b>F</b> for full screen</p>
   </div>
   <div class="orbit rv">
@@ -165,7 +165,7 @@ h3{font-size:1.02rem;margin:0 0 .3em}
   </div>
   <div class="vs rv">
     <div class="card"><span class="pill" style="background:var(--red-soft);color:var(--red)">Today</span><ul class="muted small"><li>Search spreadsheets and old e-mails by hand</li><li>Keyword search misses "ransomware" when you typed "IT outage"</li><li>Estimates are gut feel, with no ranges</li><li>A plain chatbot invents numbers and case IDs</li></ul></div>
-    <div class="card"><span class="pill" style="background:var(--green-soft);color:var(--green)">With the assistant</span><ul class="muted small"><li>Semantic + keyword + profile search over 100,000 cases</li><li>ML predictions with P10–P90 ranges and the reasons behind them</li><li>Strategies ranked by what actually recovered fastest</li><li>Every claim fact-checked against the evidence</li></ul></div>
+    <div class="card"><span class="pill" style="background:var(--green-soft);color:var(--green)">With the assistant</span><ul class="muted small"><li>Semantic + keyword + profile search over 100,000 cases</li><li>Estimates from comparable past cases (found by Synapt) with P10–P90 ranges and the reasons behind them</li><li>Strategies ranked by what actually recovered fastest</li><li>Every claim fact-checked against the evidence</li></ul></div>
   </div>
 </div></section>
 
@@ -211,7 +211,7 @@ h3{font-size:1.02rem;margin:0 0 .3em}
 <!-- 6 -->
 <section class="slide" data-anim="agents"><div class="in">
   <div class="kicker rv">Requirement 2 · multi-agent workflow</div>
-  <h2 class="rv">Seven agents, each with one job, streamed live.</h2>
+  <h2 class="rv">A supervisor and goal-driven agents that decide, check their own work and ask each other for help.</h2>
   <div class="agents rv" id="agents"></div>
   <div class="feed rv" id="feed"></div>
   <div class="rv" style="margin-top:10px"><button class="btn p" id="runAg">▶ Run again</button></div>
@@ -219,24 +219,24 @@ h3{font-size:1.02rem;margin:0 0 .3em}
 
 <!-- 7 -->
 <section class="slide"><div class="in">
-  <div class="kicker rv">Predict &amp; explain</div>
-  <h2 class="rv">Numbers come from models trained on all 100,000 cases. No LLM anywhere in the workflow.</h2>
+  <div class="kicker rv">Estimate &amp; explain</div>
+  <h2 class="rv">Numbers come from comparable past cases, not a trained model. No LLM anywhere in the workflow.</h2>
   <div class="grid g2">
     <div class="card rv">
-      <h3>Every prediction is a range</h3>
-      <p class="muted small" style="margin:0">Real model output: severity-4 cyber attack, Tier 2 electronics supplier, no backup → full recovery (days, scale 0–240)</p>
-      <div class="range"><div class="tr"></div><div class="band" style="left:21.7%;width:65%"></div><div class="pt" style="left:53.75%"></div>
-        <div class="lb" style="left:21.7%">P10 · 52 d</div><div class="lb" style="left:53.75%;top:36px">P50 · 129 d</div><div class="lb" style="left:86.7%">P90 · 208 d</div></div>
-      <p class="muted small" style="margin:18px 0 10px">The P10–P90 band contains the real value about 79% of the time (target 80%).</p>
-      <div class="metric"><span>Production impact</span><b>R² 0.70 · MAE 7.8 pts</b></div>
-      <div class="metric"><span>Full recovery days</span><b>R² 0.40 · MAE 31 d</b></div>
+      <h3>Every estimate is a range</h3>
+      <p class="muted small" style="margin:0">Real output: severity-4 cyber attack, Tier 2 electronics supplier, no backup → full recovery of the 94 most comparable past cases (days, scale 0–240). Synapt's 69 nearest cases: median 101 d.</p>
+      <div class="range"><div class="tr"></div><div class="band" style="left:26.7%;width:71.2%"></div><div class="pt" style="left:50.8%"></div>
+        <div class="lb" style="left:26.7%">P10 · 64 d</div><div class="lb" style="left:50.8%;top:36px">P50 · 122 d</div><div class="lb" style="left:92%">P90 · 235 d</div></div>
+      <p class="muted small" style="margin:18px 0 10px">On 19,921 held-out cases the P10–P90 band contains the real value about 78% of the time (target 80%).</p>
+      <div class="metric"><span>Production impact</span><b>R² 0.68 · MAE 7.9 pts</b></div>
+      <div class="metric"><span>Full recovery days</span><b>R² 0.35 · MAE 31 d</b></div>
       <div class="metric"><span>Revenue loss</span><b>R² 0.33</b></div>
       <div class="metric"><span>High-impact risk</span><b>AUC 0.87</b></div>
     </div>
     <div class="card rv">
       <h3>Why: what drives full recovery</h3>
       <div class="hb" id="drivers"></div>
-      <p class="muted small" style="margin:8px 0 0">Severity dominates; a <b>backup supplier saves about 26 days</b> on average (90 → 64). Disruption type matters mostly <em>through</em> severity. The what-if simulator shows how each change moves the prediction.</p>
+      <p class="muted small" style="margin:8px 0 0">Severity dominates; a <b>backup supplier saves about 26 days</b> on average (90 → 64). Disruption type matters mostly <em>through</em> severity. The what-if simulator compares real past cases that differ only in that change.</p>
     </div>
   </div>
 </div></section>
@@ -251,9 +251,9 @@ h3{font-size:1.02rem;margin:0 0 .3em}
       <p class="muted small" style="margin:10px 0 0">Incidents get an SLA clock and an escalation chain; breaches turn red on the Incident Desk.</p></div>
     <div class="card rv"><h3>Decision Studio: compare options in money</h3>
       <div class="hb" id="netBars"></div>
-      <p class="muted small" style="margin:6px 0 0">Net benefit vs. doing nothing for the same cyber-attack example: loss avoided − extra cost of acting, scaled by outage days. Recommended: release the buffer (+$390k, 18 days sooner). Cost assumptions are editable.</p></div>
-    <div class="card rv"><h3>Early warning</h3><p class="muted small" style="margin:0">Live GDACS hazard feed + manual signals → region × type watchlist (60% likelihood, 40% predicted impact).</p></div>
-    <div class="card rv"><h3>Act → learn</h3><p class="muted small" style="margin:0">Closing an action records the real outcome. Ratings re-weight strategies (×0.85–1.15), outcomes retrain the models, verdicts go to <code>trident_feedback</code>.</p></div>
+      <p class="muted small" style="margin:6px 0 0">Net benefit vs. doing nothing for the same cyber-attack example: loss avoided − extra cost of acting, scaled by outage days. Recommended: spot-buy from an alternative supplier (+$939k, 71 days sooner). Cost assumptions are editable.</p></div>
+    <div class="card rv"><h3>Early warning</h3><p class="muted small" style="margin:0">Live GDACS hazard feed + manual signals → region × type watchlist (60% likelihood, 40% impact from past cases).</p></div>
+    <div class="card rv"><h3>Act → learn</h3><p class="muted small" style="margin:0">Closing an action records the real outcome. Ratings re-weight strategies (×0.85–1.15), outcomes join the precedent pool, verdicts go to <code>trident_feedback</code>.</p></div>
   </div>
 </div></section>
 
@@ -292,7 +292,7 @@ h3{font-size:1.02rem;margin:0 0 .3em}
   <div class="card rv"><div class="req">
     <div>RAG similarity search</div><div>Hybrid keyword + semantic search</div><div>Classification agent</div><div>Metadata filtering (5 + 2 facets)</div>
     <div>Recommendations from history</div><div>Input guardrails</div><div>Prioritisation (severity · impact · loss)</div><div>API endpoints (53 paths)</div>
-    <div>DeepEval</div><div>Impact, loss, recovery models</div><div>LLM-as-Judge</div><div>Multi-agent workflow (7)</div>
+    <div>DeepEval</div><div>Impact, loss, recovery models</div><div>LLM-as-Judge</div><div>Supervisor + 8 goal-driven agents</div>
     <div>Resilience &amp; risk prediction</div><div>Explainable factors</div><div>Feedback loop</div><div>Front end (11 views)</div>
   </div></div>
   <div class="grid g4 rv" style="margin-top:14px">
@@ -313,11 +313,11 @@ const EVAL={n:16,deep:{"Answer relevancy":.985,"Faithfulness":.902,"Contextual r
  det:{"Classification accuracy (rules)":1.0,"LLM-judge benchmark pass":.9,"Fact-check pass rate":1.0,"Guardrail suite":1.0}};
 const LOOP=[["📡","Detect","Early warning","Hazard feeds and manual signals score each region × disruption type, so trouble shows up before orders are late."],
  ["🔎","Investigate","Cockpit · Search","Classify the incident, then find similar past cases with Synapt + keyword + profile search, plus a graph-RAG answer."],
- ["📈","Predict","Simulator","Models predict production impact, loss and recovery as P10–P90 ranges, with the factors behind each number."],
+ ["📈","Estimate","Simulator","Synapt finds the nearest past cases; the closest cohort gives production impact, loss and recovery as P10–P90 ranges, with the factors behind each number. No trained model."],
  ["🧭","Decide","Decision Studio","Strategies ranked by historical effectiveness; options compared in money; Synapt playbook steps attached."],
  ["📋","Act","Incident Desk","Incident with SLA clock, escalation chain and owned actions."],
- ["🔁","Learn","Quality","Outcomes retrain models, ratings re-weight strategies, verdicts go back to Synapt."]];
-const AG=[["🧩","Intake","classified: Cyber Attack · Electronics · Tier 2 · sev 4 · no backup",900],["🔎","Investigator","8 similar cases via Synapt + BM25 + profile · graph answer received",1400],["📈","Impact","P2 (64.2) · impact ≈ 51% · loss ≈ $1.4M · full recovery ≈ 129 d · risk 82%",350],["🧭","Planner","Primary: Inventory Buffer · Secondary: Alternative Supplier · Synapt playbook steps → actions",400],["⏱️","Recovery","with buffer: partial ≈ 39 d · full ≈ 131 d · milestones set",300],["📝","Report","briefing built + Synapt answer · fact-check passed",300],["⚖️","Judge","6-criterion rule audit · verdict: approve",300]];
+ ["🔁","Learn","Quality","Outcomes join the precedent pool, ratings re-weight strategies, verdicts go back to Synapt."]];
+const AG=[["🧑‍✈️","Supervisor","3 goals ready → starts case search, Synapt and Impact in parallel",500],["🧩","Intake","rules matched 6 fields · no need to ask Synapt · confidence 79%",700],["🔎","Investigator","8 cases at 100% similarity in 1 search · Synapt answer 0.76 + 7-step playbook · +4 cases from Synapt",1400],["📈","Impact","P2 (64.3) · impact ≈ 51% · ≈ $1.4M · 129 d · cross-checked vs 2,053-case cohort ✓",500],["🧭","Planner","Inventory Buffer (183 cases) · Synapt playbook steps → actions · confidence 96%",500],["⏱️","Recovery","131 d with buffer · inside cohort P10–P90 (27–148 d) ✓",400],["📝","Report","draft → fact-check passed → Synapt answer attached",400],["⚖️","Judge","6 criteria · APPROVE 90% · no redo needed",400]];
 const $=id=>document.getElementById(id);
 const deck=$('deck'),slides=[...document.querySelectorAll('.slide')];
 $('dots').innerHTML=slides.map((_,i)=>`<span data-i="${i}"></span>`).join('');
@@ -354,7 +354,8 @@ function runAgents(){agT.forEach(clearTimeout);agT=[];const cards=[...$('agents'
   agT.push(setTimeout(()=>{cards[i].className='ag done';cards[i].querySelector('.ms').textContent=(a[3]/1000).toFixed(1)+' s';$('feed').insertAdjacentHTML('beforeend',`<div><span style="color:var(--green)">✓ ${a[1]}</span> · ${a[2]}</div>`)},t))})}
 $('runAg').onclick=runAgents;
 // drivers & decision
-hb('drivers',[["Severity",.693,'var(--red)'],["Backup supplier",.067,'var(--green)'],["Response strategy",.028,'var(--blue)'],["Supplier tier",.010,'var(--cyan)'],["Disruption type",.0002,'var(--ink-3)']],v=>v.toFixed(3));
+// share of full-recovery variance each attribute explains on its own (η², GET /api/precedent)
+hb('drivers',[["Severity",.331,'var(--red)'],["Response strategy",.074,'var(--blue)'],["Disruption type",.068,'var(--ink-3)'],["Backup supplier",.052,'var(--green)'],["Supplier tier",.003,'var(--cyan)']],v=>v.toFixed(3));
 hb('netBars',[["Release inventory buffer",.39,'var(--green)'],["Spot-buy alternative",.15,'var(--green)'],["Reroute production",-.27,'var(--red)'],["Combined playbook",-.29,'var(--red)']],v=>(v<0?'−':'+')+'$'+Math.abs(v).toFixed(2)+'M');
 $('evalTitle').textContent=`DeepEval: ${EVAL.n} golden incidents scored by the judge LLM`;
 hb('evalBars',Object.entries(EVAL.deep).map(([k,v])=>[k,v,v>=.8?'var(--green)':v>=.6?'var(--amber)':'var(--red)']),v=>Math.round(v*100)+'%');

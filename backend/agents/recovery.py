@@ -1,27 +1,22 @@
 """
 Recovery Analysis Agent.
-Projects the recovery timeline for the chosen strategy (ML counterfactual), cohort recovery
+Projects the recovery timeline for the chosen strategy (precedent counterfactual), cohort recovery
 percentiles, supplier-change probability, milestones and resilience actions.
 """
 
 from __future__ import annotations
 
-import time
-
 import numpy as np
 
-from agents.prediction import registry
-from agents.state import done, emit
+from agents.base import Action, Agent, Tool
+from agents.precedent import estimator
 from services.data_store import store
 
 
-def recovery_node(state: dict) -> dict:
-    """LangGraph node (Recovery agent)."""
-    t0 = time.time()
-    emit("agent_start", "recovery")
-    incident, plan, pred = state["incident"], state["plan"], state["impact"]["prediction"]
+def project_recovery(incident: dict, plan: dict, pred: dict) -> dict:
+    """Counterfactual recovery timeline for the chosen strategy, cohort percentiles and resilience actions."""
     primary = plan.get("primary_strategy")
-    cf_pred = registry.predict({**incident, "response_type": primary})
+    cf_pred = estimator.predict({**incident, "response_type": primary}, keep=("response_type",))
     df = store.df
     coh = df[(df["disruption_type"] == incident["disruption_type"]) & (df["response_type"] == primary)]
     if incident.get("disruption_severity"):
@@ -53,5 +48,72 @@ def recovery_node(state: dict) -> dict:
                 "supplier_change_probability": round(float(coh["permanent_supplier_change"].mean()), 3) if len(coh) else None,
                 "milestones": milestones, "resilience": pred["resilience_score"],
                 "resilience_actions": resilience_actions}
-    summ = f"Partial ≈{round(part)}d, full ≈{round(full)}d with {primary} (cohort P50 {pct.get('p50', 0):.0f}d, n={len(coh)})"
-    return {"recovery": recovery, "trace": [done("recovery", t0, summ, recovery)]}
+    return recovery
+
+
+class RecoveryAgent(Agent):
+    """Goal: a recovery timeline for the chosen strategy that is consistent with what comparable cases
+    actually took. Tools: the precedent counterfactual (past cases like this one handled with the chosen strategy) with cohort
+    percentiles, and a consistency check of the projection against the cohort's P10-P90."""
+
+    id, node = "recovery", "recovery"
+    goal = "Project the recovery timeline for the chosen strategy and check it against the cohort"
+    max_steps = 2
+
+    def make_tools(self) -> list[Tool]:
+        return [Tool("project_timeline", "Precedent estimate under the chosen strategy + cohort percentiles",
+                     lambda incident, plan, prediction: project_recovery(incident, plan, prediction)),
+                Tool("cohort_consistency", "Is the projected full recovery inside the cohort's P10-P90?",
+                     lambda recovery: _consistency(recovery))]
+
+    def perceive(self, state: dict) -> dict:
+        return {"incident": state["incident"], "plan": state["plan"], "pred": state["impact"]["prediction"],
+                "recovery": None, "check": None}
+
+    def decide(self, obs: dict, steps: list[dict]) -> Action | None:
+        if obs["recovery"] is None:
+            return Action("project_timeline", {"incident": obs["incident"], "plan": obs["plan"], "prediction": obs["pred"]},
+                          f"Project recovery if we execute {obs['plan'].get('primary_strategy')}")
+        if obs["check"] is None:
+            return Action("cohort_consistency", {"recovery": obs["recovery"]},
+                          "Check the projection against what comparable cases actually took")
+        return None
+
+    def observe(self, obs: dict, action: Action, result, error: str | None) -> dict:
+        if action.tool == "project_timeline":
+            obs["recovery"] = result
+        else:
+            obs["check"] = result
+        return obs
+
+    def summarise(self, action: Action, result, error: str | None) -> str:
+        if action.tool == "project_timeline":
+            return f"partial {result['predicted_partial_days']} d, full {result['predicted_full_days']} d (cohort n={result['cohort_size']})"
+        return result["note"]
+
+    def reflect(self, obs: dict, steps: list[dict]) -> dict:
+        r, chk = obs["recovery"], obs["check"]
+        pct = r["cohort_full_recovery_percentiles"]
+        summ = (f"Partial ≈{r['predicted_partial_days']}d, full ≈{r['predicted_full_days']}d with {r['strategy']} "
+                f"(cohort P50 {pct.get('p50', 0):.0f}d, n={r['cohort_size']})" + ("" if chk["inside"] else " · outside cohort range"))
+        return {"status": "done" if chk["inside"] else "partial", "confidence": 0.85 if chk["inside"] else 0.6,
+                "summary": summ, "requests": []}
+
+    def commit(self, obs: dict, message: dict, state: dict) -> dict:
+        obs["recovery"]["consistency"] = obs["check"]
+        return {"recovery": obs["recovery"]}
+
+    def detail(self, obs: dict):
+        return obs["recovery"]
+
+
+def _consistency(recovery: dict) -> dict:
+    pct, full = recovery["cohort_full_recovery_percentiles"], recovery["predicted_full_days"]
+    if not pct:
+        return {"inside": True, "note": "no cohort to compare with"}
+    inside = pct["p10"] <= full <= pct["p90"]
+    return {"inside": inside, "note": (f"{full} d is inside the cohort's P10-P90 ({pct['p10']:.0f}-{pct['p90']:.0f} d)" if inside
+                                       else f"{full} d is outside the cohort's P10-P90 ({pct['p10']:.0f}-{pct['p90']:.0f} d)")}
+
+
+recovery_node = RecoveryAgent()

@@ -122,12 +122,12 @@ const VIEWS = {
   cockpit: ['Incident Cockpit', 'A supervisor agent decides which agent runs next to investigate, predict, plan and audit a new disruption. No LLM in the loop: rules, Synapt MCP, ML and templates.'],
   search: ['Search & Ask', 'Synapt graph-RAG answers and hybrid search over 100,000 historical disruptions.'],
   graph: ['Knowledge Graph', 'What Synapt holds, the reasoning subgraph it walked, playbooks and graph insights.'],
-  simulator: ['Impact Simulator', 'Predicted impact with P10–P90 ranges, drivers, counterfactuals and the root-cause chain.'],
+  simulator: ['Impact Simulator', 'Impact estimated from comparable past cases (Synapt precedents + cohort, no trained model): P10–P90 ranges, drivers, counterfactuals and the root-cause chain.'],
   decision: ['Decision Studio', 'Response options compared in money, and triage across several incidents.'],
   warning: ['Early Warning', 'External signals and supplier risk scores for the next 90 days.'],
   portfolio: ['Portfolio & Network', 'Risk across the supplier portfolio and the knock-on effect of a supplier outage.'],
   incidents: ['Incident Desk', 'Open incidents, SLA clocks, escalation and tracked actions with real outcomes.'],
-  quality: ['Quality & Learning', 'Evaluation results, model accuracy, operator feedback and Synapt answer quality.'],
+  quality: ['Quality & Learning', 'Evaluation results, precedent-estimate accuracy, operator feedback and Synapt answer quality.'],
   history: ['History', 'Everything done in the console, saved on the server so it is the same on every device.'],
 };
 const LOADERS = {};
@@ -159,9 +159,9 @@ async function refreshHealth() {
     $('dot-synapt').className = 'dot ' + (synOk ? 'ok' : s.configured ? 'warn' : 'bad');
     $('st-synapt').textContent = !s.configured ? 'not configured' : h.status === 'error' ? 'unreachable' : s.last_error ? `error (${s.last_failed_tool || 'call'})` : 'connected';
     $('st-synapt').title = s.last_error || h.error || '';
-    const m = h.models || {};
-    $('dot-models').className = 'dot ' + (m.ready && !m.fallback ? 'ok' : m.ready ? 'warn' : 'bad');
-    $('st-models').textContent = m.training ? 'training' : m.fallback ? 'cohort stats' : m.ready ? 'ready' : 'loading';
+    const m = h.estimates || {};
+    $('dot-models').className = 'dot ' + (m.ready ? 'ok' : 'bad');
+    $('st-models').textContent = m.refreshing ? 'refreshing' : m.ready ? 'precedents' : 'loading';
     const l = h.llm || {};
     $('dot-llm').className = 'dot ' + (l.configured ? 'ok' : 'warn');
     $('st-llm').textContent = l.configured ? (l.judge_model || l.model || 'configured') : 'not set';
@@ -207,7 +207,7 @@ LOADERS.overview = async () => {
     <dt>Synapt connection</dt><dd>${s.last_error ? pill('last call failed', 'bad') : pill('connected', 'ok')}</dd>
     <dt>Region tokens learned</dt><dd>${num(s.region_tokens_learned)}</dd>
     <dt>Dataset rows</dt><dd>${num((h.data || {}).rows)}</dd>
-    <dt>Models trained</dt><dd>${esc((h.models || {}).trained_at || '—')}</dd>
+    <dt>Estimates</dt><dd>precedent statistics · built ${esc((h.estimates || {}).built_at || '—')}</dd>
     <dt>Judge LLM (evaluation only)</dt><dd>${esc((h.llm || {}).judge_model || '—')}</dd></dl>`;
   $('ov-risks').innerHTML = table([
     ['Supplier', (r) => `<b>${esc(r.supplier_name)}</b><div class="muted small">${esc(r.industry)} · ${esc(r.supplier_region)} · Tier ${r.supplier_tier}</div>`],
@@ -230,7 +230,21 @@ function agentCards() {
     ? `<div class="agent supervisor" id="ag-supervisor"><div class="n">${esc(a.name)}</div>
     <div class="s">${esc(a.description)}</div><ol class="route-log" id="ck-route"></ol></div>`
     : `<div class="agent" id="ag-${a.id}"><div class="n">${esc(a.name.replace(' Agent', ''))}</div>
-    <div class="s">${esc(a.description)}</div><div class="t"></div></div>`)).join('');
+    <div class="s">${esc(a.description)}</div><div class="t"></div><ol class="step-log"></ol></div>`)).join('');
+}
+// One step of an agent's own loop: why it acted, which tool it used, what it observed
+function showStep(ev) {
+  const el = $(`ag-${ev.agent}`);
+  if (!el) return;
+  el.querySelector('.step-log').insertAdjacentHTML('beforeend',
+    `<li class="${ev.ok === false ? 'bad' : ''}" title="${esc(ev.thought)}"><b>${esc(String(ev.tool).replace(/_/g, ' '))}</b> · ${esc(ev.observation)}</li>`);
+}
+// Agent finished: summary, time and its own confidence in the result
+function showDone(el, summary, ms, conf, status) {
+  el.className = `agent done${status === 'partial' ? ' partial' : ''}`;
+  el.querySelector('.s').textContent = summary || 'done';
+  el.querySelector('.t').textContent = `${num(ms)} ms` + (conf !== null && conf !== undefined ? ` · confidence ${Math.round(conf * 100)}%` : '')
+    + (status === 'partial' ? ' · partial' : '');
 }
 // One supervisor decision: which agent(s) run next and why
 function routeItem(d) {
@@ -288,13 +302,13 @@ async function runAnalysis() {
       use_graph: $('ck-graph').checked, judge: $('ck-judge').checked, top_k: 8 };
     const r = await streamAnalyze(payload, (ev) => {
       if (ev.type === 'route') { showRoute(ev); return; }
+      if (ev.type === 'agent_step') { showStep(ev); return; }
       const el = $(`ag-${ev.agent}`);
       if (!el) return;
-      if (ev.type === 'agent_start') el.className = 'agent running';
+      if (ev.type === 'agent_start' && !el.classList.contains('done')) el.className = 'agent running';
       if (ev.type === 'agent_done') {
-        el.className = 'agent done';
-        el.querySelector('.s').textContent = ev.summary || 'done';
-        el.querySelector('.t').textContent = `${num(ev.ms)} ms`;
+        const m = (ev.data || {}).message || {};
+        showDone(el, ev.summary, ev.ms, m.confidence, m.status);
       }
     });
     if (!r) throw new Error('No result returned');
@@ -396,11 +410,16 @@ function predictionBlock(p) {
     ['Full recovery', p.full_recovery_days, rg.full_recovery_days, days],
   ];
   const sup = p.support || {};
+  const coh = p.cohort || {};
+  const sp = p.synapt_precedents || {};
   return rows.map(([l, v, r, f, max]) => `<div style="margin-bottom:10px"><div class="row" style="margin:0"><span>${l}</span><span class="spacer"></span><b>${f(v)}</b>
       <span class="muted small">${r ? `P10 ${f(r.p10)} – P90 ${f(r.p90)}` : ''}</span></div>${rangeBar(v, r, max)}</div>`).join('')
     + `<div class="chips">${pill(`risk ${p.risk_level || '—'} · ${pct(p.risk_probability)}`, levelCls(p.risk_level))}
       ${p.resilience_score ? pill(`resilience ${num(p.resilience_score.score, 1)} ${p.resilience_score.band}`, levelCls(p.resilience_score.band)) : ''}
-      ${sup.level ? pill(`${sup.matching_cases} matching cases (${sup.level})`) : ''}</div>
+      ${sup.level ? pill(`${sup.matching_cases} matching cases (${sup.level})`) : ''}
+      ${coh.cases ? pill(`estimate: median of ${num(coh.cases)} comparable cases`, 'violet') : ''}</div>
+      ${sp.source ? `<p class="muted small">Synapt precedents: ${sp.used ? `${sp.used} close cases (avg similarity ${num(sp.avg_similarity, 2)}), median full recovery ${days(sp.full_recovery_days)}, impact ${num(sp.production_impact_pct, 1)}% · <span class="mono">${esc((sp.case_ids || []).slice(0, 5).join(', '))}</span>` : 'no close cases found'}</p>` : ''}
+      ${coh.matched_on ? `<p class="muted small">Cohort matched on ${esc(coh.matched_on.join(', '))}</p>` : ''}
       ${sup.warning ? `<div class="alert warn">${esc(sup.warning)}</div>` : ''}`;
 }
 
@@ -444,7 +463,8 @@ function whatIfTable(w) {
     ['Full recovery', (s) => signed((s.delta || {}).full_recovery_days || 0, (v) => `${num(v)} d`), 'num'],
     ['Revenue loss', (s) => signed((s.delta || {}).revenue_loss_usd || 0, money), 'num'],
     ['Risk', (s) => signed((s.delta || {}).risk_probability || 0, (v) => `${num(100 * v, 1)} pt`), 'num'],
-  ], rows);
+    ['Past cases', (s) => (s.cohort_cases ? num(s.cohort_cases) : '—'), 'num'],
+  ], rows) + '<p class="muted small">Each row compares two groups of real past cases that differ only in that lever.</p>';
 }
 
 async function openIncidentFromAnalysis(btn) {
@@ -558,12 +578,12 @@ async function runInsight(btn) {
 LOADERS.simulator = async () => { incidentForm('sim-fields', 'sim'); };
 async function runSimulator(btn) {
   const inc = readIncident('sim');
-  const r = await guarded(btn, 'Predicting', () => Promise.all([post('/predict', inc), post('/explain', inc), post('/whatif', inc), post('/rootcause', inc)]));
+  const r = await guarded(btn, 'Estimating', () => Promise.all([post('/predict', inc), post('/explain', inc), post('/whatif', inc), post('/rootcause', inc)]));
   if (!r) return;
   const [p, e, w, rc] = r;
   $('sim-pred').innerHTML = predictionBlock(p.prediction || {});
   const ex = ((e.explanation || {}).full_recovery_days || {});
-  $('sim-explain').innerHTML = `<p class="muted small">Contribution of each input to the predicted full recovery (days) vs a typical case.</p>`
+  $('sim-explain').innerHTML = `<p class="muted small">How the full recovery of comparable past cases changes when each input is set to the most common value (days).</p>`
     + bars((ex.local || []).slice(0, 8).map((x) => [`${x.label}: ${x.value}`, x.contribution, x.contribution > 0 ? 'var(--red)' : 'var(--green)']), (v) => signed(v, (z) => `${num(z, 1)} d`));
   $('sim-whatif').innerHTML = whatIfTable(w);
   $('sim-root').innerHTML = `<div class="chips">${pill('Root cause: ' + (rc.root_cause || '—'), 'bad')}</div><div class="milestones">${(rc.chain || []).map((c) => `<div><b>${esc(c.when)}</b> · ${esc(c.stage)} <span class="muted small">(${esc(c.kind)}) ${esc(c.detail)}</span></div>`).join('')}</div>
@@ -733,7 +753,7 @@ document.addEventListener('change', async (e) => {
   if (!cb) return;
   const body = { status: cb.checked ? 'done' : 'open' };
   if (cb.checked) {
-    const rec = prompt('Actual recovery days for this action (optional, feeds retraining):', '');
+    const rec = prompt('Actual recovery days for this action (optional, added to the precedent pool):', '');
     if (rec) body.actual_recovery_days = +rec;
   }
   await api('PATCH', `/actions/${cb.dataset.action}`, body).catch((x) => toast(x.message));
@@ -777,17 +797,18 @@ async function runEval(btn) {
   if (r) { toast('Evaluation started (uses the judge LLM).'); track('evaluation', 'Started evaluation (5 golden cases)', 'DeepEval + LLM judge + deterministic checks'); loadEval(); }
 }
 async function loadModels() {
-  const m = await get('/models');
-  const rows = Object.entries(m.targets || {}).map(([k, v]) => ({ k, ...v }));
-  $('md-out').innerHTML = `<p class="muted small">Trained ${esc(m.trained_at)} on ${num(m.n_rows)} rows</p>` + table([
+  const m = await get('/precedent');
+  const val = (m.validation || {}).targets || {};
+  const rows = Object.entries(m.targets || {}).map(([k, v]) => ({ k, label: v.label, ...(val[k] || {}) }));
+  $('md-out').innerHTML = `<p class="muted small">No trained model: each estimate is the median of the closest cohort of past cases (at least ${num(m.min_cohort)}), cross-checked against Synapt's nearest precedents. Pool of ${num(m.n_cases)} cases built ${esc(m.built_at)}${m.feedback_rows ? ` incl. ${num(m.feedback_rows)} operator outcomes` : ''}. Hold-out check on ${num((m.validation || {}).test_cases)} unseen cases:</p>` + table([
     ['Target', (t) => esc(t.label)], ['R² / AUC', (t) => (t.auc !== undefined ? `AUC ${num(t.auc, 3)}` : num(t.r2, 3)), 'num'],
     ['MAE', (t) => (t.mae !== undefined ? num(t.mae, t.k === 'revenue_loss_usd' ? 0 : 2) : '—'), 'num'],
     ['P10–P90 coverage', (t) => (t.interval_coverage !== undefined ? pct(t.interval_coverage, 1) : '—'), 'num'],
   ], rows);
 }
 async function retrain(btn) {
-  const r = await guarded(btn, 'Retraining', () => post('/models/retrain', {}));
-  if (r) { $('md-msg').textContent = 'Retraining started in the background.'; setTimeout(() => loadModels().catch(() => {}), 15000); }
+  const r = await guarded(btn, 'Refreshing', () => post('/precedent/refresh', {}));
+  if (r) { $('md-msg').textContent = `Precedent pool refreshing with ${r.feedback_rows ?? 0} operator outcomes.`; setTimeout(() => loadModels().catch(() => {}), 3000); }
 }
 async function loadFeedback() {
   const f = await get('/feedback/stats');
@@ -850,9 +871,10 @@ async function reopenAnalysis(id, btn) {
   state.analysis = r;
   show('cockpit');
   agentCards();
+  (r.messages || []).forEach((m) => (m.steps || []).forEach((st) => showStep({ ...st, agent: m.agent })));
   (r.trace || []).forEach((t) => {
     const el = $(`ag-${t.agent}`);
-    if (el) { el.className = 'agent done'; el.querySelector('.s').textContent = t.summary || ''; el.querySelector('.t').textContent = `${num(t.ms)} ms`; }
+    if (el) showDone(el, t.summary, t.ms, t.confidence, t.status);
   });
   (r.decisions || []).forEach(showRoute);
   $('ck-desc').value = (a.input || {}).description || '';

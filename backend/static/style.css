@@ -168,6 +168,12 @@ label.check input { width: auto; }
 .agent.supervisor { grid-column: 1 / -1; min-height: 0; }
 .route-log { margin: 6px 0 0; padding-left: 20px; font-size: 11.5px; max-height: 160px; overflow-y: auto; }
 .route-log li { margin: 2px 0; overflow-wrap: anywhere; }
+.step-log { margin: 6px 0 0; padding-left: 16px; font-size: 11px; color: var(--ink-2); max-height: 120px; overflow-y: auto; }
+.step-log:empty { display: none; }
+.step-log li { margin: 2px 0; overflow-wrap: anywhere; }
+.step-log li b { color: var(--ink); font-weight: 600; }
+.step-log li.bad { color: var(--red); }
+.agent.partial { border-color: var(--amber); }
 .md { font-size: 13.5px; overflow-wrap: anywhere; }
 .md p { margin: 0 0 10px; }
 .md ul { margin: 4px 0 10px; padding-left: 20px; }

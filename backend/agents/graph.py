@@ -1,30 +1,34 @@
 """
-LangGraph Agent-Based Orchestration Graph (supervisor pattern).
-A Supervisor agent sits at the centre. Guardrails run first; after that every agent hands control
-back to the supervisor, which reads the shared state and decides which agent(s) run next, or that
-the analysis is finished. The order is not fixed: the supervisor can run retrieval and the Synapt
-worker in parallel, broaden retrieval when evidence is weak, ask Synapt again, send the briefing
-back for a strict rewrite, or start a revision round when the judge asks for one.
+LangGraph Agent-Based Orchestration Graph (supervisor + goal-driven agents on a shared blackboard).
+
+Guardrails run first. After that a Supervisor agent sits at the centre: it holds the analysis goals,
+each owned by an agent, and after every step it schedules all agents whose goal is open and whose
+inputs are ready (in parallel), acts on requests the agents post in their messages (e.g. the Judge
+asking the Planner to re-plan), and decides when the analysis is finished.
+
+Every worker is a goal-driven agent (agents/base.py): it perceives the shared state, chooses its own
+tools step by step (perceive -> decide -> act -> observe), reflects on whether its goal is met, and
+reports a message with its status, confidence, steps and any requests. No LLM is involved.
 
     START -> guardrails --(invalid)--> END
                  |
                  v
-            supervisor <-------------------------------------------+
-                 |  decides next agent(s) from the state            |
-                 +--> classifier           (Intake)                 |
-                 +--> hybrid_retriever  \\  (Investigation, may run  |
-                 +--> synapt_worker     /   in parallel)            |
-                 +--> evidence_fusion                               |
-                 +--> impact_analyzer                               |  every agent
-                 +--> planner                                       |  returns to the
-                 +--> recovery                                      |  supervisor
-                 +--> synthesis        (Report)                     |
-                 +--> judge                                         |
-                 +--> END  (when the supervisor decides it is done) |
-                 ---------------------------------------------------+
+            supervisor <---------------------------------------------------+
+                 |  goals x dependencies x requests -> next agent(s)        |
+                 +--> classifier        Intake: rules, then Synapt labels   |
+                 +--> hybrid_retriever  |                                   |
+                 +--> synapt_worker     |  Investigation + Impact,           |  every agent
+                 +--> impact_analyzer   |  started together                  |  reports back to
+                 +--> evidence_fusion                                        |  the supervisor
+                 +--> planner           rejects weak strategies, playbook   |
+                 +--> recovery          checks against the cohort           |
+                 +--> synthesis         drafts, fact-checks, rewrites        |
+                 +--> judge             audits; asks an agent to redo       |
+                 +--> END  (all goals met, or the routing limit)            |
+                 ------------------------------------------------------------+
 
-Each node streams agent_start / agent_done events and the supervisor streams a `route` event with
-its decision and reason (stream_mode="custom"); the console shows them live over Server-Sent Events.
+Streamed events (stream_mode="custom"): agent_start / agent_step / agent_done from the agents and
+`route` from the supervisor; the console shows them live over Server-Sent Events.
 """
 
 from __future__ import annotations
@@ -119,6 +123,7 @@ def _report(state: DisruptionAgentState) -> Dict[str, Any]:
               "recovery": state["recovery"], "summary": state["summary"], "facts": state["facts"],
               "fact_check": state["fact_check"], "judge": verdict, "trace": state["trace"],
               "decisions": state.get("decisions", []),
+              "messages": state.get("messages", []),
               "total_ms": int((time.time() - state["started_at"]) * 1000),
               "retrieval_context": [c["text"] for c in cases[:8]] +
                                    ([graph["answer"]] if graph and graph.get("answer") else [])}

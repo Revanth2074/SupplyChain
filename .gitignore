@@ -55,10 +55,8 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# --- Runtime Artifacts, Models & Databases ---
-# Note: Keep artifacts directory structure, ignore binary models and SQLite DBs
-backend/artifacts/*.joblib
-backend/models/*.joblib
+# --- Runtime Artifacts & Databases ---
+# Note: Keep artifacts directory structure, ignore SQLite DBs
 backend/artifacts/*.db
 backend/artifacts/history.json
 SupplyChain_final*.zip

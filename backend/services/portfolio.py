@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from services.data_store import store
-from agents.prediction import registry
+from agents.precedent import estimator
 
 REQUIRED = ["supplier_name", "industry", "supplier_region", "supplier_tier", "supplier_size", "has_backup_supplier"]
 # Optional operational columns (your own supplier data, not part of the historical dataset).
@@ -103,7 +103,7 @@ def score(rows: list[dict], severity: int = 3) -> dict:
            .groupby(level=0).transform(lambda s: s / s.sum()))
     grid = [{**r, "supplier_tier": int(r["supplier_tier"]), "disruption_type": t, "disruption_severity": severity}
             for r in rows for t in types]
-    pred = registry.predict_batch(grid)
+    pred = estimator.predict_batch(grid)
     pred["supplier_idx"] = np.repeat(np.arange(len(rows)), len(types))
     pred["disruption_type"] = types * len(rows)
     pred["weight"] = [float(mix.get((r["supplier_region"], t), 1 / len(types))) for r, t in
@@ -116,7 +116,7 @@ def score(rows: list[dict], severity: int = 3) -> dict:
         exp = {k: float((p[k] * w).sum()) for k in ("risk_probability", "revenue_loss_usd",
                                                      "full_recovery_days", "production_impact_pct")}
         worst = p.sort_values("revenue_loss_usd", ascending=False).iloc[0]
-        res = registry.resilience(r, {"full_recovery_days": exp["full_recovery_days"],
+        res = estimator.resilience(r, {"full_recovery_days": exp["full_recovery_days"],
                                       "production_impact_pct": exp["production_impact_pct"]})
         risk_index = round(100 * (0.6 * exp["risk_probability"] + 0.4 * (1 - res["score"] / 100)), 1)
         drivers = []

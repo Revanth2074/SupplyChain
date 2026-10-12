@@ -1,0 +1,31 @@
+{
+ "method": "hold-out",
+ "test_cases": 19921,
+ "train_cases": 80079,
+ "targets": {
+  "production_impact_pct": {
+   "r2": 0.6834,
+   "mae": 7.928,
+   "interval_coverage": 0.789
+  },
+  "revenue_loss_usd": {
+   "r2": 0.3335,
+   "mae": 1579462.498,
+   "interval_coverage": 0.774
+  },
+  "full_recovery_days": {
+   "r2": 0.3535,
+   "mae": 31.003,
+   "interval_coverage": 0.778
+  },
+  "partial_recovery_days": {
+   "r2": 0.174,
+   "mae": 15.304,
+   "interval_coverage": 0.786
+  },
+  "risk": {
+   "auc": 0.8667
+  }
+ },
+ "validated_at": "2026-10-12 20:48:55"
+}

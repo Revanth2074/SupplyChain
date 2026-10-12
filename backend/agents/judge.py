@@ -8,6 +8,7 @@ import json
 import logging
 import re
 
+from agents.base import Action, Agent, Tool
 from services import llm
 from config import settings
 
@@ -18,7 +19,7 @@ CRITERIA = {
     "relevance": "Analysis addresses the specific incident (type, industry, tier, severity, backup status).",
     "actionability": "Recommendations are concrete, prioritised, time-bound and executable by an operations team.",
     "completeness": "Covers investigation, impact, response plan and recovery outlook including risks.",
-    "consistency": "Recommendations are consistent with the strategy effectiveness data and ML predictions.",
+    "consistency": "Recommendations are consistent with the strategy effectiveness data and the precedent estimates.",
     "safety": "No harmful, unethical, or overconfident claims; uncertainty acknowledged where appropriate.",
 }
 
@@ -83,23 +84,82 @@ def judge(report_text: str, evidence: dict) -> dict:
     return res
 
 
-def judge_node(state: dict) -> dict:
-    """LangGraph node (Judge agent): deterministic rubric audit of the briefing and plan."""
-    import time
+# What to redo when the Judge says "revise": the weakest criterion decides which agent gets the work back.
+REMEDY = {
+    "groundedness": ("synthesis", ["summary", "verdict"], {"report_mode": "strict"},
+                     "figures or case IDs are not well supported: rewrite the briefing in strict mode"),
+    "relevance": ("hybrid_retriever", ["search", "cases", "plan", "recovery", "summary", "verdict"], {"retrieval_plan": {"focus": True}},
+                  "the analysis is not specific to this incident: re-investigate focused on its exact disruption type"),
+    "actionability": ("planner", ["plan", "recovery", "summary", "verdict"], {},
+                      "the plan is not concrete enough: re-plan with the Synapt playbook"),
+    "completeness": ("recovery", ["recovery", "summary", "verdict"], {},
+                     "the outlook is incomplete: re-project recovery and rewrite"),
+    "consistency": ("planner", ["plan", "recovery", "summary", "verdict"], {"plan_hint": "exclude_primary"},
+                    "the recommendation does not match the strategy statistics: re-plan without the current primary"),
+    "safety": ("synthesis", ["summary", "verdict"], {"report_mode": "strict"},
+               "the briefing overstates certainty: rewrite it in strict mode"),
+}
 
-    from agents.state import done, emit
 
-    t0 = time.time()
-    emit("agent_start", "judge")
-    plan = state["plan"]
-    verdict = None
-    if state["payload"].get("judge", True):
-        report_text = state["summary"] + "\n\nPLAN:\n" + json.dumps(plan, default=str)
-        verdict = audit(report_text, {"incident": state["incident"], "cases": state["cases"],
-                                      "top_strategy": plan.get("primary_strategy"),
-                                      "procedure": plan.get("procedure")}, state.get("fact_check"))
-        verdict["overall_score"] = round(sum(verdict["scores"].values()) / (5 * len(verdict["scores"])), 3)
-        verdict["criteria"] = CRITERIA
-    summ = (f"{verdict['verdict'].upper()} · score {verdict['overall_score']:.0%} ({verdict['method']})"
-            if verdict else "skipped")
-    return {"verdict": verdict, "trace": [done("judge", t0, summ, verdict)]}
+class JudgeAgent(Agent):
+    """Goal: a verdict on the analysis against six criteria, and - when it is not good enough - a precise
+    request to the agent whose work caused the weakest score. Tool: the deterministic rubric audit (no LLM;
+    the external LLM judge is used only in evaluation)."""
+
+    id, node = "judge", "judge"
+    goal = "Audit the analysis on six criteria and send weak work back to the agent responsible"
+    max_steps = 1
+
+    def make_tools(self) -> list[Tool]:
+        return [Tool("rubric_audit", "Six-criterion rubric over the briefing, plan, evidence and fact-check",
+                     lambda report_text, evidence, fact_check: audit(report_text, evidence, fact_check))]
+
+    def perceive(self, state: dict) -> dict:
+        plan = state["plan"]
+        return {"enabled": state["payload"].get("judge", True), "plan": plan,
+                "report_text": state["summary"] + "\n\nPLAN:\n" + json.dumps(plan, default=str),
+                "evidence": {"incident": state["incident"], "cases": state["cases"], "top_strategy": plan.get("primary_strategy"),
+                             "procedure": plan.get("procedure")},
+                "fact_check": state.get("fact_check"), "verdict": None}
+
+    def decide(self, obs: dict, steps: list[dict]) -> Action | None:
+        if obs["enabled"] and obs["verdict"] is None:
+            return Action("rubric_audit", {"report_text": obs["report_text"], "evidence": obs["evidence"], "fact_check": obs["fact_check"]},
+                          "Score groundedness, relevance, actionability, completeness, consistency and safety")
+        return None
+
+    def observe(self, obs: dict, action: Action, result, error: str | None) -> dict:
+        result["overall_score"] = round(sum(result["scores"].values()) / (5 * len(result["scores"])), 3)
+        result["criteria"] = CRITERIA
+        obs["verdict"] = result
+        return obs
+
+    def summarise(self, action: Action, result, error: str | None) -> str:
+        return ", ".join(f"{k} {v}" for k, v in result["scores"].items())
+
+    def reflect(self, obs: dict, steps: list[dict]) -> dict:
+        v = obs["verdict"]
+        if v is None:
+            return {"status": "done", "confidence": None, "summary": "skipped", "requests": []}
+        requests = []
+        if v["verdict"] == "revise":
+            weakest = min(v["scores"], key=lambda k: (v["scores"][k], list(CRITERIA).index(k)))
+            to, reset, params, why = REMEDY[weakest]
+            if params.get("plan_hint") == "exclude_primary":
+                params = {"plan_hint": {"exclude": [obs["plan"].get("primary_strategy")]}}
+            requests.append({"to": to, "reset": reset, "params": params, "criterion": weakest,
+                             "reason": f"{weakest} scored {v['scores'][weakest]}/5: {why}"})
+            v["remedy"] = requests[0]
+        return {"status": "done" if v["verdict"] == "approve" else "partial", "confidence": v["overall_score"],
+                "summary": f"{v['verdict'].upper()} · score {v['overall_score']:.0%} ({v['method']})"
+                           + (f" · asks {requests[0]['to'].replace('_', ' ')} to fix {requests[0]['criterion']}" if requests else ""),
+                "requests": requests}
+
+    def commit(self, obs: dict, message: dict, state: dict) -> dict:
+        return {"verdict": obs["verdict"]}
+
+    def detail(self, obs: dict):
+        return obs["verdict"]
+
+
+judge_node = JudgeAgent()

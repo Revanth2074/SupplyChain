@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import logging
 import re
-import time
 
-from agents.state import describe, done, emit
+from agents.base import Action, Agent, Tool
+from agents.state import describe
 
 log = logging.getLogger("synthesis")
 
@@ -110,40 +110,99 @@ def build_briefing(incident: dict, cases: list[dict], plan: dict, recovery: dict
     return (
         f"**Situation** — {describe(incident)}. Priority **{facts['priority']}**.\n\n"
         f"**Historical Precedent** (evidence: dataset) — Closest cases: {precedent}. Average full recovery by strategy: {stats}.\n\n"
-        f"**Expected Impact** (prediction: ML models) — {facts['production_impact']} production impact, {facts['revenue_loss']} revenue "
+        f"**Expected Impact** (estimate: precedent statistics) — {facts['production_impact']} production impact, {facts['revenue_loss']} revenue "
         f"loss, risk level {facts['risk_level']}. Resilience {facts['resilience']}.\n\n"
         f"**Recommended Response** (recommendation: statistics + Synapt playbook) — {plan.get('primary_strategy')} (secondary: {plan.get('secondary_strategy')}). "
         f"{plan.get('rationale', '')}\n{actions}\n\n"
-        f"**Recovery Outlook** (prediction: ML models) — partial ≈{facts['partial_recovery']}, full ≈{facts['full_recovery']}.")
+        f"**Recovery Outlook** (estimate: precedent statistics) — partial ≈{facts['partial_recovery']}, full ≈{facts['full_recovery']}.")
 
 
-def synthesis_node(state: dict) -> dict:
-    """LangGraph node (Report agent): evidence-built briefing, fact-checked, plus the Synapt graph answer.
-    When the supervisor sends it back after a failed fact-check, it rewrites in strict mode: every sentence
-    carrying an unverified figure or case ID is dropped, then the briefing is checked again."""
-    t0 = time.time()
-    emit("agent_start", "reporter")
-    incident, cases, plan, recovery = state["incident"], state["cases"], state["plan"], state["recovery"]
-    pred, prio = state["impact"]["prediction"], state["impact"]["priority"]
-    strat, graph = state["strategies"], state.get("graph")
-    facts = report_facts(prio, pred, recovery)
-    report_cases = cases[:6]
-    top3 = strat["strategies"][:3]
-    summary_md = build_briefing(incident, report_cases, plan, recovery, pred, prio, facts, top3)
-    proc = plan.get("procedure") or {}  # figures quoted from the Synapt playbook steps are evidence too
-    evidence = {**facts, "playbook": " ".join(st["text"] for st in proc.get("steps") or [])}
-    issues = check_report(summary_md, evidence, report_cases, top3, recovery)
-    rnd = state.get("report_round", 0) + 1
-    check = {"first_pass": issues, "final": issues, "retried": False, "method": "template", "round": rnd}
-    if issues and rnd > 1:  # strict rewrite requested by the supervisor
-        summary_md = strict_rewrite(summary_md, lambda t: check_report(t, evidence, report_cases, top3, recovery))
-        check.update(final=check_report(summary_md, evidence, report_cases, top3, recovery), retried=True)
-    answer = (graph or {}).get("answer")
-    if answer:  # Synapt's own grounded answer, shown as its own section and not part of our fact-check
-        summary_md += f"\n\n**Synapt Knowledge Graph** (Synapt graph-RAG answer) — {answer.strip()}"
-        check["method"] = "template+synapt"
-    check["passed"] = not check["final"]
-    rs = ("Briefing built, fact-check passed" if check["passed"] else
-          f"Briefing built, {len(check['final'])} unverified figure(s) flagged")
-    entry = done("reporter", t0, rs, {"summary": summary_md, "facts": facts, "fact_check": check})
-    return {"summary": summary_md, "facts": facts, "fact_check": check, "report_round": rnd, "trace": [entry]}
+MAX_REWRITES = 2
+
+
+class ReportAgent(Agent):
+    """Goal: an executive briefing in which every figure and case ID is verified against the evidence.
+    Tools: the evidence-built drafter, the deterministic fact-check, the strict rewrite (drops any sentence
+    the check flags) and the Synapt answer attacher. The agent fact-checks its own draft and rewrites
+    until it passes (at most MAX_REWRITES times) before reporting."""
+
+    id, node = "reporter", "synthesis"
+    goal = "A briefing in which every figure and case ID is verified against the evidence"
+    max_steps = 2 + 2 * MAX_REWRITES + 1
+
+    def make_tools(self) -> list[Tool]:
+        return [Tool("draft_briefing", "Fill the briefing template from facts, cases, statistics and the plan",
+                     lambda **kw: build_briefing(**kw)),
+                Tool("fact_check", "Every amount, percentage and case ID must appear in the evidence",
+                     lambda text, ev: check_report(text, ev["facts"], ev["cases"], ev["strategies"], ev["recovery"])),
+                Tool("strict_rewrite", "Drop every sentence the fact-check flags",
+                     lambda text, ev: strict_rewrite(text, lambda t: check_report(t, ev["facts"], ev["cases"], ev["strategies"], ev["recovery"]))),
+                Tool("attach_synapt_answer", "Add Synapt's own graph-RAG answer as a separate, labelled section",
+                     lambda text, answer: text + f"\n\n**Synapt Knowledge Graph** (Synapt graph-RAG answer) — {answer.strip()}")]
+
+    def perceive(self, state: dict) -> dict:
+        incident, cases, plan, recovery = state["incident"], state["cases"], state["plan"], state["recovery"]
+        pred, prio = state["impact"]["prediction"], state["impact"]["priority"]
+        facts = report_facts(prio, pred, recovery)
+        top3 = state["strategies"]["strategies"][:3]
+        proc = plan.get("procedure") or {}  # figures quoted from the Synapt playbook steps are evidence too
+        ev = {"facts": {**facts, "playbook": " ".join(st["text"] for st in proc.get("steps") or [])},
+              "cases": cases[:6], "strategies": top3, "recovery": recovery}
+        return {"draft_args": {"incident": incident, "cases": cases[:6], "plan": plan, "recovery": recovery, "pred": pred,
+                               "prio": prio, "facts": facts, "top3": top3},
+                "facts": facts, "ev": ev, "text": None, "issues": None, "first": None, "rewrites": 0, "attached": False,
+                "answer": (state.get("graph") or {}).get("answer"), "strict": state.get("report_mode") == "strict",
+                "round": state.get("report_round", 0) + 1}
+
+    def decide(self, obs: dict, steps: list[dict]) -> Action | None:
+        if obs["text"] is None:
+            return Action("draft_briefing", obs["draft_args"], "Draft the briefing from the evidence only")
+        if obs["issues"] is None:
+            return Action("fact_check", {"text": obs["text"], "ev": obs["ev"]}, "Fact-check every figure and case ID in the draft")
+        if obs["issues"] and obs["rewrites"] < MAX_REWRITES + (1 if obs["strict"] else 0):
+            return Action("strict_rewrite", {"text": obs["text"], "ev": obs["ev"]},
+                          f"{len(obs['issues'])} unverified item(s): drop the sentences that carry them")
+        if obs["answer"] and not obs["attached"]:
+            return Action("attach_synapt_answer", {"text": obs["text"], "answer": obs["answer"]},
+                          "Add Synapt's own answer as its own section (it carries Synapt's confidence, not our fact-check)")
+        return None
+
+    def observe(self, obs: dict, action: Action, result, error: str | None) -> dict:
+        if action.tool in ("draft_briefing", "strict_rewrite"):
+            obs["text"], obs["issues"] = result, None
+            if action.tool == "strict_rewrite":
+                obs["rewrites"] += 1
+        elif action.tool == "fact_check":
+            obs["issues"] = result
+            if obs["first"] is None:
+                obs["first"] = result
+        else:
+            obs["text"], obs["attached"] = result, True
+        return obs
+
+    def summarise(self, action: Action, result, error: str | None) -> str:
+        if action.tool == "fact_check":
+            return "passed" if not result else f"{len(result)} issue(s): " + "; ".join(result[:2])
+        if action.tool == "attach_synapt_answer":
+            return "Synapt section added"
+        return f"{len(result.split())} words"
+
+    def reflect(self, obs: dict, steps: list[dict]) -> dict:
+        passed = not obs["issues"]
+        rs = ("Briefing built, fact-check passed" if passed else f"Briefing built, {len(obs['issues'])} unverified figure(s) flagged")
+        if obs["rewrites"]:
+            rs += f" (rewritten {obs['rewrites']}x after {len(obs['first'])} issue(s))"
+        return {"status": "done" if passed else "partial", "confidence": 1.0 if passed else 0.5, "summary": rs, "requests": []}
+
+    def commit(self, obs: dict, message: dict, state: dict) -> dict:
+        check = {"first_pass": obs["first"] or [], "final": obs["issues"] or [], "retried": obs["rewrites"] > 0,
+                 "rewrites": obs["rewrites"], "method": "template+synapt" if obs["attached"] else "template",
+                 "round": obs["round"], "passed": not obs["issues"]}
+        obs["check"] = check
+        return {"summary": obs["text"], "facts": obs["facts"], "fact_check": check, "report_round": obs["round"], "report_mode": ""}
+
+    def detail(self, obs: dict):
+        return {"summary": obs["text"], "facts": obs["facts"], "fact_check": obs.get("check")}
+
+
+synthesis_node = ReportAgent()
