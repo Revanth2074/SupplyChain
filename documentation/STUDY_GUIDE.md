@@ -32,12 +32,10 @@ Three sentences if you only get three:
 | **Graph-RAG** | Retrieval-augmented generation where, after finding relevant chunks, the system walks the knowledge graph N hops from the entities mentioned (BFS) and answers from that subgraph. Gives a visible reasoning path. | `agents/synapt_tools.fetch_synapt_rag` → `trident_query` |
 | **RAG** | Retrieve relevant evidence first, then answer *from that evidence*. Here Synapt's `trident_query` does retrieval + graph walk + answer generation inside Synapt. | `agents/graph.py` |
 | **BM25** | Classic keyword ranking: rewards rare words that appear often in a document, normalised by length. Good for exact terms ("ransomware", "Tier 2"). | `agents/retrieval.lexical_search` |
-| **LSA** | Latent Semantic Analysis: TF-IDF + truncated SVD (96 dims), a light local "semantic" index. Used as the fallback when Synapt is down. | `services/data_store.py` |
 | **RRF** (Reciprocal Rank Fusion) | Merge ranked lists by rank: each list adds w / (60 + rank). No need to make scores comparable. Items that rank well in several lists win. | `agents/retrieval.reciprocal_rank_fusion` |
 | **Profile leg** | Third retrieval list: vectorised attribute match (type, industry, tier, region, size, backup, severity) across all 100k rows. | `agents/retrieval.profile_matches` |
-| **Circuit breaker** | After 3 consecutive failures of a Synapt tool, stop calling that tool for 60 s and use the local fallback; then allow one trial call. One breaker per tool. | `agents/synapt_tools.breaker_for` |
-| **Fallback Lab** | Runtime switches that simulate outages (Synapt, graph, playbooks, LLM judge, models, live feed) plus a self-test that checks every feature used the expected engine. | `services/faults.py`, `services/fallback_lab.py` |
-| **Cohort statistics** | Fallback for the models: median and P10/P90 of the most similar historical cases (keys dropped least-important-first until ≥ 30 cases). | `agents/prediction._cohort` |
+| **Single Synapt mode** | Synapt is required; there is no local or degraded mode. Start-up connects to Synapt first and stops in an error state if it is not configured or unreachable. Every Synapt call has a timeout; a failure raises `SynaptError` and the request returns a clear error. `/api/health` shows the last failed tool and error. | `services/bootstrap.py`, `agents/synapt_tools._call` |
+| **Cohort statistics** | Used for predictions when the trained model file is absent (nothing to do with Synapt): median and P10/P90 of the most similar historical cases (keys dropped least-important-first until ≥ 30 cases). | `agents/prediction._cohort` |
 | **Region bridge** | Synapt masks region names as PII (`[LOCATION_ab12]`). We learn token ↔ region from known cases and translate both ways. | `agents/synapt_tools.regions` |
 | **HistGradientBoosting** | Fast gradient-boosted trees in scikit-learn with native categorical support; strong default for tabular data. | `agents/prediction.py` |
 | **Quantile models / P10–P90** | Extra models trained to predict the 10th and 90th percentile, giving an 80% range. | `agents/prediction.QUANTILES` |
@@ -60,7 +58,7 @@ Spend the most time on items 1–6; they are what the panel will ask about.
 | # | File | What to understand |
 |:-:|---|---|
 | 1 | `backend/agents/graph.py` + `state.py` | The LangGraph `StateGraph`: nodes, the parallel fan-out (hybrid retriever ∥ Synapt worker), the join, streaming events |
-| 2 | `backend/agents/synapt_tools.py` | `get_synapt_connector()`, per-tool breakers, region bridge, `get_chunks`, `fetch_synapt_rag` (graph-RAG + quality), `fetch_synapt_procedures`, `search_nodes`, `synapt_worker_node` |
+| 2 | `backend/agents/synapt_tools.py` | `get_synapt_connector()`, timed calls + `SynaptError`, region bridge, `get_chunks`, `fetch_synapt_rag` (graph-RAG + quality), `fetch_synapt_procedures`, `search_nodes`, `synapt_worker_node` |
 | 3 | `backend/synapt/synapt_connector.py` | `SynaptConfig`, `SynaptMCPConnector`: authenticate → `initialize_mcp` → `call_tool` (schema-driven argument injection, SSE parsing, re-auth on 401) |
 | 4 | `backend/agents/retrieval.py` | `lexical_search`, `semantic_search_synapt`, `reciprocal_rank_fusion`, `hybrid_search` (three legs + rerank), `profile_matches` |
 | 5 | `backend/agents/prediction.py` | Features, targets, `train`, quantiles, `predict` (ranges, support), cohort-statistics fallback, `explain`, `whatif`, `resilience` |
@@ -68,10 +66,10 @@ Spend the most time on items 1–6; they are what the panel will ask about.
 | 7 | `backend/agents/synthesis.py`, `judge.py` | Briefing + deterministic fact-check with one rewrite; 6-criterion judge + heuristic fallback |
 | 8 | `backend/agents/guardrails.py` | Patterns and why each exists; `guardrails_node` routes invalid input straight to END |
 | 9 | `backend/services/decision.py`, `risk_watch.py`, `ops.py` | Scenario money model, early-warning heuristic, SLA/escalation/actions |
-| 10 | `backend/services/feedback.py`, `evaluation.py`, `faults.py`, `fallback_lab.py` | Strategy boosts (×0.85–1.15), outcomes → retraining, golden set, outage switches + self-test |
-| 11 | `backend/server.py` + `routes/` + `schemas/` | How the 15 routers mount under `/api`; know `/api/analyze/stream`, `/api/search`, `/api/predict`, `/api/health` |
+| 10 | `backend/services/feedback.py`, `evaluation.py` | Strategy boosts (×0.85–1.15), outcomes → retraining, golden set |
+| 11 | `backend/server.py` + `routes/` + `schemas/` | How the 14 routers mount under `/api`; know `/api/analyze/stream`, `/api/search`, `/api/predict`, `/api/health` |
 | 12 | `backend/scripts/build_knowledge_base.py`, `synapt/ingest_to_synapt.py`, `synapt/test_connection.py` | How the knowledge base is generated, loaded into Synapt and verified |
-| 13 | `backend/static/index.html`, `app.js` | The console: 12 views grouped by stage (incl. the 3D Control Tower and History), one loader per view, `track()` history logging, the SSE stream reader for the 7 agents |
+| 13 | `backend/static/index.html`, `app.js` | The console: 11 views grouped by stage (incl. the 3D Control Tower and History), one loader per view, `track()` history logging, the SSE stream reader for the 7 agents |
 
 Exercise: run one incident in the cockpit, open the browser dev tools Network tab, and match each SSE event to the agent code that produced it.
 
@@ -92,7 +90,7 @@ Exercise: run one incident in the cockpit, open the browser dev tools Network ta
 **Retrieval**
 - RRF k = 60; semantic weight 0.6, keyword 0.4, profile 0.6; final rank = 0.5 fused + 0.5 similarity.
 - Profile leg: exact-profile matches 14% → 83%.
-- With vs. without Synapt (25 golden cases, top 8): semantic-only type precision **87% vs 68.5%**; similarity 0.78 vs 0.73; full hybrid 100% both.
+- Synapt semantic leg alone (25 golden cases, top 8): type precision **87%**, similarity 0.78; full hybrid 100%.
 
 **Models** (held-out 20%)
 | Target | Metric |
@@ -127,7 +125,7 @@ Exercise: run one incident in the cockpit, open the browser dev tools Network ta
 ### About Synapt (expect most questions here)
 
 **Q1. Why Synapt and not just a vector database like FAISS or pgvector?**
-A vector DB answers "which passages look similar". Synapt also gives a graph walk (the reasoning path), procedures (playbooks as ordered steps), episodic memory (tickets, feedback), and per-answer confidence signals, all behind one open protocol. I measured the semantic leg: 87% type precision vs 68.5% for my local LSA index. The graph and procedures have no local equivalent at all.
+A vector DB answers "which passages look similar". Synapt also gives a graph walk (the reasoning path), procedures (playbooks as ordered steps), episodic memory (tickets, feedback), and per-answer confidence signals, all behind one open protocol. I measured the semantic leg on its own: 87% type precision on the golden set. The graph and procedures have no local equivalent at all, which is why the app runs only on Synapt.
 
 **Q2. Explain exactly what happens in one `trident_query` call.**
 As I understand it from the tool contract and the responses: the question (with regions masked) is embedded; top-k chunks are retrieved; entities in those chunks seed the graph; Synapt walks up to `SYNAPT_GRAPH_HOPS = 2` hops (BFS); procedures and episodes are attached; the LLM inside Synapt answers from that context; the response includes the subgraph, sources and quality signals (knowledge, procedural, graph confidence, degraded flag).
@@ -151,13 +149,10 @@ Every user verdict calls `trident_feedback` with the query ID, verdict and score
 (1) Fix entity creation. (2) A tenant-scoped, read-only Cypher endpoint. (3) Per-hop graph confidence, so you can see where an answer got weak. (4) Document the ticket gateway (`.xlsx` only) and the `label_ticket` JSON-string contract. (5) Optionally allow listing fields (like region) as non-PII per provider.
 
 **Q9. What happens if Synapt is down during the demo?**
-The circuit breaker opens after 3 failures; search switches to local LSA; the result carries `semantic_source: "local-lsa"` and a `fallback_reason`; the graph answer and playbook are skipped; everything else works. Full hybrid search still found the right type 100% of the time on the golden set.
+The app runs in one mode, on Synapt, so there is no silent switch to a weaker engine. If Synapt is not configured or unreachable at start-up, the boot stage becomes "error", data endpoints return 503 and the console banner shows the start-up error. If a call fails later, it raises `SynaptError`: `/api/analyze` and the stream return an error, `/api/ask` and `/api/synapt/*` return HTTP 502, and `/api/health` reports the last failed tool and error. Every call has a timeout, so nothing hangs.
 
-**Q9b. Can you show the fallbacks working?**
-Yes, live: the Fallback Lab page has switches for Synapt (all, graph only, playbooks only), the LLM judge, the prediction models and the live feed. Each makes that dependency fail at its lowest level, so the real fallback code runs. The self-test then checks every feature answered through the expected engine. Measured with the full workflow: all on 15/15 (including a live LLM-judge call); Synapt off 15/15 on the fallbacks; judge LLM + models + feed off 15/15, no crashes.
-
-**Q9c. Why one circuit breaker per Synapt tool?**
-A slow graph-RAG call (up to 90 s) used to count against the same breaker as case search, so three slow graph calls could switch off chunk retrieval too. Per-tool breakers isolate failures; restoring a simulated outage resets them immediately.
+**Q9b. Why not keep a local fallback?**
+A local index would answer, but worse, and without the graph walk, playbooks or confidence signals; a quietly weaker answer is risky in an operational tool. A clear error is honest and easy to monitor. BM25 and the profile leg are still part of every search, as regular hybrid legs alongside Synapt, not as a replacement for it.
 
 **Q10. Which MCP transport do you use, and how is auth handled?**
 Streamable HTTP: JSON-RPC 2.0 POSTs with an `Mcp-Session-Id` header after `initialize`. Auth: email/password → bearer token from the Synapt auth service, refreshed every 50 minutes, with automatic re-auth on 401. Replies can be JSON or SSE; the client handles both.
@@ -171,7 +166,7 @@ Cosine similarities, BM25 scores and profile scores are on different scales and 
 It is the standard constant from the original RRF paper. It damps the difference between rank 1 and rank 2 so one list cannot dominate. I didn't tune it; the profile leg mattered far more.
 
 **Q13. How is metadata filtering done?**
-Filters apply to every leg before fusion: BM25 and profile on the local DataFrame, and Synapt hits are filtered after the region bridge maps tokens back. If Synapt returns nothing that passes filters, the local semantic index supplements it (`synapt+local`).
+Filters apply to every leg before fusion: BM25 and profile on the local DataFrame, and Synapt hits are filtered after the region bridge maps tokens back. Results always carry `semantic_source: "synapt"`; BM25 and the profile leg add their own matches through RRF as usual.
 
 **Q14. How do you know retrieval is good?**
 Retrieval type precision (100% in hybrid on the golden set), average attribute similarity, DeepEval contextual relevancy, and Synapt's knowledge confidence per answer.
@@ -202,7 +197,7 @@ Risk is a classifier for "high-impact" (top-quartile loss ≥ $2.49M, OR top-qua
 ### Agents and LLM
 
 **Q22. Are these real agents?**
-They are specialised steps in a deterministic pipeline, each with one responsibility, a typed output and a fallback. I chose orchestration over autonomous agents for predictability and auditability in an operational setting.
+They are specialised steps in a deterministic pipeline, each with one responsibility and a typed output. I chose orchestration over autonomous agents for predictability and auditability in an operational setting.
 
 **Q23. Where is the LLM used?**
 Only as the independent judge, the same way the reference Synapt capstone does it: `scripts/llm_judge.py` (10 cases, 4 rubrics), `scripts/deepeval_suite.py` (DeepEval metrics) and `POST /api/judge`. Inside the workflow, classification is vocabulary-constrained rules, the plan is strategy statistics plus the Synapt playbook steps, the briefing is built from the evidence plus Synapt's graph-RAG answer, and `/ask` returns Synapt's `trident_query` answer. Synapt does the language work on its side.
@@ -270,4 +265,4 @@ Ratings change strategy ranking immediately (boost ×0.85–1.15, needs ~3 ratin
 | 3 | Read `agents/retrieval.py`, `agents/prediction.py`, `agents/impact_analysis.py`. Recompute one priority score by hand. |
 | 4 | Read the four HTML pages in `documentation/visual/`. Learn §4 by heart. |
 | 5 | Answer §5 out loud without notes; time the demo (3 min). |
-| 6 | Full dry run of `PRESENTATION_GUIDE.md` with a timer; rehearse the "Synapt is down" fallback. |
+| 6 | Full dry run of `PRESENTATION_GUIDE.md` with a timer; rehearse the "Synapt is down" answer (Q9) and where the error shows. |

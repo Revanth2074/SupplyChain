@@ -4,8 +4,8 @@ Invokes Synapt MCP tools (trident_query, trident_get_procedures, trident_get_chu
 trident_episodes, trident_label_ticket, trident_cypher, trident_feedback, trident_get_stats) via
 SynaptMCPConnector to retrieve grounded graph, document and procedural context.
 
-Every call goes through a per-tool circuit breaker and a timeout; any failure raises SynaptError
-so the agents fall back to the local engines (LSA/BM25 search, statistics, templates).
+Synapt is required: the app runs in a single Synapt-backed mode. Every call has a timeout and any
+failure raises SynaptError, which surfaces to the caller (there is no local fallback).
 """
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ import threading
 import time
 from typing import Any
 
-from services import faults
 from config import settings
 from synapt.synapt_connector import SynaptConfig, SynaptError, SynaptMCPConnector
 
@@ -27,44 +26,7 @@ CASE_SPLIT = re.compile(r"#{2,3}\s*(DIS-\d{6})")
 _pool = cf.ThreadPoolExecutor(max_workers=4)
 
 
-class _Breaker:
-    def __init__(self, threshold: int = 3, cooldown: int = 60) -> None:
-        self.fails, self.threshold, self.cooldown, self.opened = 0, threshold, cooldown, 0.0
-        self.last_error = ""
-
-    def allow(self) -> bool:
-        return self.fails < self.threshold or time.time() - self.opened > self.cooldown
-
-    def ok(self) -> None:
-        self.fails, self.last_error = 0, ""
-
-    def fail(self, e: Exception) -> None:
-        self.fails += 1
-        self.last_error = str(e)[:300]
-        if self.fails >= self.threshold:
-            self.opened = time.time()
-
-
-_breakers: dict[str, _Breaker] = {}
-
-
-def breaker_for(tool: str) -> _Breaker:
-    """One breaker per tool, so a slow graph-RAG call cannot switch off case search."""
-    return _breakers.setdefault(tool, _Breaker())
-
-
-def reset_breakers() -> None:
-    for b in _breakers.values():
-        b.ok()
-        b.opened = 0.0
-
-
-def _on_fault_change(name: str, enabled: bool) -> None:
-    if not enabled and name.startswith("synapt"):
-        reset_breakers()  # restoring a simulated outage takes effect immediately
-
-
-faults.on_change(_on_fault_change)
+_last_error = {"tool": None, "error": ""}
 
 
 class _RegionMap:
@@ -149,6 +111,12 @@ def configured() -> bool:
     return bool(settings.SYNAPT_USERNAME and settings.SYNAPT_PASSWORD and settings.SYNAPT_PROVIDER_ID)
 
 
+def require_configured() -> None:
+    if not configured():
+        raise SynaptError("Synapt is not configured: set SYNAPT_USERNAME, SYNAPT_PASSWORD and "
+                          "SYNAPT_PROVIDER_ID in backend/.env")
+
+
 def _unwrap(r: Any) -> Any:
     """Connector returns the tool's JSON text; parse it (and unwrap {"result": "<json>"} envelopes)."""
     if isinstance(r, str):
@@ -165,22 +133,18 @@ def _unwrap(r: Any) -> Any:
 
 
 def _call(tool: str, args: dict, timeout: float) -> Any:
-    if not configured():
-        raise SynaptError("Synapt not configured")
-    breaker = breaker_for(tool)
-    if not breaker.allow():
-        raise SynaptError(f"Synapt circuit open for {tool}: {breaker.last_error}")
+    require_configured()
     # provider_id / top_k / graph_hops are injected by the connector where the tool schema expects them
     fut = _pool.submit(lambda: get_synapt_connector().call_tool(tool, args))
     try:
         r = _unwrap(fut.result(timeout=timeout))
-        breaker.ok()
+        _last_error.update(tool=None, error="")
         return r
     except cf.TimeoutError as e:
-        breaker.fail(e)
+        _last_error.update(tool=tool, error=f"timed out after {timeout}s")
         raise SynaptError(f"{tool} timed out after {timeout}s") from e
     except Exception as e:  # noqa: BLE001
-        breaker.fail(e)
+        _last_error.update(tool=tool, error=str(e)[:300])
         raise SynaptError(f"{tool} failed: {e}") from e
 
 
@@ -423,41 +387,35 @@ def stats(timeout: float = 15) -> dict:
 
 
 def status() -> dict:
-    open_tools = [t for t, b in _breakers.items() if not b.allow()]
-    errs = [b.last_error for b in _breakers.values() if b.last_error]
-    simulated = [n for n in faults.active_list() if n.startswith("synapt")]
-    return {"configured": configured(), "circuit_open": bool(open_tools) or "synapt" in simulated,
-            "open_tools": open_tools, "simulated_outage": simulated,
-            "consecutive_failures": max((b.fails for b in _breakers.values()), default=0),
-            "last_error": errs[-1] if errs else "",
+    return {"configured": configured(), "last_failed_tool": _last_error["tool"],
+            "last_error": _last_error["error"],
             "provider_id": settings.SYNAPT_PROVIDER_ID, "mcp_url": settings.SYNAPT_MCP_URL,
             "region_tokens_learned": len(regions.tokens)}
 
 
 def synapt_worker_node(state: dict) -> dict:
-    """LangGraph node: queries the Synapt Context Substrate for grounded reasoning (trident_query graph-RAG)
-    and the response playbook for this disruption type (trident_get_procedures), in parallel.
-    Runs alongside hybrid retrieval; any failure leaves the field empty and the agents carry on locally."""
+    """LangGraph node (Synapt worker, part of the Investigation agent): queries the Synapt Context
+    Substrate for grounded reasoning (trident_query graph-RAG) and the response playbook for this
+    disruption type (trident_get_procedures), in parallel. When the supervisor sends it back because
+    graph-RAG gave no answer, it asks a broader question (type + industry only) and keeps the playbook.
+    Synapt is required: a failure stops the workflow with a SynaptError."""
     from agents.state import describe
 
-    if not configured():
-        return {"graph": None, "procedure": None}
+    require_configured()
     payload, incident = state["payload"], state["incident"]
+    rnd = state.get("synapt_round", 0) + 1
     desc = state.get("description") or ""
-    graph_fut = None
+    graph_fut = proc_fut = None
     if payload.get("use_graph", True):
-        gq = (f"{describe(incident)}. {desc[:300]} Has a similar disruption occurred and how was it resolved, "
-              f"which response strategy recovered fastest?")
+        if rnd == 1:
+            gq = (f"{describe(incident)}. {desc[:300]} Has a similar disruption occurred and how was it resolved, "
+                  f"which response strategy recovered fastest?")
+        else:
+            core = {k: incident.get(k) for k in ("disruption_type", "industry")}
+            gq = f"How are {describe(core)}s usually resolved, and which response strategy recovers fastest?"
         graph_fut = _pool.submit(fetch_synapt_rag, gq, None, None, 75, "workflow")
-    proc_fut = _pool.submit(procedure_for, incident["disruption_type"])
-    graph = procedure = None
-    if graph_fut:
-        try:
-            graph = graph_fut.result(timeout=80)
-        except Exception as e:  # noqa: BLE001
-            graph = {"error": str(e)[:200]}
-    try:
-        procedure = proc_fut.result(timeout=30)
-    except Exception as e:  # noqa: BLE001
-        log.info("Synapt procedure unavailable: %s", e)
-    return {"graph": graph, "procedure": procedure}
+    if rnd == 1 or state.get("procedure") is None:
+        proc_fut = _pool.submit(procedure_for, incident["disruption_type"])
+    graph = graph_fut.result(timeout=80) if graph_fut else None
+    procedure = proc_fut.result(timeout=30) if proc_fut else state.get("procedure")
+    return {"graph": graph, "procedure": procedure, "synapt_round": rnd}

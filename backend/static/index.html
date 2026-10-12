@@ -15,7 +15,7 @@
     { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/" } }
   </script>
-  <link rel="stylesheet" href="/static/style.css?v=6">
+  <link rel="stylesheet" href="/static/style.css?v=8">
 </head>
 <body>
   <div class="app-container">
@@ -51,8 +51,6 @@
         <button class="nav-item" data-tab="incidents">Incident Desk <span class="nav-badge" id="badge-breached" hidden></span></button>
         <button class="nav-item" data-tab="quality">Quality &amp; Learning</button>
         <button class="nav-item" data-tab="history">History</button>
-        <div class="nav-group">System</div>
-        <button class="nav-item" data-tab="lab">Fallback Lab <span class="nav-badge warn" id="badge-lab" hidden>TEST</span></button>
       </nav>
 
       <div class="sidebar-footer">
@@ -73,7 +71,7 @@
         <div class="topbar-right"><span class="pill" id="provider-pill">provider —</span></div>
       </header>
 
-      <div class="boot-banner" id="boot-banner" hidden>Loading 100,000 cases and models… first request may take ~30 s.</div>
+      <div class="boot-banner" id="boot-banner" hidden>Connecting to Synapt and loading 100,000 cases and models… first request may take ~30 s.</div>
 
       <!-- ===================================================== CONTROL TOWER -->
       <section class="view-panel active" id="view-overview">
@@ -120,7 +118,7 @@
             <label class="check"><input type="checkbox" id="ck-judge" checked> Judge audit</label>
             <details class="inline-details"><summary>Structured fields (optional, override the classifier)</summary><div class="form-grid" id="ck-fields"></div></details>
             <span class="spacer"></span>
-            <button class="btn primary" id="ck-run" type="button">Analyse with 7 agents</button>
+            <button class="btn primary" id="ck-run" type="button">Analyse with agents</button>
           </div>
         </div>
         <div class="agent-track" id="ck-agents"></div>
@@ -314,19 +312,9 @@ Natural Disaster, Pharmaceuticals, 3, Asia-Pacific, 5, no</textarea>
         </div>
       </section>
 
-      <!-- ===================================================== FALLBACK LAB -->
-      <section class="view-panel" id="view-lab">
-        <div class="alert info">Switch a dependency off to simulate an outage; every page then uses its fallback. Switches are global and restore themselves after the chosen time.</div>
-        <div class="row wrap"><label>Auto-restore <select id="lab-min"><option>10</option><option selected>30</option><option>60</option></select> min</label>
-          <button class="btn ghost small" id="lab-reset" type="button">Restore all</button>
-          <label class="check"><input type="checkbox" id="lab-full" checked> include full workflow (~15 s)</label>
-          <button class="btn primary small" id="lab-test" type="button">Run self-test</button></div>
-        <div class="grid g3" id="lab-switches"></div>
-        <div class="card"><h3>Self-test <span id="lab-score"></span></h3><div id="lab-out" class="table-container"></div></div>
-      </section>
     </main>
   </div>
   <div class="toast" id="toast" hidden></div>
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=8"></script>
 </body>
 </html>

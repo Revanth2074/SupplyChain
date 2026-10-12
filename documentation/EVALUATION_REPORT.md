@@ -29,7 +29,6 @@ via aicredits.in) is only the judge.
 | | High-impact risk AUC | **0.87** |
 | | P10–P90 interval coverage | **78–80 %** (target 80 %) |
 | Synapt quality signals (25 cases) | Answer / knowledge / procedural / graph confidence | **0.755 / 0.891 / 0.797 / 0.576** |
-| Fallback Lab self-test | All on / Synapt off / judge LLM + models + feed off | **15/15 · 15/15 · 15/15** |
 
 ## 2. DeepEval Benchmark Results
 
@@ -111,11 +110,10 @@ followed by a rerank: 0.5 × fused score + 0.5 × attribute similarity to the in
 | Configuration | Type precision | Attribute similarity |
 |---|---|---|
 | Synapt semantic leg alone | 87.0 % | 0.777 |
-| Local LSA leg alone (fallback) | 68.5 % | 0.725 |
 | Full hybrid with Synapt | 100 % | 0.998 |
-| Full hybrid without Synapt | 100 % | 0.990 |
 
-The profile leg raised exact-profile matches in the top results from 14 % to 83 %.
+The profile leg raised exact-profile matches in the top results from 14 % to 83 %. The BM25 and profile legs are
+regular hybrid legs, not a fallback: the app runs only on Synapt, and a Synapt failure is returned as an error.
 
 ## 5. Knowledge-Base Re-Ingestion: Original vs Enriched Provider
 

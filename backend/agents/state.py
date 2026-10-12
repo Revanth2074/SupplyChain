@@ -1,7 +1,7 @@
 """
 Supply-Chain Disruption Assistant — Agent State Schema.
-Defines the typed dictionary state passed across all LangGraph nodes, the seven
-user-facing agents, and the progress-event helper used for SSE streaming.
+Defines the typed dictionary state shared by the supervisor and all agents, the user-facing
+agents, and the progress-event helper used for SSE streaming.
 """
 
 from __future__ import annotations
@@ -10,8 +10,9 @@ import operator
 import time
 from typing import Annotated, Any, Dict, List, Optional, TypedDict
 
-# The seven agents the console shows. Graph nodes report progress under these ids.
+# The agents the console shows. Graph nodes report progress under these ids.
 AGENTS = [
+    ("supervisor", "Supervisor Agent", "Reads the shared state and decides which agent runs next, and when to stop"),
     ("intake", "Intake & Classification Agent", "Validates input and classifies the disruption"),
     ("investigator", "Investigation Agent", "Retrieves similar historical cases via Synapt hybrid + graph RAG"),
     ("impact", "Impact Assessment Agent", "Predicts production, financial & recovery impact; prioritises"),
@@ -38,7 +39,7 @@ class DisruptionAgentState(TypedDict, total=False):
     query: str
     intake_t0: float
 
-    # Investigation: hybrid retrieval (local + Synapt) and the Synapt worker run in parallel
+    # Investigation: hybrid retrieval and the Synapt worker (the supervisor may run them in parallel)
     investigation_t0: float
     search: Dict[str, Any]
     graph: Optional[Dict[str, Any]]       # trident_query answer, subgraph, quality
@@ -57,6 +58,16 @@ class DisruptionAgentState(TypedDict, total=False):
     facts: Dict[str, Any]
     fact_check: Dict[str, Any]
     verdict: Optional[Dict[str, Any]]
+
+    # Supervisor routing: its decisions (with reasons), the agents it chose, and the loop counters
+    decisions: Annotated[List[Dict[str, Any]], operator.add]
+    next_agents: List[str]
+    routes: int
+    retrieval_round: int
+    retrieval_plan: Dict[str, Any]       # {"broaden": True} when the supervisor asks for wider retrieval
+    synapt_round: int
+    report_round: int
+    revision: int
 
     # Per-agent timings/summaries (parallel nodes append, so the list has a reducer)
     trace: Annotated[List[Dict[str, Any]], operator.add]

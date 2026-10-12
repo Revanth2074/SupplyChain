@@ -1,7 +1,8 @@
 """
 Service Bootstrap & Readiness.
-Loads the 100k-case store and the prediction models in a background thread at start-up,
-so the API answers /api/health immediately and other endpoints return 503 until ready.
+Connects to Synapt, then loads the 100k-case store and the prediction models in a background thread
+at start-up, so the API answers /api/health immediately and other endpoints return 503 until ready.
+Synapt is required: if it is not configured or unreachable, start-up stops in the "error" stage.
 """
 
 from __future__ import annotations
@@ -11,6 +12,7 @@ import threading
 
 from fastapi import HTTPException
 
+from agents import synapt_tools as syn
 from agents.prediction import registry
 from services import feedback, ops, risk_watch
 from services.data_store import store
@@ -22,6 +24,9 @@ boot = {"stage": "starting", "error": None}
 
 def _bootstrap() -> None:
     try:
+        boot["stage"] = "connecting to Synapt"
+        syn.require_configured()
+        syn.get_synapt_connector()  # authenticate + MCP handshake
         boot["stage"] = "loading data"
         store.load()
         feedback.init()

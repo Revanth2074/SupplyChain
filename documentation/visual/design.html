@@ -97,6 +97,8 @@ tr:last-child td{border-bottom:0}
 .ag b{display:block;margin-bottom:4px}
 .ag .io{font-size:.76rem;color:var(--ink-2)}
 .ag .io i{font-style:normal;color:var(--ink-3);font-weight:600}
+.ag.sup{grid-column:1/-1;border-color:var(--violet);background:var(--violet-soft)}
+.ag.sup:before{counter-increment:none;content:"hub";color:var(--violet)}
 /* stages */
 .stages{display:flex;gap:8px;flex-wrap:wrap}
 .stg{flex:1;min-width:150px;border-radius:12px;padding:12px;color:#fff}
@@ -218,8 +220,26 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
 
 <section id="agents">
   <h2>Agent contracts</h2>
-  <p class="sub">Seven agents, each with one job, a typed input and output, and a deterministic fallback. Streamed to the UI over Server-Sent Events.</p>
+  <p class="sub">Eight agents: a <b>Supervisor</b> plus seven worker agents, each with one job and a typed input and output. There is no fixed order: after guardrails pass, the supervisor reads the shared state after every step and decides which agent runs next (or two in parallel), and every worker hands back to it (hub-and-spoke). An agent can run more than once in a run. Each decision and its reason is streamed to the UI over Server-Sent Events and saved with the report; if a Synapt call fails, the run stops with a clear error.</p>
   <div class="agents" id="agentGrid"></div>
+  <div class="card" style="margin-top:14px">
+    <h3>Supervisor decision policy</h3>
+    <p class="muted small" style="margin:0 0 8px">Rule-based (no LLM), in <code>agents/supervisor.py</code> <code>decide(state)</code>. The first rule that matches wins; every decision is emitted as a <code>route</code> event and stored as <code>decisions</code> (step, next, reason).</p>
+    <div class="tw"><table><thead><tr><th>#</th><th>When</th><th>Next</th></tr></thead><tbody>
+      <tr><td>1</td><td>Routing limit reached (25 decisions)</td><td>finish</td></tr>
+      <tr><td>2</td><td>No incident yet</td><td>Intake (classifier)</td></tr>
+      <tr><td>3</td><td>No search and Synapt not queried</td><td>Investigation retriever + Synapt worker <b>in parallel</b> (or whichever is missing)</td></tr>
+      <tr><td>4</td><td>Cases not fused</td><td>evidence fusion</td></tr>
+      <tr><td>5</td><td><b>Weak evidence</b>: fewer than 3 cases or average attribute similarity &lt; 60%, retrieval rounds &lt; 2</td><td>retriever again in <b>broaden</b> mode (filters dropped, query = type + industry, top_k + 4), then fuse again</td></tr>
+      <tr><td>6</td><td>Graph-RAG on but returned no answer, Synapt rounds &lt; 2</td><td><b>re-ask</b> the Synapt worker with a broader question, then fuse again</td></tr>
+      <tr><td>7–10</td><td>Impact / plan / recovery / summary missing</td><td>Impact → Planner → Recovery → Report, in that dependency order</td></tr>
+      <tr><td>11</td><td><b>Fact-check failed</b>, report rounds &lt; 2</td><td>Report again in <b>strict rewrite</b> mode (drops unverified sentences, re-checks)</td></tr>
+      <tr><td>12</td><td>Judge requested, no verdict</td><td>Judge</td></tr>
+      <tr><td>13</td><td>Verdict "revise", no revision yet</td><td><b>revision round</b>: broaden retrieval, re-plan, re-recover, re-write, re-judge</td></tr>
+      <tr><td>14</td><td>Otherwise</td><td>finish (verdict approve, or no audit requested)</td></tr>
+    </tbody></table></div>
+    <p class="callout small">Measured live on Synapt: a normal ransomware incident took <b>9 decisions</b> (~15 s, approve). A run with narrow, conflicting filters took <b>11</b>: after fusion the supervisor saw average similarity 46% &lt; 60%, broadened retrieval and fused again before continuing.</p>
+  </div>
   <div class="card" style="margin-top:14px">
     <h3>The anti-hallucination chain</h3>
     <div class="grid g3">
@@ -289,27 +309,29 @@ const MODELS=[
 // EVAL: from backend/artifacts/eval_results.json
 const EVAL={n:16,total:25,ran:"2026-10-08",deep:{"Answer relevancy":.985,"Faithfulness":.902,"Contextual relevancy":.883,"Impact analysis correctness":.747,"Recommendation quality":.747},
  det:{"Classification accuracy (rules)":1.0,"LLM-judge benchmark pass (10)":.9,"Fact-check pass rate":1.0,"Runtime rule audit":.9,"Guardrail suite (10 cases)":1.0,"Synapt answer confidence (25)":.755,"Synapt graph confidence (25)":.576},
- fallback:{n:9,cls:1.0,audit:.9,fc:1.0}};
+ rest:{n:9,cls:1.0,audit:.9,fc:1.0}};
 const PRINC=[
  ["🎯","Right tool for each job","Synapt for knowledge and answers, ML for numbers, rules and templates for the report, the LLM only as an independent judge."],
  ["🧾","Evidence or it didn't happen","Every recommendation cites real case IDs; a fact-checker rejects anything not in the evidence."],
- ["🪂","Degrade, don't break","Every external call has a timeout, a circuit breaker and a local fallback; results say which path was used."],
+ ["📣","Fail loudly, never fake","The app runs in one mode, on Synapt. Every Synapt call has a timeout; a failure surfaces as a clear error (HTTP 502 or a stream error) and health shows the last failed tool."],
+ ["🧑‍✈️","A supervisor that explains itself","No fixed order: a rule-based Supervisor picks the next agent from the shared state, gives a reason for every decision, and loops back only within bounded round caps."],
  ["📏","Measure everything","DeepEval, LLM-as-Judge, fact-check rate, guardrail suite and Synapt confidence are tracked together."],
  ["🔁","Learn from use","Ratings re-weight strategies, real outcomes retrain models, verdicts go back to Synapt."],
  ["🧭","Explain to a non-expert","Ranges instead of point guesses, plain-language drawers, and 'insufficient history' when data is thin."],
 ];
 const AGENTS=[
+ ["Supervisor","shared state after every step","next agent(s) or finish + a stated reason","rules (no LLM) · max 25 decisions"],
  ["Intake","free text / fields","structured incident + confidence","rules (no LLM)"],
- ["Investigator","incident","similar cases + graph answer","Synapt + BM25 → LSA + BM25"],
+ ["Investigator","incident","similar cases + graph answer","Synapt + BM25 + profile (RRF)"],
  ["Impact","incident","predictions, P10–P90, priority, explanation","local only"],
- ["Planner","cases + stats + playbook","primary / secondary strategy, actions","stats + Synapt playbook → stats only"],
+ ["Planner","cases + stats + playbook","primary / secondary strategy, actions","stats + Synapt playbook"],
  ["Recovery","plan","counterfactual timeline, milestones","local only"],
- ["Report","everything above","executive briefing (fact-checked)","template + Synapt answer → template"],
+ ["Report","everything above","executive briefing (fact-checked)","template + Synapt answer"],
  ["Judge","briefing + evidence","6 scores + approve / revise","rule rubric (LLM judge in evaluation)"],
 ];
 const STORES=[
  ["Synapt (remote)","Case narratives (4k), profiles (100k), aggregate stats, 6 playbooks, ontology doc, 5,000 tickets (.xlsx), feedback episodes."],
- ["In-memory (pandas + indexes)","All 100k cases, BM25 index, LSA matrix (96 dims), profile arrays for vectorised matching. Built at start-up (~30 s)."],
+ ["In-memory (pandas + indexes)","All 100k cases, BM25 index, profile arrays for vectorised matching (semantic search lives in Synapt). Built at start-up (~30 s)."],
  ["SQLite artifacts/feedback.db","Tables: analyses, feedback, synapt_quality, incidents, actions, signals. Small, file-based, no server to run."],
  ["models/disruption_predictors.joblib","13 trained models (4 regression targets × point + P10 + P90, plus the risk classifier) with metadata and metrics in models_meta.json."],
  ["artifacts/synapt_region_tokens.json","Learned map from Synapt's masked [LOCATION_x] tokens back to region names."],
@@ -317,11 +339,12 @@ const STORES=[
 ];
 const STAGES=[["Detect","#ef4444","Early Warning"],["Investigate","#f59e0b","Cockpit · Search · Graph"],["Predict & explain","#0891b2","Simulator · Root Cause"],["Decide","#2563eb","Decision Studio · Portfolio · Network · Triage"],["Act & learn","#16a34a","Incident Desk · Quality · Analytics"]];
 const DEC=[
- ["Synapt as the knowledge layer, local BM25 + ML alongside","Synapt gives graph reasoning, playbooks and memory; local indexes cover all 100k rows cheaply and keep working offline.","Two sources to keep in sync; we fuse by rank to avoid score calibration."],
+ ["Synapt as the knowledge layer, local BM25 + ML alongside","Synapt gives graph reasoning, playbooks and memory; local BM25 and profile legs cover all 100k rows cheaply.","Two sources to keep in sync; we fuse by rank to avoid score calibration. Synapt is required: if it is down, requests return errors."],
  ["RRF instead of weighted score blending","Rank-based fusion is robust when legs score on different scales.","Loses the magnitude of very confident hits."],
  ["Gradient boosting, not deep learning","Tabular data, 100k rows, categorical features: GBMs are accurate, fast to train and explainable.","Lower ceiling on noisy targets (revenue R² 0.33)."],
  ["Quantile ranges on every prediction","Point estimates hide uncertainty; operators plan with ranges.","Two more models per target; ~79% coverage vs 80% target."],
  ["Fixed Cypher templates only","trident_cypher is not tenant-scoped on the server.","Less flexible analytics than free-form queries."],
+ ["Rule-based supervisor instead of a fixed pipeline or an LLM planner","Deterministic, auditable, no LLM cost, and every routing decision comes with a reason. It can broaden weak evidence, re-ask Synapt, rewrite a report that fails fact-check and run one revision round.","Latency varies per run (9 decisions normally, more when it loops). Loops are bounded by round caps and a 25-decision limit. Less flexible than an LLM planner, which would reintroduce LLM cost, latency and non-determinism."],
  ["SSE streaming for the workflow","Users see progress in seconds while Synapt graph-RAG finishes.","One long-lived connection per analysis."],
  ["SQLite for operational state","Zero-ops, enough for a single-node microservice.","Not for multi-instance deployments; swap for Postgres there."],
  ["4k narratives + 100k profiles in Synapt","Full narratives for all rows would be slow and costly to ingest.","Synapt's semantic leg sees fewer full stories; the profile leg compensates."],
@@ -367,8 +390,8 @@ function imp(i){document.querySelectorAll('#impTabs button').forEach((b,j)=>b.cl
  const rows=Object.entries(MODELS[i][4]).sort((a,b)=>b[1]-a[1]).map(([k,v])=>[k,v]);hbar('impBars',rows,'var(--violet)',v=>v.toFixed(3));grow()}
 $('impTabs').innerHTML=MODELS.map((m,i)=>`<button>${m[0].replace(' days','').replace('High-impact ','')}</button>`).join('');
 document.querySelectorAll('#impTabs button').forEach((b,i)=>b.onclick=()=>imp(i));
-$('agentGrid').innerHTML=AGENTS.map(a=>`<div class="ag"><b>${a[0]}</b><div class="io"><i>in</i> ${a[1]}</div><div class="io"><i>out</i> ${a[2]}</div><div class="io" style="margin-top:6px"><span class="pill">${a[3]}</span></div></div>`).join('');
-$('evalSub').innerHTML=`Golden set of <b>${EVAL.total} incidents</b> covering every type, industry and region (${EVAL.ran}). The workflow uses no LLM; DeepEval and the LLM judge are averaged over the <b>${EVAL.n} cases the judge scored</b> before its credits ran out. The other ${EVAL.fallback.n} analyses completed normally (rule classifier ${Math.round(EVAL.fallback.cls*1000)/10}% accurate, rule audit ${EVAL.fallback.audit}, fact-check ${EVAL.fallback.fc*100}%). Thresholds: 0.6 for relevancy, faithfulness and the G-Eval rubrics; 0.4 for contextual relevancy.`;
+$('agentGrid').innerHTML=AGENTS.map((a,i)=>`<div class="ag${i===0?' sup':''}"><b>${a[0]}</b><div class="io"><i>in</i> ${a[1]}</div><div class="io"><i>out</i> ${a[2]}</div><div class="io" style="margin-top:6px"><span class="pill">${a[3]}</span></div></div>`).join('');
+$('evalSub').innerHTML=`Golden set of <b>${EVAL.total} incidents</b> covering every type, industry and region (${EVAL.ran}). The workflow uses no LLM; DeepEval and the LLM judge are averaged over the <b>${EVAL.n} cases the judge scored</b> before its credits ran out. The other ${EVAL.rest.n} analyses completed normally (rule classifier ${Math.round(EVAL.rest.cls*1000)/10}% accurate, rule audit ${EVAL.rest.audit}, fact-check ${EVAL.rest.fc*100}%). Thresholds: 0.6 for relevancy, faithfulness and the G-Eval rubrics; 0.4 for contextual relevancy.`;
 hbar('evalBars',Object.entries(EVAL.deep).map(([k,v])=>[k,v,v>=.8?'var(--green)':v>=.6?'var(--amber)':'var(--red)']),'',v=>(v*100).toFixed(1)+'%');
 hbar('evalDet',Object.entries(EVAL.det).map(([k,v])=>[k,v,k.startsWith('Synapt')?'var(--cyan)':'var(--blue)']),'',v=>(v*100).toFixed(1)+'%');
 $('storeGrid').innerHTML=STORES.map(s=>`<div class="card small"><h3 class="mono" style="font-size:.85rem">${s[0]}</h3><p class="muted" style="margin:0">${s[1]}</p></div>`).join('');

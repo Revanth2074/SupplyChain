@@ -1,7 +1,7 @@
 # Architecture & System Design
 ## AI-Powered Supply Chain Disruption Assistant with Synapt MCP
 
-> Interactive version with diagrams and animations: [`visual/architecture.html`](visual/architecture.html). How the system behaves without Synapt or the LLM judge: [`visual/synapt-modes.html`](visual/synapt-modes.html).
+> Interactive version with diagrams and animations: [`visual/architecture.html`](visual/architecture.html). The single Synapt-backed operating mode (start-up, errors, health): [`visual/synapt-mode.html`](visual/synapt-mode.html).
 
 This document provides the complete architectural blueprint and design specification for the **AI-Powered Supply Chain Disruption Assistant**, built on top of the **Synapt Context Substrate (MCP)** and 100,000 historical disruption precedents.
 
@@ -26,7 +26,7 @@ flowchart TB
     end
 
     subgraph Local ["LOCAL ANALYTICS (all 100k rows)"]
-        BM["BM25 + LSA index"]
+        BM["BM25 keyword index"]
         PRO["Profile matcher"]
         ML["HistGradientBoosting<br/>impact · loss · recovery · risk · P10/P90"]
         XAI["Explainability"]
@@ -76,7 +76,7 @@ choices into tracked work whose real outcomes retrain the models.
 ```mermaid
 flowchart TD
     subgraph Client_Layer ["Operations Console (backend/static: index.html · style.css · app.js)"]
-        UI["12 views: 3D Control Tower · Incident Cockpit · Search & Ask · Knowledge Graph · Impact Simulator<br/>Decision Studio + Triage · Early Warning · Portfolio & Network · Incident Desk · Quality & Learning · History · Fallback Lab"]
+        UI["11 views: 3D Control Tower · Incident Cockpit · Search & Ask · Knowledge Graph · Impact Simulator<br/>Decision Studio + Triage · Early Warning · Portfolio & Network · Incident Desk · Quality & Learning · History"]
     end
 
     subgraph Service_Layer ["FastAPI Service Layer (backend/server.py + routes/)"]
@@ -100,7 +100,7 @@ flowchart TD
     end
 
     subgraph Storage_Layer ["Data & Knowledge Substrates"]
-        DATA[("100,000-case CSV<br/>in-memory BM25 + LSA + profiles")]
+        DATA[("100,000-case CSV<br/>in-memory BM25 + profiles")]
         MODELS[("models/disruption_predictors.joblib<br/>HistGradientBoosting x 13")]
         SQL[("artifacts/feedback.db<br/>analyses · feedback · incidents · signals")]
         SUB[("Synapt Context Substrate<br/>provider supply_chain_disruptions<br/>894 nodes · 1,038 edges · 6 procedures")]
@@ -149,13 +149,17 @@ fusion. Every node streams `agent_start` / `agent_done` events, so the console s
   with `synapt/test_connection.py`.
 - **Region masking bridge**: Synapt's PII masking turns supplier regions into `[LOCATION_<hash>]` tokens;
   `agents/synapt_tools.regions` learns token → region (seeded in `artifacts/synapt_region_tokens.json`) and maps both ways.
-- **Resilience**: one circuit breaker per tool (opens after 3 failures, 60 s cooldown) with transparent
-  fallback to the local semantic and keyword indexes.
+- **Synapt is required (single mode)**: missing credentials or a failed handshake raise `SynaptError`; tool
+  schemas come from the live `tools/list` only. Start-up (`services/bootstrap.py`) connects to Synapt first,
+  then loads the data and models; if Synapt is not configured or unreachable the boot stage is `error` and
+  data endpoints return 503. At request time every call has a timeout and any failure raises `SynaptError`
+  to the caller (`/api/ask` and `/api/synapt/*` → 502, analyses → error event); `/api/health` → `synapt`
+  reports `configured`, `last_failed_tool`, `last_error`, `provider_id`, `mcp_url` and `region_tokens_learned`.
 
 ### 2.2 Hybrid Retrieval Engine (`agents/retrieval.py` & `services/data_store.py`)
 - **Reciprocal Rank Fusion** (`reciprocal_rank_fusion`):
   $$\text{Score}(d) = \sum_{m \in \{\text{semantic}, \text{keyword}, \text{profile}\}} \frac{w_m}{60 + \text{Rank}_m(d)}$$
-- **Semantic leg** (`semantic_search_synapt`): Synapt `trident_get_chunks` (fallback: local TF-IDF + LSA);
+- **Semantic leg** (`semantic_search_synapt`): Synapt `trident_get_chunks` (hits joined to the CSV by `DIS-` id; `semantic_source` = `synapt`);
   `trident_search` adds knowledge-graph nodes (playbook procedures and steps) as supporting knowledge.
 - **Keyword leg** (`lexical_search`): BM25Okapi over pre-rendered case narratives.
 - **Profile leg** (`profile_matches`): vectorised attribute match over all 100,000 rows.
@@ -189,14 +193,12 @@ fusion. Every node streams `agent_start` / `agent_done` events, so the console s
 LLM-as-Judge benchmark (`scripts/llm_judge.py`, 4 rubrics), DeepEval (`scripts/deepeval_suite.py`) and
 `POST /api/judge`. Classification, planning, the briefing and Q&A use rules, Synapt MCP, ML and templates.
 
-### 2.5 Quality, Evaluation & Resilience (`services/evaluation.py`, `services/faults.py`, `services/fallback_lab.py`)
+### 2.5 Quality & Evaluation (`services/evaluation.py`)
 - **DeepEval suite** (`scripts/deepeval_suite.py`): AnswerRelevancy, Faithfulness, ContextualRelevancy and two
   G-Eval rubrics over 25 golden incidents + a 10-case guardrail suite; Synapt confidence recorded per case.
   Results: [`EVALUATION_REPORT.md`](EVALUATION_REPORT.md).
 - **Continuous improvement**: ratings re-weight strategies (×0.85–1.15), reported outcomes retrain the models,
   verdicts go to `trident_feedback`.
-- **Fallback Lab**: runtime switches that simulate outages of Synapt (all / graph / playbooks), the LLM judge,
-  the models and the live feed, plus a self-test of every feature.
 
 ---
 
@@ -223,7 +225,7 @@ SupplyChain/
 │   ├── routes/                      # 14 modular FastAPI routers (mounted under /api)
 │   ├── schemas/                     # Pydantic request/response models
 │   ├── services/                    # data store, LLM, feedback, evaluation, decision, early warning,
-│   │                                # portfolio, network, incident desk, faults, fallback lab, web gate, bootstrap
+│   │                                # portfolio, network, incident desk, web gate, bootstrap
 │   ├── synapt/                      # synapt_connector.py · ingest_to_synapt.py · test_connection.py
 │   ├── scripts/                     # build_knowledge_base · train_prediction_model · deepeval_suite · smoke_test
 │   ├── models/                      # disruption_predictors.joblib · prediction_metrics.json
@@ -236,7 +238,7 @@ SupplyChain/
 
 ## 4. REST API Specification
 
-All routes are mounted under `/api`; interactive OpenAPI docs at `/docs`.
+All routes are mounted under `/api` (53 paths); interactive OpenAPI docs at `/docs`.
 
 | Router (tag) | Endpoints |
 |---|---|
@@ -253,5 +255,4 @@ All routes are mounted under `/api`; interactive OpenAPI docs at `/docs`.
 | Response Playbooks | `GET /sops`, `GET /sops/{filename}` |
 | Operator Feedback | `POST /feedback`, `GET /feedback/stats` |
 | Evaluation | `POST /judge`, `POST /evaluate`, `GET /evaluate/status`, `GET /evaluate/results` |
-| Fallback Lab | `GET /fallback-lab`, `PUT /fallback-lab/{switch}`, `POST /fallback-lab/reset`, `POST /fallback-lab/selftest` |
 | History | `GET /history`, `POST /history`, `GET /history/{id}`, `DELETE /history/{id}`, `DELETE /history` (stored in `artifacts/history.json`) |

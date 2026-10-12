@@ -5,7 +5,6 @@ Exports API routers for inclusion into the main FastAPI application.
 
 from routes.decision import router as decision_router
 from routes.evaluation import router as evaluation_router
-from routes.fallback_lab import router as fallback_lab_router
 from routes.feedback import router as feedback_router
 from routes.health import router as health_router
 from routes.history import router as history_router
@@ -33,6 +32,5 @@ __all__ = [
     "sops_router",
     "feedback_router",
     "evaluation_router",
-    "fallback_lab_router",
     "history_router",
 ]

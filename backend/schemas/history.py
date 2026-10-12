@@ -7,7 +7,7 @@ from typing import Any, Optional
 from pydantic import BaseModel, Field
 
 KINDS = ("analysis", "ask", "search", "graph", "simulation", "decision", "triage", "portfolio", "network",
-         "signal", "incident", "feedback", "evaluation", "fallback_lab", "playbook", "insight")
+         "signal", "incident", "feedback", "evaluation", "playbook", "insight")
 
 
 class HistoryRequest(BaseModel):

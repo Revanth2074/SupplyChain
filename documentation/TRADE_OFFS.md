@@ -18,10 +18,17 @@ was given up for it.
 | Answer quality signals | ✘ | ✔ knowledge / procedural / graph confidence, degraded flag |
 | Protocol | proprietary SDK | open MCP (JSON-RPC over HTTP) |
 
-**Measured:** Synapt's semantic leg finds the right disruption type 87 % of the time in the top 8 vs. 68.5 %
-for the local LSA index (25 golden cases).
-**Trade-off:** a network dependency on a beta service. Mitigated by per-tool circuit breakers and local
-fallbacks (see `visual/synapt-modes.html`).
+**Measured:** Synapt's semantic leg finds the right disruption type 87 % of the time in the top 8 (25 golden
+cases).
+
+### Requiring Synapt: one operating mode
+The app runs in a single mode, on Synapt; there is no local or degraded mode (see `visual/synapt-mode.html`).
+- **Benefit:** one code path is simpler to build, test and explain; every answer comes from the same engines,
+  so results are consistent; and there is no silent drop in quality. A Synapt failure surfaces as a clear error
+  (start-up stage `error` and 503 on data endpoints; 502 on `/api/ask` and `/api/synapt/*`; an error event on
+  analyses), and `/api/health` names the last failed tool and error.
+- **Trade-off:** a hard dependency on a beta network service. If Synapt is down or misconfigured, the app is
+  unavailable for analysis until it recovers; each call has a timeout, so failures are fast rather than hung.
 
 ## 2. Storage Architecture: Hybrid Dual-Persistence (Synapt + Local Store)
 
@@ -31,7 +38,7 @@ every row.
 
 ### The Solution: Hybrid Dual-Persistence
 - **Synapt:** 4,000 case narratives, profiles and statistics over all 100k rows, 6 SOP playbooks, tickets.
-- **Local:** all 100k rows in memory (BM25 + LSA + vectorised profile matching), SQLite for operational state.
+- **Local:** all 100k rows in memory (BM25 + vectorised profile matching), SQLite for operational state.
 - Every Synapt hit is joined back to its CSV row by `DIS-` ID, so the two stores never disagree on facts.
 - The profile leg over all 100k rows raised exact-profile matches from 14 % to 83 %.
 
@@ -87,7 +94,8 @@ Revenue (R² 0.33) and recovery (R² 0.27–0.40) are noisy, so every prediction
 
 | Decision | Benefit | Cost accepted |
 |---|---|---|
-| Synapt as knowledge substrate | Graph reasoning, playbooks, memory, quality signals | Network dependency (mitigated by fallbacks) |
+| Synapt as knowledge substrate | Graph reasoning, playbooks, memory, quality signals | Network dependency on a beta service |
+| Synapt required (single mode) | Simpler, consistent answers, no silent quality drop | Synapt outage = app unavailable for analysis |
 | Dual persistence | Full-dataset ML + cheap ingestion | Two stores joined by ID |
 | LangGraph StateGraph | Auditable, parallel, streamable | Less agent autonomy |
 | RRF fusion | No score calibration | Ignores score magnitude |

@@ -20,7 +20,6 @@ if base_dir not in sys.path:
 from routes import (  # noqa: E402
     decision_router,
     evaluation_router,
-    fallback_lab_router,
     feedback_router,
     health_router,
     history_router,
@@ -64,7 +63,6 @@ app.include_router(synapt_router, prefix="/api")
 app.include_router(sops_router, prefix="/api")
 app.include_router(feedback_router, prefix="/api")
 app.include_router(evaluation_router, prefix="/api")
-app.include_router(fallback_lab_router, prefix="/api")
 app.include_router(history_router, prefix="/api")
 
 

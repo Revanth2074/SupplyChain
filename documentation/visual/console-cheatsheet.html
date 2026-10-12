@@ -84,7 +84,7 @@ ul.do li{margin:3px 0}
 </aside>
 <main>
   <h1>What you can do on every page</h1>
-  <p class="lead">Twelve pages, grouped the way the sidebar is: <b>Overview → Investigate → Predict &amp; Decide → Act &amp; Learn → System</b>.
+  <p class="lead">Eleven pages, grouped the way the sidebar is: <b>Overview → Investigate → Predict &amp; Decide → Act &amp; Learn</b>.
     Every input below has been run on the real app; press <b>Copy</b>, paste it into the page, press the button named in bold.
     Use the filter on the left to jump to a page or find a question.</p>
 
@@ -101,8 +101,7 @@ ul.do li{margin:3px 0}
       <li><span class="t">5:30</span><span><b>Knowledge Graph</b>: graph query → the reasoning subgraph Synapt walked; load the Cyber Attack playbook.</span></li>
       <li><span class="t">6:30</span><span><b>Decision Studio</b>: <b>Compare options</b> → recommended option and net benefit in money.</span></li>
       <li><span class="t">7:30</span><span><b>Incident Desk</b>: the incident you opened, SLA clock, escalation chain; tick an action done with an actual recovery.</span></li>
-      <li><span class="t">8:15</span><span><b>Fallback Lab</b>: switch <b>Synapt (all tools)</b> off → <b>Run self-test</b> → everything still passes on fallbacks. <b>Restore all</b>.</span></li>
-      <li><span class="t">9:15</span><span><b>History</b>: every step you just did is there; <b>Open full analysis</b> re-opens one without re-running.</span></li>
+      <li><span class="t">8:15</span><span><b>History</b>: every step you just did is there; <b>Open full analysis</b> re-opens one without re-running.</span></li>
     </ol>
   </div>
 
@@ -113,9 +112,10 @@ ul.do li{margin:3px 0}
     <h2>🧯 If something goes wrong during the demo</h2>
     <div class="trouble" style="margin-top:12px">
       <b>Yellow banner "Loading 100,000 cases and models…"</b><span>Normal for ~30 s after starting. Wait; every page reloads itself when the backend is ready.</span>
-      <b>Sidebar shows Synapt "circuit open" or "simulated off"</b><span>Synapt is slow/unreachable or a Fallback Lab switch is on. Say "this is the fallback case", open Fallback Lab, press <b>Restore all</b>. Pages keep working on local search meanwhile.</span>
+      <b>Banner shows a start-up error</b><span>The app runs only on Synapt. If it is not configured or unreachable at boot, start-up stops at "error" and data pages return 503. Check <code>SYNAPT_USERNAME</code> / <code>SYNAPT_PASSWORD</code> / <code>SYNAPT_PROVIDER_ID</code> in <code>backend/.env</code> and the network, then restart the backend.</span>
+      <b>Sidebar shows Synapt "error (tool)", "unreachable" or "not configured"</b><span>A Synapt call failed. The request that hit it shows a clear error (HTTP 502, or an error in the Cockpit stream); <code>/api/health</code> names the <code>last_failed_tool</code> and <code>last_error</code>. Retry once Synapt answers again.</span>
       <b>Analysis takes 20–30 s</b><span>Synapt graph-RAG is slow on the beta that day. Untick <b>Synapt graph-RAG</b> in the Cockpit for a ~3 s run (no graph answer).</span>
-      <b>Judge LLM shows "rules (off)" or the LLM-judge self-test check fails</b><span>The judge model in <code>backend/.env</code> is retired or out of credits. Set <code>MODEL_NAME=nvidia/nemotron-3-super-120b-a12b</code>. The workflow itself never needs it.</span>
+      <b>Judge LLM shows "not set" or evaluation falls back to the rule rubric</b><span>The judge key or model in <code>backend/.env</code> is missing, retired or out of credits. Set <code>MODEL_NAME=nvidia/nemotron-3-super-120b-a12b</code>. The workflow itself never needs it.</span>
       <b>3D Control Tower says "unavailable"</b><span>No internet for the three.js CDN. Every other page works; skip to the Incident Cockpit.</span>
       <b>Page looks old after an update</b><span>Hard refresh (Ctrl+F5).</span>
     </div>
@@ -143,7 +143,7 @@ const PAGES = [
 
   { id: 'search', g: 'Investigate', ic: '🔎', t: 'Search & Ask', tag: ['Synapt answers', 'p-c'],
     p: 'Two tools in one page. <b>Ask</b> gets a plain-language answer straight from Synapt (trident_query). <b>Hybrid search</b> lists the most similar of the 100,000 historical cases using Synapt meaning-search + keywords + profile matching, fused by RRF.',
-    d: ['<b>Ask</b>: type a question → answer, confidence and the supporting case IDs.', '<b>Search</b>: type keywords, choose mode (Hybrid / Semantic / Keyword) and number of results, optionally filter by type, industry, region, tier, backup → <b>Search</b>.', 'The meta line shows which semantic leg answered (<code>synapt</code> or <code>local-lsa</code>) and the latency.', 'Click a result row to read the full case.'],
+    d: ['<b>Ask</b>: type a question → answer, confidence and the supporting case IDs.', '<b>Search</b>: type keywords, choose mode (Hybrid / Semantic / Keyword) and number of results, optionally filter by type, industry, region, tier, backup → <b>Search</b>.', 'The meta line shows the semantic leg (<code>synapt</code>; none in Keyword mode) and the latency.', 'Click a result row to read the full case.'],
     a: [['Which response strategies recovered fastest for port congestion?', 'Ask · Synapt lists strategies with partial/full recovery days'], ['Which strategies recovered fastest for labor strikes?', 'Ask'], ['How does having a backup supplier change full recovery time for Geopolitical disruptions?', 'Ask · numbers with vs without backup'], ['How should we respond to a Cyber Attack on a supplier without a backup?', 'Ask · playbook-style answer'], ['What factors are associated with higher production impact or financial loss?', 'Ask · drivers (severity, tier, size, backup)'], ['cyber attack tier 2 electronics no backup', 'Search · Hybrid, 10 results'], ['port congestion asia electronics large supplier', 'Search · try Semantic vs Keyword to compare']],
     pt: 'The pill "answer: Synapt graph-RAG" with its confidence; "via Synapt" badges on search rows; switching mode changes which cases come first.',
     u: 'POST /api/ask → trident_query · POST /api/search → agents/retrieval.hybrid_search (trident_get_chunks + BM25 + profile, RRF k=60).' },
@@ -156,7 +156,7 @@ const PAGES = [
     u: 'GET /api/synapt/knowledge (trident_get_stats) · POST /api/synapt/graph (trident_query) · /api/synapt/procedures (trident_get_procedures) · /api/synapt/insights/{key} (trident_cypher, 6 fixed templates).' },
 
   { id: 'simulator', g: 'Predict & Decide', ic: '📈', t: 'Impact Simulator', tag: ['ML', 'p-v'],
-    p: 'Pick an incident profile and see what the models predict, why, what would change it, and the cause-and-effect chain. Pure local ML, no Synapt needed.',
+    p: 'Pick an incident profile and see what the models predict, why, what would change it, and the cause-and-effect chain. Pure local ML: this page makes no Synapt call.',
     d: ['Set the 9 fields (type, industry, tier, region, size, backup, severity, response strategy, response time).', '<b>Predict &amp; explain</b> → four panels at once.', 'Prediction: production impact, revenue loss, partial and full recovery, each with a P10–P90 range bar, risk level and resilience.', 'Why: each input\'s contribution in days to full recovery.', 'What-if: backup supplier, other strategy, faster response… with deltas.', 'Root-cause chain: Day 0 trigger → mechanism → impact, plus what made it worse / helped.'],
     a: [['Cyber Attack · Electronics · Tier 2 · Asia-Pacific · Large · no backup · severity 4 · Inventory Buffer · 3 days', 'Default → ~51% impact, ~$4.85M, ~130 days'], ['Change Backup supplier to Yes and run again', 'Full recovery drops by ~31 days'], ['Change Severity to 2', 'Shows severity is the biggest driver']],
     pt: 'Ranges, not single numbers (models are honest: R² 0.70 impact, 0.40 recovery). "Severity +62 d" and "Backup supplier +31 d" in the Why panel.',
@@ -199,17 +199,10 @@ const PAGES = [
 
   { id: 'history', g: 'Act & Learn', ic: '🕘', t: 'History', tag: ['new', 'p-a'],
     p: 'Everything you did in the console, saved on the server (artifacts/history.json), so it looks the same on any device and travels with the project zip.',
-    d: ['Filter by type (Analysis, Question, Search, Simulation, Decision, Incident, Fallback Lab…) or search the text.', 'Click an entry → its inputs and stored result.', '<b>Open full analysis</b> → re-opens a past analysis in the Cockpit with all 7 agent results, without re-running.', '<b>Run again</b> → repeats a past question, search or graph query.', 'Delete one entry or <b>Clear all</b>.'],
+    d: ['Filter by type (Analysis, Question, Search, Simulation, Decision, Incident…) or search the text.', 'Click an entry → its inputs and stored result.', '<b>Open full analysis</b> → re-opens a past analysis in the Cockpit with all 7 agent results, without re-running.', '<b>Run again</b> → repeats a past question, search or graph query.', 'Delete one entry or <b>Clear all</b>.'],
     a: [['cyber', 'Search box → every cyber-related action'], ['Kansas', 'Search box → the Control Tower site simulation']],
     pt: '"Re-opened analysis from … (not re-run)" toast: answers are reproducible from the saved record.',
     u: 'GET/POST/DELETE /api/history → services/history.py · GET /api/analyses/{id} (full saved report in feedback.db).' },
-
-  { id: 'lab', g: 'System', ic: '🧪', t: 'Fallback Lab', tag: ['resilience', 'p-r'],
-    p: 'Switch a dependency off on purpose and prove the app keeps working on its fallbacks. The strongest "engineering" moment of the demo.',
-    d: ['Pick auto-restore time (10 / 30 / 60 min).', 'Switch off: <b>Synapt (all tools)</b>, Synapt graph-RAG only, Synapt playbooks only, <b>LLM judge</b>, prediction models, live hazard feed.', 'Tick "include full workflow" and press <b>Run self-test</b> → every feature is called once and checked against the engine it should use.', '<b>Restore all</b> when done (always do this after a demo).'],
-    a: [['Synapt (all tools) → Switch off → Run self-test', '15/15 pass, amber "fallback" pills (local LSA search, statistics-only plan)'], ['Prediction models → Switch off → Run self-test', 'Predictions come from cohort statistics instead'], ['LLM judge → Switch off', 'Workflow unchanged; only grading falls back to the rule rubric']],
-    pt: '"Answered by" column: green = normal engine, amber = fallback; "15/15 passed". The sidebar status dots turn amber while a switch is off.',
-    u: 'GET /api/fallback-lab, PUT /api/fallback-lab/{switch}, POST /api/fallback-lab/selftest → services/faults.py + services/fallback_lab.py · circuit breakers in agents/synapt_tools.py.' },
 ];
 
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

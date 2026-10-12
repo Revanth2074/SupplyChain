@@ -1,5 +1,5 @@
 """Activity history: every action taken in the console (analyses, questions, searches, simulations,
-decisions, incidents, feedback, evaluations, Fallback Lab runs) kept in one JSON file on the server,
+decisions, incidents, feedback, evaluations) kept in one JSON file on the server,
 artifacts/history.json, so the History tab shows the same list on any device that opens the app."""
 from __future__ import annotations
 

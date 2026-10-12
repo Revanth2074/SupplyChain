@@ -23,7 +23,6 @@ import xml.etree.ElementTree as ET
 import httpx
 
 from agents.classifier import classify
-from services import faults
 from services import feedback
 from agents import synapt_tools as syn
 from services.data_store import store
@@ -142,7 +141,6 @@ GDACS_TYPES = {"EQ": "earthquake", "TC": "tropical cyclone", "FL": "flood", "VO"
 
 def fetch_gdacs(limit: int = 15) -> dict:
     """Pull current orange/red natural-disaster alerts from GDACS (public RSS)."""
-    faults.check("live_feed")
     r = httpx.get(GDACS_URL, timeout=20, follow_redirects=True, headers={"User-Agent": "supplychain-assistant/1.0"})
     r.raise_for_status()
     root = ET.fromstring(r.content)

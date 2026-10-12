@@ -1,40 +1,40 @@
 {
- "ran_at": "2026-10-08 21:57:22",
- "n_cases": 25,
- "evaluator_model": "gpt-4o-mini",
+ "ran_at": "2026-10-12 10:20:28",
+ "n_cases": 5,
+ "evaluator_model": "nvidia/nemotron-3-super-120b-a12b",
  "deepeval_enabled": true,
- "n_llm_cases": 16,
- "n_fallback_cases": 9,
+ "n_llm_cases": 3,
+ "n_fallback_cases": 2,
  "summary": {
   "deepeval": {
-   "AnswerRelevancyMetric": 0.985,
-   "ContextualRelevancyMetric": 0.883,
-   "FaithfulnessMetric": 0.902,
-   "Impact Analysis Correctness": 0.747,
-   "Recommendation Quality": 0.747
+   "AnswerRelevancyMetric": null,
+   "ContextualRelevancyMetric": 0.927,
+   "FaithfulnessMetric": null,
+   "Impact Analysis Correctness": 0.933,
+   "Recommendation Quality": 0.333
   },
   "classification_accuracy": 1.0,
-  "llm_judge_overall": 1.0,
-  "rule_audit_overall": 0.9,
+  "llm_judge_overall": 0.867,
+  "rule_audit_overall": 0.867,
   "fact_check_pass_rate": 1.0,
-  "retrieval_type_precision": 0.98,
-  "avg_similarity": 0.887,
-  "avg_latency_ms": 13449,
+  "retrieval_type_precision": 1.0,
+  "avg_similarity": 0.992,
+  "avg_latency_ms": 7553,
   "guardrail_pass_rate": 1.0,
   "fallback_mode": {
-   "n": 9,
+   "n": 2,
    "classification_accuracy": 1.0,
    "llm_judge_overall": null,
-   "rule_audit_overall": 0.9,
+   "rule_audit_overall": 0.867,
    "fact_check_pass_rate": 1.0
   },
   "synapt": {
-   "confidence": 0.755,
-   "knowledge_confidence": 0.891,
-   "procedural_confidence": 0.797,
-   "graph_confidence": 0.576,
-   "degraded_rate": 1.0,
-   "n": 25
+   "confidence": null,
+   "knowledge_confidence": null,
+   "procedural_confidence": null,
+   "graph_confidence": null,
+   "degraded_rate": null,
+   "n": 0
   }
  },
  "rows": [
@@ -63,70 +63,64 @@
     "supplier_tier": true,
     "has_backup_supplier": true
    },
-   "retrieval_type_precision": 0.833,
-   "avg_similarity": 0.833,
+   "retrieval_type_precision": 1.0,
+   "avg_similarity": 1.0,
    "primary_strategy": "Inventory Buffer",
    "audit": {
-    "overall": 0.9,
+    "overall": 0.867,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 5,
+     "actionability": 4,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
    "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
+    "overall": 0.9,
+    "verdict": "revise",
     "scores": {
-     "groundedness": 5,
+     "groundedness": 3,
      "relevance": 5,
      "actionability": 5,
      "completeness": 5,
      "consistency": 5,
-     "safety": 5
+     "safety": 4
     }
    },
    "metrics": {
     "AnswerRelevancyMetric": {
-     "score": 0.96,
-     "passed": true,
-     "reason": "The score is 0.96 because the response was mostly relevant, but it incorrectly rated the severity of the incident as 3 out of 5 instead of the stated 4 out of 5 in the input."
+     "score": null,
+     "passed": false,
+     "reason": "error: Unterminated string starting at: line 5 column 5 (char 217)"
     },
     "FaithfulnessMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
+     "score": null,
+     "passed": false,
+     "reason": "error: Expecting value: line 1 column 1 (char 0)"
     },
     "ContextualRelevancyMetric": {
-     "score": 0.793,
-     "passed": true,
-     "reason": "The score is 0.79 because while the retrieval context provided relevant information such as 'Disruption type: Cyber Attack' and 'The supplier had no backup supplier', it also included contradictory details like 'Severity was 3 out of 5', which does not match the input severity of '4/5'. This inconsistency affects the overall relevancy."
+     "score": null,
+     "passed": false,
+     "reason": "error: Expecting ',' delimiter: line 43 column 6 (char 1128)"
     },
     "Recommendation Quality": {
-     "score": 0.6,
-     "passed": true,
-     "reason": "The output provides a recommended response strategy of 'Inventory Buffer' which aligns with the historical data indicating its effectiveness for cyber attacks. However, it inaccurately states the severity as 3/5 instead of the input's 4/5, which misrepresents the urgency of the situation. While it includes concrete actions and justifies the recommendation with historical cases, the misalignment in"
+     "score": 0.3,
+     "passed": false,
+     "reason": "The output correctly identifies Inventory Buffer as the primary response strategy and supplies concrete, time\u2011bound immediate actions (0\u201124h, 24\u201172h, 0\u201148h). However, the recommendation is justified using effectiveness scores, case IDs (DIS\u2011040993, DIS\u2011017165, DIS\u2011064959, DIS\u2011027207) and aggregated statistics (e.g., 87.3 days over 79 cases) that do not appear in the retrieval context, failing to g"
     },
     "Impact Analysis Correctness": {
-     "score": 0.4,
-     "passed": false,
-     "reason": "The output fails to accurately state the expected production impact and financial loss, as it reports a severity of 3/5 instead of the input's severity of 4/5. While it provides a plausible recovery outlook, the estimates for production impact and revenue loss do not align with the severity level indicated in the input. Additionally, it does not clearly identify the factors driving the impact, suc"
+     "score": 0.9,
+     "passed": true,
+     "reason": "The output clearly states expected production impact (38.3%), financial loss ($3,946,003), and recovery times (partial ~31 days, full ~101 days). These estimates are plausible compared to the retrieval context, which shows similar impacts (25.3%-46.2%), losses ($0.9M-$47M), and recovery times (20-166 days). The output also identifies key impact factors: Tier 2 supplier, Asia-Pacific location, no b"
     }
    },
-   "latency_ms": 15163,
-   "synapt": {
-    "confidence": 0.74,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.53,
-    "degraded": true
-   },
+   "latency_ms": 7698,
+   "synapt": null,
    "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
+   "plan_method": "statistics",
    "llm_used": true
   },
   {
@@ -156,69 +150,63 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.917,
+   "avg_similarity": 0.995,
    "primary_strategy": "Alternative Supplier",
    "audit": {
-    "overall": 0.9,
+    "overall": 0.867,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 5,
+     "actionability": 4,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
    "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
+    "overall": 0.8,
+    "verdict": "revise",
     "scores": {
-     "groundedness": 5,
+     "groundedness": 2,
      "relevance": 5,
      "actionability": 5,
      "completeness": 5,
-     "consistency": 5,
-     "safety": 5
+     "consistency": 4,
+     "safety": 3
     }
    },
    "metrics": {
     "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the issue of port congestion and the backup supplier, providing relevant information without any irrelevant statements."
+     "score": null,
+     "passed": false,
+     "reason": "error: Expecting value: line 1 column 1 (char 0)"
     },
     "FaithfulnessMetric": {
-     "score": 0.929,
-     "passed": true,
-     "reason": "The score is 0.93 because the actual output's claim of a severe production impact contradicts the historical average production impact of 24.3% and revenue loss of $1,963,051 presented in the retrieval context."
+     "score": null,
+     "passed": false,
+     "reason": "error: Expecting value: line 1 column 1 (char 0)"
     },
     "ContextualRelevancyMetric": {
-     "score": 1.0,
+     "score": 0.927,
      "passed": true,
-     "reason": "The score is 1.00 because all relevant statements in the retrieval context, such as 'Disruption type: Port Congestion' and 'The supplier had a backup supplier,' directly align with the input regarding severe port congestion affecting a Tier 1 supplier's electronic components."
+     "reason": "The score is 0.93 because the retrieval context contains highly relevant statements such as 'Disruption type: Port Congestion.', 'Industry: Electronics.', 'Supplier tier: Tier 1.', 'Supplier region: Asia-Pacific.', 'Supplier size: Large.', and 'The supplier had a backup supplier.' that directly match the input, while it also includes irrelevant details like 'Severity was 4 out of 5', 'Production i"
     },
     "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively recommends activating the Alternative Supplier as the primary response strategy, which aligns with historical data indicating it is the fastest recovery method for port congestion in electronics. It provides a justified rationale based on historical cases and statistics, detailing the average recovery times. Additionally, it outlines concrete, time-bound actions, such as cla"
+     "score": 0.3,
+     "passed": false,
+     "reason": "The output recommends a primary strategy (Alternative Supplier) and includes concrete, time\u2011bound actions, satisfying steps 1 and 3. However, the justification uses case IDs (DIS-027981, DIS-041964, DIS-083118, DIS-086331, DIS-026541) and aggregated statistics (81.4 days over 723 cases, etc.) that are not present in the retrieval context, failing step 2 and violating step 4."
     },
     "Impact Analysis Correctness": {
-     "score": 0.8,
+     "score": 1.0,
      "passed": true,
-     "reason": "The output effectively identifies the expected production impact (59.6%), financial loss ($5,989,290), and recovery time (partial \u224830 days, full \u224896 days), aligning well with the evaluation steps. It also references historical precedents and the importance of activating the backup supplier, which is crucial given the severity of the disruption. However, while the estimates are plausible, the recov"
+     "reason": "The output clearly states the expected production impact (59.6%), financial loss ($5,989,290), and recovery times (partial ~30 days, full ~96 days). These estimates are plausible given the severity (4/5) and similar cases in the retrieval context, which show comparable impacts and recovery durations. It also identifies key driving factors: Tier 1 supplier, presence of a backup supplier, and severi"
     }
    },
-   "latency_ms": 19900,
-   "synapt": {
-    "confidence": 0.77,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.62,
-    "degraded": true
-   },
+   "latency_ms": 7620,
+   "synapt": null,
    "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
+   "plan_method": "statistics",
    "llm_used": true
   },
   {
@@ -247,70 +235,27 @@
     "disruption_severity": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.908,
+   "avg_similarity": 0.975,
    "primary_strategy": "Alternative Supplier",
    "audit": {
-    "overall": 0.9,
+    "overall": 0.867,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 5,
+     "actionability": 4,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements, providing a clear and focused answer."
-    },
-    "FaithfulnessMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because all relevant statements, such as 'Disruption type: Labor Strike.', 'Industry: Automotive.', and 'Severity was 3 out of 5.', perfectly align with the input, confirming the context's complete relevance."
-    },
-    "Recommendation Quality": {
-     "score": 0.6,
-     "passed": true,
-     "reason": "The response effectively recommends a primary strategy of 'Alternative Supplier' which aligns with the historical data indicating its effectiveness for similar disruptions. It provides a justification based on historical cases and statistics, detailing the average recovery times. However, it lacks specific time-bound actions for immediate implementation, which is a requirement. Additionally, the c"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively states the expected production impact (45.4%), financial loss ($1,783,566), and recovery time (71 days for full recovery). These estimates are plausible given the severity level of 3 and align with historical precedents. Additionally, it identifies key factors driving the impact, such as the absence of a backup supplier and the chosen response strategies. However, the produc"
-    }
-   },
-   "latency_ms": 9433,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
+   "judge": null,
+   "metrics": {},
+   "latency_ms": 7163,
+   "synapt": null,
    "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
+   "plan_method": "statistics",
+   "llm_used": false
   },
   {
    "id": "G4",
@@ -339,69 +284,63 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.888,
+   "avg_similarity": 0.995,
    "primary_strategy": "Inventory Buffer",
    "audit": {
-    "overall": 0.9,
+    "overall": 0.867,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 5,
+     "actionability": 4,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
     }
    },
    "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
+    "overall": 0.9,
+    "verdict": "revise",
     "scores": {
-     "groundedness": 5,
+     "groundedness": 3,
      "relevance": 5,
      "actionability": 5,
      "completeness": 5,
      "consistency": 5,
-     "safety": 5
+     "safety": 4
     }
    },
    "metrics": {
     "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input regarding the earthquake's impact on the API supplier plant without any irrelevant statements."
+     "score": null,
+     "passed": false,
+     "reason": "error: Expecting value: line 1 column 1 (char 0)"
     },
     "FaithfulnessMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
+     "score": null,
+     "passed": false,
+     "reason": "error: Expecting value: line 3 column 42 (char 57)"
     },
     "ContextualRelevancyMetric": {
-     "score": 0.894,
-     "passed": true,
-     "reason": "The score is 0.89 because while the retrieval context includes relevant statements like 'Earthquake damaged a small Tier 3 API supplier plant in Japan,' many other details, such as 'Disruption type: Natural Disaster' and 'Supplier size: Small,' are too general and do not specifically address the earthquake's impact on the supplier."
+     "score": null,
+     "passed": false,
+     "reason": "error: Expecting ',' delimiter: line 14 column 6 (char 275)"
     },
     "Recommendation Quality": {
      "score": 0.4,
      "passed": false,
-     "reason": "The response provides a specific primary strategy of 'Inventory Buffer' but fails to align with the retrieval context, which indicates that there is no backup supplier available. The recommendation should have prioritized 'Production Reroute' as the fallback option, as historical cases show that this is the likely strategy when no alternative supplier exists. While the output includes historical p"
+     "reason": "The output recommends a clear primary strategy (Inventory Buffer) and provides concrete, time\u2011bound actions, satisfying steps 1 and 3. However, the justification relies on historical case IDs (DIS\u2011002119, DIS\u2011055867, DIS\u2011007753) and aggregated statistics (e.g., 95.4 days over 108 cases) that are not present in the retrieval context, violating step 4 and weakening the alignment of step 2."
     },
     "Impact Analysis Correctness": {
-     "score": 0.7,
+     "score": 0.9,
      "passed": true,
-     "reason": "The output provides a detailed assessment of the situation, including expected production impact (41.1%), financial loss ($738,620), and recovery time estimates (partial \u224840 days, full \u2248132 days). However, while it identifies the lack of a backup supplier and the critical severity of the situation, it does not explicitly mention the factors driving the impact in a clear manner, such as the implica"
+     "reason": "The output provides the expected production impact (41.1%), financial loss ($738,620), and recovery times (partial ~40 days, full ~132 days). These estimates are plausible given the severity (4/5) and similar cases in the retrieval context, which show impacts ranging from ~24% to 53% and losses from $225k to $7.4M with recovery times between 79 and 362 days. The output also identifies driving fact"
     }
    },
-   "latency_ms": 12828,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
+   "latency_ms": 7341,
+   "synapt": null,
    "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
+   "plan_method": "statistics",
    "llm_used": true
   },
   {
@@ -428,1110 +367,15 @@
     "has_backup_supplier": true
    },
    "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.941,
+   "avg_similarity": 0.994,
    "primary_strategy": "Alternative Supplier",
    "audit": {
-    "overall": 0.9,
+    "overall": 0.867,
     "verdict": "approve",
     "scores": {
      "groundedness": 5,
      "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements, demonstrating a clear understanding of the situation and providing a relevant solution."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.938,
-     "passed": true,
-     "reason": "The score is 0.94 because the actual output presents expected production impact and revenue loss figures that are not aligned with the retrieval context, which specifies a range for both metrics."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because all relevant statements in the retrieval context align perfectly with the input, including the disruption type being geopolitical, the supplier tier being Tier 2, and the severity level being 4 out of 5."
-    },
-    "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The response effectively recommends activating the Alternative Supplier as the primary strategy, which aligns with the evaluation steps. It provides a justification based on historical data, citing the average recovery times and effectiveness scores. However, while it outlines concrete actions and timelines, it lacks a direct mention of the specific case IDs from the retrieval context, which is a "
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively identifies the expected production impact (52.4%), financial loss ($1,518,804), and recovery time (partial \u224836 days, full \u224899 days), aligning well with the evaluation steps. It also references the backup supplier and assesses the impact based on historical data, which supports the plausibility of the estimates. However, while it mentions the factors driving the impact, it co"
-    }
-   },
-   "latency_ms": 9420,
-   "synapt": {
-    "confidence": 0.74,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.78,
-    "graph_confidence": 0.54,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G6",
-   "input": "Fire at a large Tier 1 food packaging supplier's factory in North America, moderate severity 2. Backup supplier available.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Factory Incident",
-    "supplier_region": "North America",
-    "supplier_size": "Large",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "disruption_severity": 2,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Factory Incident",
-    "supplier_tier": 1,
-    "disruption_severity": 2
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.862,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 0.941,
-     "passed": true,
-     "reason": "The score is 0.94 because while the response was mostly relevant, the mention of SLA review time was not directly related to the immediate impact of the incident. However, the overall response effectively addressed the situation and provided valuable information."
-    },
-    "FaithfulnessMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.984,
-     "passed": true,
-     "reason": "The score is 0.98 because, despite the retrieval context stating 'Severity was 1 out of 5', which does not align with the input's 'moderate severity 2', the context provides relevant information such as 'Severity was 2 out of 5' and 'Production impact was 29.2% (Moderate)', which closely matches the input details."
-    },
-    "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The response effectively recommends activating the Alternative Supplier as the primary strategy, which aligns with the historical precedent of similar Factory Incident disruptions. It provides a well-justified rationale based on statistical data from past cases, including average recovery times. However, while it outlines immediate actions, it lacks specific time-bound actions for activating the b"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively identifies the expected production impact (30.1%), financial loss ($1,539,721), and recovery time (full recovery in 48 days). It also references historical precedents that support the plausibility of these estimates. Additionally, it highlights the presence of a backup supplier and the chosen response strategy, aligning well with the evaluation steps. However, while the reco"
-    }
-   },
-   "latency_ms": 9553,
-   "synapt": {
-    "confidence": 0.74,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.53,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G7",
-   "input": "Hurricane flooding shut down a medium Tier 1 consumer goods supplier warehouse in North America. Severity 4, no backup supplier.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Natural Disaster",
-    "supplier_region": "North America",
-    "supplier_size": "Medium",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "disruption_severity": 4,
-    "has_backup_supplier": false
-   },
-   "expected": {
-    "disruption_type": "Natural Disaster",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "has_backup_supplier": false
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.921,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the impact of hurricane flooding on the supplier without any irrelevant statements."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.583,
-     "passed": false,
-     "reason": "The score is 0.58 because there are several contradictions, including mismatched recovery times, discrepancies in expected production impact and revenue loss, and inconsistencies regarding the availability of backup suppliers and the tier of suppliers involved."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.939,
-     "passed": true,
-     "reason": "The score is 0.94 because while the retrieval context provided relevant information such as 'Severity was 4 out of 5' and 'The supplier had no backup supplier,' it also included contradictory and irrelevant details like 'Severity was 3 out of 5' and 'Response strategy: Production Reroute, started after 1 days,' which detracted from its overall relevance."
-    },
-    "Recommendation Quality": {
-     "score": 0.9,
-     "passed": true,
-     "reason": "The response effectively identifies the primary strategy as 'Alternative Supplier' and provides a rationale based on historical effectiveness, aligning with the evaluation steps. It also includes concrete actions with timeframes, such as classifying the incident and assessing impact, which are time-bound and actionable. However, it does not penalize the use of case IDs that do not appear in the re"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The output effectively identifies the expected production impact (59.3%), financial loss ($940,599), and recovery time (full recovery in 128 days). However, while it references historical precedents, it does not explicitly state the plausibility of these estimates against similar cases, which is a key evaluation step. Additionally, it identifies factors driving the impact, such as the lack of a ba"
-    }
-   },
-   "latency_ms": 12060,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.54,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G8",
-   "input": "Dockworkers strike at Rotterdam has stopped outbound containers from our large Tier 2 automotive electronics supplier in Europe. Severity 3, backup supplier qualified.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Labor Strike",
-    "supplier_region": "Europe",
-    "supplier_size": "Large",
-    "industry": "Automotive",
-    "supplier_tier": 2,
-    "disruption_severity": 3,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Labor Strike",
-    "supplier_tier": 2,
-    "has_backup_supplier": true,
-    "disruption_severity": 3
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.884,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the situation regarding the dockworkers' strike and its impact on the supply chain without any irrelevant statements."
-    },
-    "FaithfulnessMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.875,
-     "passed": true,
-     "reason": "The score is 0.88 because while the retrieval context includes relevant details such as 'Severity was 3 out of 5' and 'Disruption type: Labor Strike,' it also contains multiple irrelevant statements like 'Severity was 2 out of 5' and 'Production impact was 31.3% (Moderate)' that detract from the overall relevance."
-    },
-    "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The response effectively identifies the primary strategy as 'Alternative Supplier' and justifies it with historical data, including average recovery times and effectiveness scores. It provides concrete actions aligned with the evaluation steps, such as classifying the incident and activating the backup supplier. However, it includes case IDs that do not appear in the retrieval context, which detra"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively identifies the expected production impact (37.4%), financial loss ($4,872,688), and recovery time (average 61.4 days) based on historical data. It also mentions the backup supplier and severity level, aligning well with the evaluation steps. However, while the estimates are plausible, the recovery outlook of 74 days for full recovery is slightly higher than the average for s"
-    }
-   },
-   "latency_ms": 13076,
-   "synapt": {
-    "confidence": 0.74,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.53,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G9",
-   "input": "Malware outage at a small Tier 3 pharmaceutical packaging vendor in South America; their order system is down. Low severity 2.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Cyber Attack",
-    "supplier_region": "South America",
-    "supplier_size": "Small",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 3,
-    "disruption_severity": 2
-   },
-   "expected": {
-    "disruption_type": "Cyber Attack",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 3,
-    "disruption_severity": 2
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.9,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 0.96,
-     "passed": true,
-     "reason": "The score is 0.96 because the response was mostly relevant, but the mention of monitoring SLA did not address the specific issue of the malware outage. However, the overall content effectively addressed the situation, justifying a high score."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.941,
-     "passed": true,
-     "reason": "The score is 0.94 because the actual output claims a production impact of 21.1%, which is not supported by the retrieval context that indicates a variation from 3.4% to 40.9%."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.802,
-     "passed": true,
-     "reason": "The score is 0.80 because while the retrieval context includes relevant details such as 'Supplier tier: Tier 3' and 'Severity was 2 out of 5', it also contains numerous irrelevant statements like 'Supplier tier: Tier 2' and 'Severity was 3 out of 5' that detract from its overall relevance."
-    },
-    "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The response effectively recommends the Alternative Supplier strategy, which aligns with the historical data indicating its effectiveness for similar disruptions. It provides a well-justified rationale based on historical cases and statistics, fulfilling the requirement for justification. However, while it outlines immediate actions, it lacks specific time-bound actions for the primary strategy, w"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The output provides a detailed analysis of the expected production impact (21.1%), financial loss ($315,439), and recovery time (partial \u224820 days, full \u224852 days), aligning well with the evaluation steps. However, it lacks a clear identification of factors driving the impact, such as the absence of a backup supplier, which is critical for assessing recovery strategies. Overall, while the estimates "
-    }
-   },
-   "latency_ms": 11470,
-   "synapt": {
-    "confidence": 0.79,
-    "knowledge_confidence": 0.88,
-    "procedural_confidence": 0.79,
-    "graph_confidence": 0.69,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G10",
-   "input": "Tariff escalation and border closure stop titanium forgings from our Tier 1 aerospace supplier in Asia-Pacific. Severity 5, single source.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Geopolitical",
-    "supplier_region": "Asia-Pacific",
-    "industry": "Aerospace",
-    "supplier_tier": 1,
-    "disruption_severity": 5,
-    "has_backup_supplier": false
-   },
-   "expected": {
-    "disruption_type": "Geopolitical",
-    "industry": "Aerospace",
-    "supplier_tier": 1,
-    "has_backup_supplier": false
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.889,
-   "primary_strategy": "Production Reroute",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input regarding tariff escalation and its impact on titanium forgings without any irrelevant statements."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.929,
-     "passed": true,
-     "reason": "The score is 0.93 because the actual output incorrectly states a priority for response classified as P1 - Critical with a score of 86.2 out of 100, which is not supported by the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.506,
-     "passed": true,
-     "reason": "The score is 0.51 because while the retrieval context includes relevant statements such as 'Disruption type: Geopolitical' and 'Severity was 5 out of 5', it also contains numerous irrelevant details like 'Supplier size: Small' and 'The supplier had no backup supplier', which detract from the overall relevance to the input about tariff escalation and border closure."
-    },
-    "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The response effectively identifies the primary strategy as Production Reroute, which aligns with the severity and context of the disruption. It provides a well-justified rationale based on historical effectiveness scores and recovery times. However, while it outlines immediate actions and timeframes, it lacks specific case IDs from the retrieval context, which could have strengthened the justific"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively identifies the expected production impact (74.5%), financial loss ($6,270,041), and recovery time estimates (partial \u224857 days, full \u2248155 days). It also references historical precedents and aligns with the severity of the situation. However, while it mentions the lack of a backup supplier and the critical nature of the incident, it could further elaborate on specific factors "
-    }
-   },
-   "latency_ms": 21842,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.79,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G11",
-   "input": "Explosion and fire at a large Tier 2 chemical intermediates plant serving our pharmaceutical lines in Europe. Critical severity 5.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Factory Incident",
-    "supplier_region": "Europe",
-    "supplier_size": "Large",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 2,
-    "disruption_severity": 5
-   },
-   "expected": {
-    "disruption_type": "Factory Incident",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 2,
-    "disruption_severity": 5
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.812,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the critical incident at the chemical plant without any irrelevant statements."
-    },
-    "FaithfulnessMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because there are no contradictions, indicating that the actual output perfectly aligns with the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.82,
-     "passed": true,
-     "reason": "The score is 0.82 because while the retrieval context provided relevant information such as 'Severity was 5 out of 5' and 'Production impact was 62.1% (Severe)', it also included multiple instances of irrelevant data like 'Severity was 3 out of 5' and 'Production impact was 25.2% (Moderate)', which detracted from the overall relevancy."
-    },
-    "Recommendation Quality": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The response effectively recommends the Alternative Supplier strategy, which aligns with the historical precedent of similar factory incidents. It provides a justified rationale based on effectiveness scores and recovery times. However, while it outlines immediate actions, it lacks specific time-bound actions for activating the backup supplier, which is critical for a severity 5 incident. Addition"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.9,
-     "passed": true,
-     "reason": "The output effectively states the expected production impact of 62.5%, financial loss of $13,282,055, and recovery time estimates of partial recovery in 45 days and full recovery in 133 days. These estimates are plausible given the severity level of 5 and historical precedents. Additionally, it identifies key factors driving the impact, such as the use of an alternative supplier and the combined s"
-    }
-   },
-   "latency_ms": 10463,
-   "synapt": {
-    "confidence": 0.73,
-    "knowledge_confidence": 0.87,
-    "procedural_confidence": 0.78,
-    "graph_confidence": 0.54,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G12",
-   "input": "Vessel backlog and port congestion in Santos are delaying automotive components from a medium Tier 1 supplier in South America. Severity 2.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Port Congestion",
-    "supplier_region": "South America",
-    "supplier_size": "Medium",
-    "industry": "Automotive",
-    "supplier_tier": 1,
-    "disruption_severity": 2
-   },
-   "expected": {
-    "disruption_type": "Port Congestion",
-    "industry": "Automotive",
-    "supplier_tier": 1,
-    "disruption_severity": 2
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.912,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 0.935,
-     "passed": true,
-     "reason": "The score is 0.94 because while the response addressed the main issue of vessel backlog and port congestion, it included irrelevant statements about SLA review timeframe and low-severity cases that did not pertain to the specific backlog issue. However, the core concerns were well addressed, justifying a high relevancy score."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.471,
-     "passed": false,
-     "reason": "The score is 0.47 because multiple claims in the actual output, such as the priority score of 34.3 and various average recovery times, are not supported by the retrieval context, indicating significant discrepancies."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The score is 0.80 because while the retrieval context includes relevant information such as 'Disruption type: Port Congestion' and 'Severity was 2 out of 5', it also contains numerous irrelevant details like 'The supplier had a backup supplier' and 'Revenue loss was $140,094 (Under 1M)', which do not pertain to the current vessel backlog and port congestion issues."
-    },
-    "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively recommends the 'Alternative Supplier' strategy, which aligns with the historical precedent of similar disruptions. It provides a well-justified rationale based on statistical data, including average recovery times and effectiveness scores. However, while it outlines immediate actions, it lacks specific time-bound actions for each step, which is a shortcoming. Additionally, i"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively states the expected production impact (30.5%), financial loss ($1,078,920), and recovery time (partial \u224816 days, full \u224848 days). These estimates are plausible given the severity level of 2 and historical precedents. Additionally, it identifies key factors driving the impact, such as the use of an alternative supplier and the effectiveness of the strategies based on historica"
-    }
-   },
-   "latency_ms": 12354,
-   "synapt": {
-    "confidence": 0.77,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.78,
-    "graph_confidence": 0.64,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G13",
-   "input": "Typhoon damaged a small Tier 2 printed circuit board supplier in Asia-Pacific; electronics assembly at risk. We have a backup supplier. Severity 4.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Natural Disaster",
-    "supplier_region": "Asia-Pacific",
-    "supplier_size": "Small",
-    "industry": "Electronics",
-    "supplier_tier": 2,
-    "disruption_severity": 4,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Natural Disaster",
-    "industry": "Electronics",
-    "supplier_tier": 2,
-    "has_backup_supplier": true
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.913,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements. Great job staying on topic!"
-    },
-    "FaithfulnessMetric": {
-     "score": 0.941,
-     "passed": true,
-     "reason": "The score is 0.94 because the actual output claims a response plan within 24 hours, while the retrieval context indicates that the response strategy typically starts after 1 to 2 days, creating a discrepancy in the expected timing."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.938,
-     "passed": true,
-     "reason": "The score is 0.94 because while the retrieval context included relevant statements such as 'Severity was 4 out of 5' and 'The supplier had a backup supplier', it also contained contradictory and unrelated information like 'Severity was 5 out of 5' and 'The supplier was permanently replaced', which detracted from its overall relevance."
-    },
-    "Recommendation Quality": {
-     "score": 0.9,
-     "passed": true,
-     "reason": "The response effectively recommends the 'Alternative Supplier' strategy, which aligns with the historical data indicating it is the fastest recovery option for similar disruptions. It provides a well-justified rationale based on historical effectiveness scores and recovery times. Additionally, it outlines concrete actions to be taken within specified timeframes, adhering to the evaluation steps. H"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively identifies the expected production impact (50.8%), financial loss ($429,276), and recovery time (98 days for full recovery), aligning well with the evaluation steps. It also references the backup supplier and severity level, which are critical factors in assessing the impact. However, while the estimates are plausible, they could be more closely tied to historical precedents"
-    }
-   },
-   "latency_ms": 16119,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.54,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G14",
-   "input": "Union walkout at a large Tier 1 consumer goods contract manufacturer in Africa/Middle East halted shipments for two weeks. Severity 3, no backup.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Labor Strike",
-    "supplier_region": "Africa/Middle East",
-    "supplier_size": "Large",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "disruption_severity": 3,
-    "has_backup_supplier": false
-   },
-   "expected": {
-    "disruption_type": "Labor Strike",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "has_backup_supplier": false
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.885,
-   "primary_strategy": "Inventory Buffer",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the input without any irrelevant statements. Great job staying on topic!"
-    },
-    "FaithfulnessMetric": {
-     "score": 0.944,
-     "passed": true,
-     "reason": "The score is 0.94 because the actual output suggests a response strategy involving an Inventory Buffer and Alternative Supplier, which are not mentioned in the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.911,
-     "passed": true,
-     "reason": "The score is 0.91 because while there are several irrelevant statements such as 'Supplier region: Europe' and 'The supplier relationship was kept', the relevant context regarding the 'Supplier region: Africa/Middle East' and the details about production impact and revenue loss provide significant insights into the union walkout's effects."
-    },
-    "Recommendation Quality": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The response effectively identifies the primary strategy as 'Inventory Buffer' and provides a rationale based on historical effectiveness, aligning with the evaluation steps. However, while it includes concrete actions, it lacks specific time-bound actions for each step, which is a shortcoming. Additionally, it references relevant historical cases but does not penalize the use of case IDs that do "
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The output effectively identifies the expected production impact (42.5%), financial loss ($2,196,964), and recovery time (full recovery in 94 days). However, while it provides plausible estimates based on historical precedents, it lacks a clear identification of factors driving the impact, such as the absence of a backup supplier. The recommended response aligns with the evaluation steps but could"
-    }
-   },
-   "latency_ms": 10807,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G15",
-   "input": "Ransomware encrypted the MES of our medium Tier 1 automotive seat supplier in North America; production halted. Severity 4.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Cyber Attack",
-    "supplier_region": "North America",
-    "supplier_size": "Medium",
-    "industry": "Automotive",
-    "supplier_tier": 1,
-    "disruption_severity": 4
-   },
-   "expected": {
-    "disruption_type": "Cyber Attack",
-    "industry": "Automotive",
-    "supplier_tier": 1,
-    "disruption_severity": 4
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.917,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 1.0,
-     "passed": true,
-     "reason": "The score is 1.00 because the response directly addresses the impact of ransomware on the automotive seat supplier's production without any irrelevant statements."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.875,
-     "passed": true,
-     "reason": "The score is 0.88 because the actual output presents specific figures for production impact and revenue loss that are not supported by the retrieval context, which provides a range for these values. Additionally, the historical averages mentioned in the context contradict the claims made in the actual output."
-    },
-    "ContextualRelevancyMetric": {
-     "score": 0.99,
-     "passed": true,
-     "reason": "The score is 0.99 because, despite the retrieval context mentioning 'Supplier tier: Tier 2', the majority of relevant statements confirm the input's details, such as 'Supplier tier: Tier 1' and 'Severity was 4 out of 5', which align closely with the input."
-    },
-    "Recommendation Quality": {
-     "score": 0.8,
-     "passed": true,
-     "reason": "The output effectively recommends a primary response strategy of 'Alternative Supplier' and justifies it with historical data, citing specific recovery times and effectiveness scores. It also outlines concrete, time-bound actions aligned with the Synapt playbook. However, it fails to penalize the use of case IDs that do not appear in the retrieval context, which slightly undermines its adherence t"
-    },
-    "Impact Analysis Correctness": {
-     "score": 0.7,
-     "passed": true,
-     "reason": "The output effectively states the expected production impact (59.3%), financial loss ($2,371,456), and recovery time (full recovery in 96 days). However, while the estimates are plausible, they are slightly lower than the historical averages for similar cases, which could indicate a lack of thoroughness in assessing the severity. The output identifies key factors driving the impact, such as the us"
-    }
-   },
-   "latency_ms": 14600,
-   "synapt": {
-    "confidence": 0.77,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.62,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G16",
-   "input": "Export sanctions on rare-earth magnets from a Tier 3 electronics supplier in Asia-Pacific; severity 3, backup supplier available.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Geopolitical",
-    "supplier_region": "Asia-Pacific",
-    "industry": "Electronics",
-    "supplier_tier": 3,
-    "disruption_severity": 3,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Geopolitical",
-    "industry": "Electronics",
-    "supplier_tier": 3,
-    "has_backup_supplier": true
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.953,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": {
-    "overall": 1.0,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 5,
-     "actionability": 5,
-     "completeness": 5,
-     "consistency": 5,
-     "safety": 5
-    }
-   },
-   "metrics": {
-    "AnswerRelevancyMetric": {
-     "score": 0.957,
-     "passed": true,
-     "reason": "The score is 0.96 because the response was mostly relevant but included an irrelevant statement about the SLA for review, which did not pertain to the specifics of the input regarding sanctions. This minor deviation prevented a perfect score, but the overall content was still highly aligned with the query."
-    },
-    "FaithfulnessMetric": {
-     "score": 0.875,
-     "passed": true,
-     "reason": "The score is 0.88 because the actual output incorrectly states a priority classified as P3 with a score of 43.3 out of 100, which is not supported by the retrieval context, and it also introduces a resilience score of 79.0 out of 100 that is not mentioned in the retrieval context."
-    },
-    "ContextualRelevancyMetric": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Expecting ',' delimiter: line 40 column 6 (char 1142)"
-    },
-    "Recommendation Quality": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'insufficient balance: prompt costs ~\u20b90.05 but balance is \u20b90.00', 'type': 'insufficient_quota'}}"
-    },
-    "Impact Analysis Correctness": {
-     "score": null,
-     "passed": false,
-     "reason": "error: Error code: 402 - {'error': {'code': 402, 'message': 'insufficient balance: prompt costs ~\u20b90.05 but balance is \u20b90.00', 'type': 'insufficient_quota'}}"
-    }
-   },
-   "latency_ms": 16109,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": true
-  },
-  {
-   "id": "G17",
-   "input": "Machine breakdown and contamination recall at a small Tier 2 aerospace fastener factory in Europe. Severity 2.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Factory Incident",
-    "supplier_region": "Europe",
-    "supplier_size": "Small",
-    "industry": "Aerospace",
-    "supplier_tier": 2,
-    "disruption_severity": 2
-   },
-   "expected": {
-    "disruption_type": "Factory Incident",
-    "industry": "Aerospace",
-    "supplier_tier": 2,
-    "disruption_severity": 2
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 0.833,
-   "avg_similarity": 0.867,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
+     "actionability": 4,
      "completeness": 4,
      "consistency": 4,
      "safety": 5
@@ -1539,451 +383,10 @@
    },
    "judge": null,
    "metrics": {},
-   "latency_ms": 8936,
-   "synapt": {
-    "confidence": 0.74,
-    "knowledge_confidence": 0.88,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.54,
-    "degraded": true
-   },
+   "latency_ms": 7805,
+   "synapt": null,
    "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G18",
-   "input": "Congestion at the Port of Los Angeles has delayed pharmaceutical raw materials from a large Tier 1 supplier in North America by three weeks. Severity 3.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Port Congestion",
-    "supplier_region": "North America",
-    "supplier_size": "Large",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 1,
-    "disruption_severity": 3
-   },
-   "expected": {
-    "disruption_type": "Port Congestion",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 1,
-    "disruption_severity": 3
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.917,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 11452,
-   "synapt": {
-    "confidence": 0.78,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.78,
-    "graph_confidence": 0.67,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G19",
-   "input": "Wildfire forced evacuation of a medium Tier 2 automotive wiring harness supplier in South America; no backup supplier. Severity 4.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Natural Disaster",
-    "supplier_region": "South America",
-    "supplier_size": "Medium",
-    "industry": "Automotive",
-    "supplier_tier": 2,
-    "disruption_severity": 4,
-    "has_backup_supplier": false
-   },
-   "expected": {
-    "disruption_type": "Natural Disaster",
-    "industry": "Automotive",
-    "supplier_tier": 2,
-    "has_backup_supplier": false
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.87,
-   "primary_strategy": "Inventory Buffer",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 9811,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.55,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G20",
-   "input": "Phishing-led cyber attack disabled EDI at our Tier 1 consumer goods packaging supplier in Europe; severity 3, backup supplier exists.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Cyber Attack",
-    "supplier_region": "Europe",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "disruption_severity": 3,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Cyber Attack",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "has_backup_supplier": true
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.869,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 18272,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.8,
-    "graph_confidence": 0.59,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G21",
-   "input": "Civil unrest and trade embargo in Africa/Middle East region blocks our Tier 2 aerospace composites supplier. Severity 4.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Geopolitical",
-    "supplier_region": "Africa/Middle East",
-    "industry": "Aerospace",
-    "supplier_tier": 2,
-    "disruption_severity": 4
-   },
-   "expected": {
-    "disruption_type": "Geopolitical",
-    "industry": "Aerospace",
-    "supplier_tier": 2,
-    "disruption_severity": 4
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "disruption_severity": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.88,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 12862,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.88,
-    "procedural_confidence": 0.78,
-    "graph_confidence": 0.59,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G22",
-   "input": "Truck drivers strike in Asia-Pacific stops deliveries from a small Tier 3 electronics connector supplier. Severity 2, we have a backup.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Labor Strike",
-    "supplier_region": "Asia-Pacific",
-    "supplier_size": "Small",
-    "industry": "Electronics",
-    "supplier_tier": 3,
-    "disruption_severity": 2,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Labor Strike",
-    "industry": "Electronics",
-    "supplier_tier": 3,
-    "has_backup_supplier": true
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.906,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 10525,
-   "synapt": {
-    "confidence": 0.76,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G23",
-   "input": "Power failure and fire at a large Tier 1 consumer goods plant in Asia-Pacific; severity 4, single sourced.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Factory Incident",
-    "supplier_region": "Asia-Pacific",
-    "supplier_size": "Large",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "disruption_severity": 4,
-    "has_backup_supplier": false
-   },
-   "expected": {
-    "disruption_type": "Factory Incident",
-    "industry": "Consumer Goods",
-    "supplier_tier": 1,
-    "has_backup_supplier": false
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 0.833,
-   "avg_similarity": 0.815,
-   "primary_strategy": "Inventory Buffer",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 10168,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.54,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G24",
-   "input": "Port congestion at Jebel Ali delaying aerospace spares from our Tier 2 supplier in Africa/Middle East. Severity 3, alternate supplier qualified.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Port Congestion",
-    "supplier_region": "Africa/Middle East",
-    "industry": "Aerospace",
-    "supplier_tier": 2,
-    "disruption_severity": 3,
-    "has_backup_supplier": true
-   },
-   "expected": {
-    "disruption_type": "Port Congestion",
-    "industry": "Aerospace",
-    "supplier_tier": 2,
-    "has_backup_supplier": true
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.869,
-   "primary_strategy": "Alternative Supplier",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 14808,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.89,
-    "procedural_confidence": 0.78,
-    "graph_confidence": 0.58,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
-   "llm_used": false
-  },
-  {
-   "id": "G25",
-   "input": "Earthquake in Europe damaged a medium Tier 1 pharmaceutical fill-finish supplier. Critical severity 5, no backup supplier.",
-   "source": "golden",
-   "classification": {
-    "disruption_type": "Natural Disaster",
-    "supplier_region": "Europe",
-    "supplier_size": "Medium",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 1,
-    "disruption_severity": 5,
-    "has_backup_supplier": false
-   },
-   "expected": {
-    "disruption_type": "Natural Disaster",
-    "industry": "Pharmaceuticals",
-    "supplier_tier": 1,
-    "has_backup_supplier": false
-   },
-   "classification_accuracy": 1.0,
-   "classification_detail": {
-    "disruption_type": true,
-    "industry": true,
-    "supplier_tier": true,
-    "has_backup_supplier": true
-   },
-   "retrieval_type_precision": 1.0,
-   "avg_similarity": 0.841,
-   "primary_strategy": "Combined Strategy",
-   "audit": {
-    "overall": 0.9,
-    "verdict": "approve",
-    "scores": {
-     "groundedness": 5,
-     "relevance": 4,
-     "actionability": 5,
-     "completeness": 4,
-     "consistency": 4,
-     "safety": 5
-    }
-   },
-   "judge": null,
-   "metrics": {},
-   "latency_ms": 8553,
-   "synapt": {
-    "confidence": 0.75,
-    "knowledge_confidence": 0.9,
-    "procedural_confidence": 0.81,
-    "graph_confidence": 0.54,
-    "degraded": true
-   },
-   "fact_check_passed": true,
-   "plan_method": "statistics+synapt-playbook",
+   "plan_method": "statistics",
    "llm_used": false
   }
  ],

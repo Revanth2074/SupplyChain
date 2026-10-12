@@ -1,0 +1,11 @@
+cd D:\SupplyChain && .\run.ps1
+
+
+# Navigate to project
+cd D:\SupplyChain\backend
+
+# Activate virtual environment
+.\.venv\Scripts\Activate.ps1
+
+# Start the server
+python -m uvicorn server:app --host 127.0.0.1 --port 8000

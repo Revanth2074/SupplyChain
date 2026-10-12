@@ -127,9 +127,9 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     <div class="stat"><b>100,000</b><span>historical disruptions</span></div>
     <div class="stat"><b>15</b><span>Synapt MCP tools wired in</span></div>
     <div class="stat"><b>7</b><span>agents in the workflow</span></div>
-    <div class="stat"><b>62</b><span>REST endpoints in 15 routers</span></div>
-    <div class="stat"><b>12</b><span>console views (HTML/CSS/JS)</span></div>
-    <div class="stat"><b>3</b><span>fallback layers</span></div>
+    <div class="stat"><b>53</b><span>API paths in 14 routers</span></div>
+    <div class="stat"><b>11</b><span>console views (HTML/CSS/JS)</span></div>
+    <div class="stat"><b>1</b><span>operating mode: on Synapt</span></div>
   </div>
 </div>
 
@@ -148,12 +148,12 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
     <!-- client -->
     <rect x="300" y="18" width="500" height="74" rx="14" class="dg-box"/>
     <text x="320" y="44" class="dg-t">Static console (HTML · CSS · JS)</text>
-    <text x="320" y="64" class="dg-s">12 views · Detect → Investigate → Predict → Decide → Act &amp; learn</text>
-    <text x="320" y="80" class="dg-s">11 views · 3D control tower (three.js) · SVG graph · SSE stream viewer</text>
+    <text x="320" y="64" class="dg-s">11 views · Detect → Investigate → Predict → Decide → Act &amp; learn</text>
+    <text x="320" y="80" class="dg-s">3D control tower (three.js) · SVG graph · SSE stream viewer</text>
     <!-- gateway -->
     <rect x="300" y="130" width="500" height="54" rx="14" class="dg-box" style="stroke:var(--blue)"/>
     <text x="320" y="153" class="dg-t">FastAPI microservice · webapp gate</text>
-    <text x="320" y="171" class="dg-s">15 routers under /api · password gate · serves built UI</text>
+    <text x="320" y="171" class="dg-s">14 routers under /api · password gate · serves built UI</text>
     <!-- modules -->
     <g>
       <rect x="60" y="214" width="190" height="120" rx="12" class="dg-box"/>
@@ -201,7 +201,7 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
       <rect x="410" y="400" width="320" height="140" rx="14" class="dg-box" style="stroke:var(--green)"/>
       <text x="426" y="426" class="dg-t" style="fill:var(--green)">Local data + ML engine</text>
       <text x="426" y="448" class="dg-s">pandas store of all 100k cases</text>
-      <text x="426" y="465" class="dg-s">BM25 keyword · LSA semantic (fallback)</text>
+      <text x="426" y="465" class="dg-s">BM25 keyword index (hybrid leg)</text>
       <text x="426" y="482" class="dg-s">HistGradientBoosting × 5 + P10/P90</text>
       <text x="426" y="499" class="dg-s">SQLite: feedback, incidents, signals</text>
       <text x="426" y="522" class="dg-s mono">agents/retrieval · prediction · services/data_store</text>
@@ -343,23 +343,23 @@ footer{color:var(--ink-3);font-size:.8rem;text-align:center;padding:30px 0}
   </div>
 </section>
 </main>
-<footer>AI-Powered Supply-Chain Disruption Assistant · Architecture · see also how-it-works.html, design.html, synapt-modes.html</footer>
+<footer>AI-Powered Supply-Chain Disruption Assistant · Architecture · see also how-it-works.html, design.html, synapt-mode.html</footer>
 
 <script>
 const COMPONENTS=[
  {k:"ui",ic:"🖥️",c:"blue",t:"Operations console",f:"backend/static/index.html · style.css · app.js",d:"Three static files served by FastAPI at /, the same pattern as the reference Synapt capstone. A sidebar groups 11 views by stage.",b:["No build step, no Node.js","Hash routing, light + dark theme","Talks only to /api/*"]},
  {k:"ui",ic:"🛰️",c:"cyan",t:"Control Tower (3D)",f:"static/app.js · Tower",d:"Live 3D view of the supplier portfolio: regional islands, ports with gantry cranes, trucks, container ships and 747 freighters sequenced through your hub. three.js loads from the CDN only when the view opens.",b:["Simulate a disruption type: halted sea lanes, air routes and ports","Click a site: risk by type, then run the 7 agents for it","KPIs, early warning and top risks below the scene"]},
  {k:"ui",ic:"📡",c:"violet",t:"Workflow viewer",f:"static/app.js · streamAnalyze",d:"Opens a Server-Sent Events stream and animates each agent as it starts and finishes.",b:["Shows each agent's output","Hand-off to Incident Desk","Feedback form on the result"]},
- {k:"svc",ic:"🚪",c:"blue",t:"FastAPI service",f:"server.py · routes/ · schemas/",d:"The microservice. 62 endpoints in 15 routers (health, copilot, search, prediction, decisions, portfolio, early warning, incidents, statistics, Synapt, playbooks, feedback, evaluation, fallback lab, history).",b:["Bootstraps data + models in a background thread","Returns 503 while warming up","OpenAPI docs at /docs"]},
+ {k:"svc",ic:"🚪",c:"blue",t:"FastAPI service",f:"server.py · routes/ · schemas/",d:"The microservice. 53 API paths in 14 routers (health, copilot, search, prediction, decisions, portfolio, early warning, incidents, statistics, Synapt, playbooks, feedback, evaluation, history).",b:["Bootstraps in a background thread: connect to Synapt → data → models","Returns 503 while warming up, or if Synapt is not configured / unreachable at start-up","OpenAPI docs at /docs"]},
  {k:"svc",ic:"🔐",c:"amber",t:"Web gate",f:"services/webapp.py",d:"Production wiring: optional password sign-in, CORS allow-list and serving the built UI from the same origin.",b:["HMAC session cookie","401 for API, redirect for pages","Off in local development"]},
  {k:"svc",ic:"🛡️",c:"red",t:"Guardrails",f:"agents/guardrails.py",d:"Every free-text input is validated before any model sees it.",b:["Blocks prompt injection & secrets","Redacts e-mails, cards, SSNs","Rejects off-topic text","Checks field values against the dataset vocabulary"]},
  {k:"ai",ic:"🤖",c:"violet",t:"7-agent LangGraph",f:"agents/graph.py · agents/state.py",d:"A LangGraph StateGraph: Guardrails → Classifier → (Hybrid retriever ∥ Synapt worker) → Evidence fusion → Impact → Planner → Recovery → Synthesis → Judge. Each node has one job and passes a typed state to the next.",b:["Synapt calls start in parallel at intake","Report is fact-checked and rewritten once if needed","No LLM inside: rules, Synapt, ML, templates"]},
- {k:"ai",ic:"🔎",c:"blue",t:"Hybrid retrieval",f:"agents/retrieval.py · services/data_store.py",d:"Three ranked lists fused with Reciprocal Rank Fusion: Synapt semantic, BM25 keyword, and a profile match over all 100k cases. Then re-ranked by attribute similarity.",b:["RRF k = 60, semantic weight α = 0.6","Faceted filters on 6 attributes","LSA semantic index if Synapt is down"]},
+ {k:"ai",ic:"🔎",c:"blue",t:"Hybrid retrieval",f:"agents/retrieval.py · services/data_store.py",d:"Three ranked lists fused with Reciprocal Rank Fusion: Synapt semantic, BM25 keyword, and a profile match over all 100k cases. Then re-ranked by attribute similarity.",b:["RRF k = 60, semantic weight α = 0.6","Faceted filters on 6 attributes","Synapt is the only semantic leg (semantic_source = synapt)"]},
  {k:"ai",ic:"📈",c:"green",t:"Prediction models",f:"agents/prediction.py",d:"HistGradientBoosting models for production impact, revenue loss, partial and full recovery, plus a high-impact risk classifier.",b:["Quantile models give P10–P90 ranges","'Insufficient history' warning","What-if counterfactuals"]},
  {k:"ai",ic:"🧩",c:"cyan",t:"Classifier",f:"agents/classifier.py",d:"Turns a free-text description into structured fields (type, industry, tier, region, severity, backup) with per-field confidence.",b:["Keyword rules constrained to allowed values","Industry hints (avionics → Aerospace …)","98/98 fields on the golden set"]},
  {k:"ai",ic:"⚖️",c:"amber",t:"Judge + fact-check",f:"agents/judge.py · agents/synthesis.py · scripts/llm_judge.py",d:"At runtime a rule rubric (6 criteria) scores the briefing and a deterministic checker rejects unknown case IDs and numbers not in the evidence. The external LLM is the independent judge in evaluation only.",b:["Approve / revise verdict","LLM judge: llm_judge.py, DeepEval, /api/judge","Fact-check pass rate tracked in eval"]},
  {k:"syn",ic:"🧠",c:"cyan",t:"Synapt MCP connector",f:"synapt/synapt_connector.py",d:"SynaptConfig + SynaptMCPConnector over Streamable-HTTP JSON-RPC 2.0: authenticate, initialize_mcp, list_remote_tools, call_tool (injects provider_id/top_k from the live tool schema), handles SSE or JSON replies, re-authenticates on 401.",b:["Token refreshed every 50 min","Thread-safe session"]},
- {k:"syn",ic:"🔌",c:"cyan",t:"Synapt tools & worker node",f:"agents/synapt_tools.py",d:"Wraps each tool in a typed function with timeouts and a circuit breaker, maps masked regions back, and normalises answers + quality signals.",b:["Breaker opens after 3 failures, retries after 60 s","Region token bridge","Fixed, provider-pinned Cypher templates"]},
+ {k:"syn",ic:"🔌",c:"cyan",t:"Synapt tools & worker node",f:"agents/synapt_tools.py",d:"Wraps each tool in a typed function with a per-call timeout, maps masked regions back, and normalises answers + quality signals. Synapt is required: a failed call raises SynaptError.",b:["Failures surface as errors (stream error / HTTP 502), never hidden","Region token bridge","Fixed, provider-pinned Cypher templates"]},
  {k:"syn",ic:"📥",c:"green",t:"Knowledge loader",f:"synapt/ingest_to_synapt.py · test_connection.py",d:"Builds knowledge_base/ (scripts/build_knowledge_base.py), ingests cases, SOPs and reference docs with a dry-run manifest, learns region tokens and verifies the connection; the .xlsx ticket store is loaded in the console. Checks what Synapt holds.",b:["docs · ingest · tickets · check","Idempotent, safe to re-run"]},
  {k:"ops",ic:"🚨",c:"red",t:"Early warning & signals",f:"services/risk_watch.py",d:"Scores each region × disruption type from external signals (live GDACS feed + manual) blended with ML impact.",b:["60% likelihood + 40% impact","Watchlist with drill-down"]},
  {k:"ops",ic:"💰",c:"blue",t:"Decision engine",f:"services/decision.py",d:"Compares response options in money: expected loss avoided vs. cost of acting, scaled by outage days. Editable cost assumptions.",b:["Net benefit and ROI per option","Root-cause chains with evidence"]},
@@ -367,15 +367,15 @@ const COMPONENTS=[
  {k:"ops",ic:"✅",c:"green",t:"Evaluation & feedback",f:"services/evaluation.py · feedback.py",d:"25-case DeepEval suite + guardrail suite. Ratings adjust strategy weights (×0.85–1.15); reported outcomes retrain models; verdicts go to trident_feedback.",b:["5 DeepEval metrics","Synapt confidence logged next to them"]},
 ];
 const TOOLS=[
- ["trident_get_chunks","Knowledge","Semantic leg of hybrid search; kNN labelling of a new incident","retrieval, classifier","Local LSA semantic index"],
- ["trident_query","Graph","Graph-RAG answer + reasoning subgraph (2 hops) and quality signals","Investigator agent, Search & Ask, Knowledge Graph","Skipped; answer built from local evidence"],
- ["trident_get_procedures","Procedures","Fetch the response playbook for the disruption type","Planner agent","Plan uses strategy statistics only"],
- ["trident_feedback","Episodes","Send each user verdict back to Synapt","Feedback form","Stored locally, still used for re-weighting"],
- ["trident_episodes","Episodes","Mined incident patterns from the ticket store","Knowledge page","Section hidden"],
- ["trident_label_ticket","Episodes","Label a ticket from similar labelled tickets","Classifier panel","kNN labelling via chunks / rules"],
- ["trident_cypher","Graph","Six fixed, provider-pinned analytics queries","Knowledge Graph → Ask the graph","Offline network view from local data"],
+ ["trident_get_chunks","Knowledge","Semantic leg of hybrid search; kNN labelling of a new incident","retrieval, classifier","SynaptError: search / analysis returns an error"],
+ ["trident_query","Graph","Graph-RAG answer + reasoning subgraph (2 hops) and quality signals","Investigator agent, Search & Ask, Knowledge Graph","Workflow stops with an error; /api/ask returns 502"],
+ ["trident_get_procedures","Procedures","Fetch the response playbook for the disruption type","Planner agent","Workflow stops with an error"],
+ ["trident_feedback","Episodes","Send each user verdict back to Synapt","Feedback form","Warning logged; rating still saved (synapt_sent = false)"],
+ ["trident_episodes","Episodes","Mined incident patterns from the ticket store","Knowledge page","Error shown; /api/synapt/episodes returns 502"],
+ ["trident_label_ticket","Episodes","Label a ticket from similar labelled tickets","Classifier panel","Reported as ticket_store_error in /api/synapt/label"],
+ ["trident_cypher","Graph","Six fixed, provider-pinned analytics queries","Knowledge Graph → Ask the graph","/api/synapt/insights returns 502"],
  ["trident_ingest","Knowledge","Load docs, playbooks, ontology","Loader script","—"],
- ["trident_get_stats","All","What is stored for this provider","Health, Knowledge page","Shown as unavailable"],
+ ["trident_get_stats","All","What is stored for this provider","Health, Knowledge page","Error shown with the Synapt message"],
  ["trident_get_schema / find_exact / search","Graph / Knowledge","Exploration and checks","Loader script","—"],
  ["trident_create_entity / concept / relationship","Graph","Typed ontology (attempted)","Loader script","Server error; ontology doc ingested instead"],
 ];

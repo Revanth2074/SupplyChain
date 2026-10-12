@@ -1,5 +1,5 @@
 {
- "trained_at": "2026-10-07 22:01:05",
+ "trained_at": "2026-10-11 21:00:24",
  "n_rows": 100000,
  "targets": {
   "production_impact_pct": {
@@ -92,5 +92,5 @@
    }
   }
  },
- "train_seconds": 14.9
+ "train_seconds": 17.0
 }

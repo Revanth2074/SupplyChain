@@ -2,7 +2,7 @@
 ## AI-Powered Supply-Chain Disruption Assistant, built on Synapt
 
 Slides: open [`visual/how-it-works.html`](visual/how-it-works.html) in a browser and press **F** for full screen; use ← → to move.
-Back-up pages for questions: [`visual/architecture.html`](visual/architecture.html), [`visual/design.html`](visual/design.html), [`visual/synapt-modes.html`](visual/synapt-modes.html).
+Back-up pages for questions: [`visual/architecture.html`](visual/architecture.html), [`visual/design.html`](visual/design.html), [`visual/synapt-mode.html`](visual/synapt-mode.html).
 Preparation and likely questions: [`STUDY_GUIDE.md`](STUDY_GUIDE.md). What to click and ask on every page: [`visual/console-cheatsheet.html`](visual/console-cheatsheet.html). Synapt in plain words: [`visual/synapt-explained.html`](visual/synapt-explained.html).
 
 Every number in this script is real: from `backend/models/prediction_metrics.json`, `backend/artifacts/eval_results.json`, `documentation/llm_judge_benchmark_results.json`, or measured on the 25-case golden set. Do not add numbers you cannot show.
@@ -22,7 +22,7 @@ Every number in this script is real: from `backend/models/prediction_metrics.jso
 | — | **Live demo** | 4:10–7:10 | Cockpit → Decision Studio → Incident Desk |
 | 7 | Predict & explain | 7:10–7:40 | Ranges, honest R², drivers |
 | 8 | Decide & act | (skip if demo covered it) | Priority, money, SLA |
-| 9 | Trust | 7:40–8:30 | DeepEval + fact-check + fallback numbers |
+| 9 | Trust | 7:40–8:30 | DeepEval + fact-check + LLM-judge numbers |
 | 10 | What I found in Synapt | 8:30–9:30 | Product feedback |
 | 11 | Coverage + thanks | 9:30–10:00 | Every requirement, one image |
 
@@ -55,7 +55,7 @@ If time is short, drop slide 8 (the demo already shows it) and shorten slide 7.
 - "Adding the profile leg raised exact-profile matches in the top results from 14% to 83%."
 
 ### 6 · Seven agents (40 s)
-- Intake → Investigator → Impact → Planner → Recovery → Report → Judge. Each has one job, a typed output, and a fallback.
+- Intake → Investigator → Impact → Planner → Recovery → Report → Judge. Each has one job and a typed output.
 - None of them calls an LLM: intake is vocabulary-constrained rules, the plan is strategy statistics plus the Synapt playbook steps, the briefing is built from the evidence plus Synapt's graph-RAG answer, and the judge is a six-criterion rule audit. "That is the same split the reference Synapt capstone uses: Synapt reasons, the LLM only judges."
 - Synapt calls start in parallel at intake, so they overlap with the local work. A run takes ~12 s, ~10 s of it Synapt graph-RAG. Results stream over Server-Sent Events.
 
@@ -74,10 +74,9 @@ Have the app open and **warmed up** (first request after start-up takes ~30 s wh
 2. Click **What-if → add backup supplier**: recovery drops; "this is the ML model; no LLM is involved anywhere in the workflow."
 3. **Decision Studio**: same incident. "Releasing the buffer is recommended: +$390k net benefit vs doing nothing, 18 days sooner. A qualified backup would be worth +$537k, which is the business case for dual-sourcing."
 4. **Open incident & track actions** → Incident Desk: SLA clock, escalation chain; close an action with a real outcome → "this becomes training data and a `trident_feedback` verdict."
-5. **Fallback Lab** (30 s, strong for this panel): switch **Synapt (all tools)** off → **Run self-test** → 15/15 checks still pass, amber badges show the local fallbacks. Switch it back on. Optionally switch the **LLM judge** off: nothing in the workflow changes, only grading falls back to rules. "This is the circuit breaker and fallback design, proven live rather than claimed."
-6. (If time) **Knowledge Graph**: the reasoning subgraph Synapt walked.
+5. (If time) **Knowledge Graph**: the reasoning subgraph Synapt walked.
 
-Backup plan if the network fails: say "this is exactly the fallback case," open the Fallback Lab and run the self-test: it will show which engines are down and that every feature still answered.
+Backup plan if the network fails: the app runs only on Synapt, so there is no offline demo. Say so plainly, show the clear error in the console banner and `/api/health` (last Synapt error), and switch to the slides and screenshots.
 
 ### 7 · Predict & explain (30 s)
 - Models: HistGradientBoosting on all 100,000 rows, 80/20 split.
@@ -92,7 +91,7 @@ Backup plan if the network fails: say "this is exactly the fallback case," open 
 ### 9 · Trust (50 s)
 Read the numbers from the slide: DeepEval on 16 judged golden cases (relevancy 0.985, faithfulness 0.90, contextual relevancy 0.88, impact 0.75, recommendation 0.75); independent LLM-as-Judge benchmark 9/10 (grounding 0.98); rule classification 100%; 28 unit tests. Then the key line: "No agent calls an LLM. Synapt does the reasoning; the external model only grades. When the judge ran out of credits after 16 cases, all 25 analyses still completed, because the workflow doesn't depend on it." Then:
 - Fact-check pass rate and guardrail suite: both on the slide.
-- "If Synapt is down, a circuit breaker opens after three failures and search switches to a local index. On the golden set, Synapt's semantic search finds the right disruption type 87% of the time versus 68.5% for the fallback. With all three legs fused, both reach 100%, so the app degrades instead of breaking."
+- "The app runs in one mode, on Synapt. If Synapt is not reachable at start-up, the app stops in an error state; if a call fails later, the request returns a clear error and `/api/health` shows the last Synapt error. Nothing silently switches to a weaker engine."
 
 ### 10 · What I found in Synapt (60 s): the slide that matters most to this panel
 - `trident_create_entity` / `create_concept` fail with `index_node() missing 'neo4j_id'`. Few typed entities → graph confidence ~0.57, and every eval answer was flagged **degraded**. Worked around with an ontology document.
@@ -112,7 +111,7 @@ Read the numbers from the slide: DeepEval on 16 judged golden cases (relevancy 0
 |---|---|
 | "Zero hallucination" | "No generator LLM in our code; the briefing is built from evidence and fact-checked (100% on the golden set). Synapt's own answer is shown separately with its confidence" |
 | "The LLM judge says it's perfect" | "An independent model passed 9 of 10 cases; the one fail was Synapt's answer naming a strategy not in its chunks" |
-| "100% uptime" | "Degrades gracefully: circuit breaker + local fallback" |
+| "100% uptime" / "works without Synapt" | "Synapt is required; if it fails, the request returns a clear error instead of a silently weaker answer" |
 | "90% faster triage", "$250B industry loss" | Nothing; there is no source |
 | "R² 0.70" (alone) | "0.70 for production impact; 0.27–0.40 for recovery and revenue, so we show ranges" |
 | "Synapt knows all 100k cases" | "Full narratives for 4k, compact profiles for all 100k; local search covers every row" |
@@ -130,6 +129,5 @@ Run through this once the day before and once an hour before.
    - *"Where is the LLM?"* Only as the independent judge: `scripts/llm_judge.py` (10 cases, 4 rubrics, 9/10 pass), DeepEval, and `POST /api/judge`. No agent calls it.
    - *"Why not let the LLM write the plan?"* An earlier version did. When the gateway ran out of credits mid-evaluation, plans silently fell back to templates. Now an analysis costs no credits, can't be broken by the gateway, and the judge never grades its own text. The cost: briefings read like structured reports rather than prose.
    - *"What did you find in Synapt?"* Slide 10, the four findings, each with its workaround.
-4. **Failure drills:** pull the network cable (or switch Synapt off in the Fallback Lab) and run the demo incident: it must still finish with "via local" badges. Then switch everything back on.
-5. **Numbers card** (keep on paper): DeepEval relevancy 0.985 / faithfulness 0.90 (16 judged); LLM-judge 9/10, grounding 0.98; classification 100%; fact-check 100%; guardrails 10/10; 28 unit tests; Fallback Lab 15/15 ×3; impact R² 0.70, risk AUC 0.87; Synapt semantic 87% vs 68.5% local.
-6. **Reset after rehearsal:** Fallback Lab → **Restore all**, so no switch is left off for the real session.
+4. **Connection check:** confirm Synapt credentials and network before the session; the app will not start without Synapt. Know where the error shows (console banner, `/api/health` → `synapt.last_error`) in case the connection drops.
+5. **Numbers card** (keep on paper): DeepEval relevancy 0.985 / faithfulness 0.90 (16 judged); LLM-judge 9/10, grounding 0.98; classification 100%; fact-check 100%; guardrails 10/10; 28 unit tests; impact R² 0.70, risk AUC 0.87; Synapt semantic leg 87% type precision.

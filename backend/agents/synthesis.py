@@ -85,6 +85,19 @@ def strip_bad_ids(md: str, cases: list[dict]) -> str:
     return CASE_ID.sub(lambda m: m.group(0) if m.group(0).upper() in known else "a historical case", md)
 
 
+SENTENCE = re.compile(r"(?<=[.!?])\s+(?=[A-Z*])")
+
+
+def strict_rewrite(md: str, issues_in) -> str:
+    """Drop every sentence that the fact-check flags; headings and clean sentences are kept."""
+    out = []
+    for line in md.split("\n"):
+        kept = [s for s in SENTENCE.split(line) if not issues_in(s)]
+        if kept or not line.strip():
+            out.append(" ".join(kept))
+    return "\n".join(out)
+
+
 def build_briefing(incident: dict, cases: list[dict], plan: dict, recovery: dict, pred: dict, prio: dict,
                    facts: dict, top3: list[dict]) -> str:
     """Executive briefing from the evidence only: every figure comes from `facts`, the cases or the
@@ -99,13 +112,15 @@ def build_briefing(incident: dict, cases: list[dict], plan: dict, recovery: dict
         f"**Historical Precedent** (evidence: dataset) — Closest cases: {precedent}. Average full recovery by strategy: {stats}.\n\n"
         f"**Expected Impact** (prediction: ML models) — {facts['production_impact']} production impact, {facts['revenue_loss']} revenue "
         f"loss, risk level {facts['risk_level']}. Resilience {facts['resilience']}.\n\n"
-        f"**Recommended Response** (recommendation: statistics + Synapt playbook) — {plan.get('primary_strategy')} (fallback: {plan.get('secondary_strategy')}). "
+        f"**Recommended Response** (recommendation: statistics + Synapt playbook) — {plan.get('primary_strategy')} (secondary: {plan.get('secondary_strategy')}). "
         f"{plan.get('rationale', '')}\n{actions}\n\n"
         f"**Recovery Outlook** (prediction: ML models) — partial ≈{facts['partial_recovery']}, full ≈{facts['full_recovery']}.")
 
 
 def synthesis_node(state: dict) -> dict:
-    """LangGraph node (Report agent): evidence-built briefing, fact-checked, plus the Synapt graph answer."""
+    """LangGraph node (Report agent): evidence-built briefing, fact-checked, plus the Synapt graph answer.
+    When the supervisor sends it back after a failed fact-check, it rewrites in strict mode: every sentence
+    carrying an unverified figure or case ID is dropped, then the briefing is checked again."""
     t0 = time.time()
     emit("agent_start", "reporter")
     incident, cases, plan, recovery = state["incident"], state["cases"], state["plan"], state["recovery"]
@@ -118,7 +133,11 @@ def synthesis_node(state: dict) -> dict:
     proc = plan.get("procedure") or {}  # figures quoted from the Synapt playbook steps are evidence too
     evidence = {**facts, "playbook": " ".join(st["text"] for st in proc.get("steps") or [])}
     issues = check_report(summary_md, evidence, report_cases, top3, recovery)
-    check = {"first_pass": issues, "final": issues, "retried": False, "method": "template"}
+    rnd = state.get("report_round", 0) + 1
+    check = {"first_pass": issues, "final": issues, "retried": False, "method": "template", "round": rnd}
+    if issues and rnd > 1:  # strict rewrite requested by the supervisor
+        summary_md = strict_rewrite(summary_md, lambda t: check_report(t, evidence, report_cases, top3, recovery))
+        check.update(final=check_report(summary_md, evidence, report_cases, top3, recovery), retried=True)
     answer = (graph or {}).get("answer")
     if answer:  # Synapt's own grounded answer, shown as its own section and not part of our fact-check
         summary_md += f"\n\n**Synapt Knowledge Graph** (Synapt graph-RAG answer) — {answer.strip()}"
@@ -127,4 +146,4 @@ def synthesis_node(state: dict) -> dict:
     rs = ("Briefing built, fact-check passed" if check["passed"] else
           f"Briefing built, {len(check['final'])} unverified figure(s) flagged")
     entry = done("reporter", t0, rs, {"summary": summary_md, "facts": facts, "fact_check": check})
-    return {"summary": summary_md, "facts": facts, "fact_check": check, "trace": [entry]}
+    return {"summary": summary_md, "facts": facts, "fact_check": check, "report_round": rnd, "trace": [entry]}

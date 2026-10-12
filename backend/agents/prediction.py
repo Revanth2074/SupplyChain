@@ -18,7 +18,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OrdinalEncoder
 
-from services import faults
 from config import settings
 from services.data_store import store
 
@@ -186,7 +185,7 @@ class ModelRegistry:
 
     # ---------------- cohort-statistics fallback ----------------
     def fallback(self) -> bool:
-        return faults.active("ml") or not self.models
+        return not self.models
 
     def _cohort(self, row: tuple) -> dict:
         """Median, P10/P90 and high-impact share of the closest historical cohort for one feature row."""

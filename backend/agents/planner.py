@@ -81,7 +81,7 @@ EVIDENCE_FIELDS = ("disruption_id", "disruption_type", "industry", "supplier_tie
                    "response_time_days", "partial_recovery_days", "full_recovery_days", "similarity")
 
 
-def fallback_plan(inc: dict, strategies: list[dict], cases: list[dict]) -> dict:
+def statistics_plan(inc: dict, strategies: list[dict], cases: list[dict]) -> dict:
     """Plan from strategy statistics: best-ranked strategy first, cited comparable cases."""
     top = strategies[0]["strategy"] if strategies else "Alternative Supplier"
     sec = strategies[1]["strategy"] if len(strategies) > 1 else "Inventory Buffer"
@@ -165,7 +165,7 @@ def planner_node(state: dict) -> dict:
     procedure = state.get("procedure")
     strat = strategy_table(incident)
     evidence_cases = [{k: c.get(k) for k in EVIDENCE_FIELDS} for c in cases[:10]]
-    plan = apply_playbook(fallback_plan(incident, strat["strategies"], cases), procedure)
+    plan = apply_playbook(statistics_plan(incident, strat["strategies"], cases), procedure)
     plan["procedure"] = procedure
     summ = f"Primary: {plan.get('primary_strategy')} · Secondary: {plan.get('secondary_strategy')} ({plan.get('method')})"
     if procedure:

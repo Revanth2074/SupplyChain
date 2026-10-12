@@ -1,14 +1,13 @@
 """
 Hybrid Retrieval Engine & Reciprocal Rank Fusion (RRF) Node.
-Fuses lexical BM25 candidates from the local 100k-case index with Synapt Context Substrate
-semantic retrieval (trident_get_chunks, joined back to the CSV) and an attribute-profile leg over
-all 100k rows; trident_search adds knowledge-graph nodes (playbook procedures and steps).
-Falls back to the local LSA semantic index when Synapt is unavailable.
+Fuses Synapt Context Substrate semantic retrieval (trident_get_chunks, joined back to the CSV) with
+lexical BM25 candidates from the 100k-case index and an attribute-profile leg over all 100k rows;
+trident_search adds knowledge-graph nodes (playbook procedures and steps).
+Synapt is required: there is no local semantic fallback, and a Synapt failure raises SynaptError.
 """
 from __future__ import annotations
 
 import concurrent.futures as cf
-import logging
 import time
 
 import numpy as np
@@ -16,7 +15,6 @@ import numpy as np
 from agents import synapt_tools as syn
 from services.data_store import store
 
-log = logging.getLogger("retrieval")
 RRF_K = 60
 _pool = cf.ThreadPoolExecutor(max_workers=4)
 
@@ -107,44 +105,26 @@ def lexical_search(query: str, filters: dict | None, top_k: int) -> list[tuple[s
     return store.keyword_search(query, filters, top_k)
 
 
-def semantic_search_synapt(query: str, filters: dict | None, top_k: int, pool_k: int | None = None) -> dict:
+def semantic_search_synapt(query: str, filters: dict | None, top_k: int) -> dict:
     """Semantic leg via the Synapt Context Substrate: trident_get_chunks (case documents, joined back to
-    the CSV by DIS- id) with the local LSA index as fallback, plus trident_search (knowledge-graph nodes:
-    playbook procedures and steps) returned as supporting knowledge."""
+    the CSV by DIS- id) plus trident_search (knowledge-graph nodes: playbook procedures and steps) returned
+    as supporting knowledge. Synapt is required; a failure raises SynaptError."""
     hits: list[tuple[str, float]] = []
     texts: dict[str, str] = {}
-    source, fallback_reason = "synapt", None
-    node_fut = _pool.submit(syn.search_nodes, query, 5) if syn.configured() else None
-    try:
-        seen = set()
-        for h in syn.get_chunks(query, top_k=max(8, min(top_k, 20))):
-            cid = h.get("id")
-            if not cid or cid in seen:
-                continue
-            seen.add(cid)
-            c = store.get_case(cid)
-            if c and h.get("masked_region"):
-                syn.regions.learn(h["masked_region"], c["supplier_region"])
-            if c and _matches(c, filters):
-                hits.append((cid, 1.0 / (1 + h["rank"])))
-                texts[cid] = h["text"]
-        if not hits:
-            # Synapt answered but nothing passed filters -> supplement with local semantic
-            fallback_reason = "Synapt returned no cases matching filters; supplemented with local semantic index"
-            hits = store.semantic_search(query, filters, pool_k or top_k)
-            source = "synapt+local"
-    except Exception as e:  # noqa: BLE001
-        log.warning("Synapt semantic leg failed -> local fallback: %s", e)
-        fallback_reason = str(e)
-        source = "local-lsa"
-        hits = store.semantic_search(query, filters, pool_k or top_k)
-    nodes = []
-    if node_fut:
-        try:
-            nodes = node_fut.result(timeout=30)
-        except Exception as e:  # noqa: BLE001
-            log.info("trident_search leg skipped: %s", e)
-    return {"hits": hits, "texts": texts, "source": source, "fallback_reason": fallback_reason, "nodes": nodes}
+    node_fut = _pool.submit(syn.search_nodes, query, 5)
+    seen = set()
+    for h in syn.get_chunks(query, top_k=max(8, min(top_k, 20))):
+        cid = h.get("id")
+        if not cid or cid in seen:
+            continue
+        seen.add(cid)
+        c = store.get_case(cid)
+        if c and h.get("masked_region"):
+            syn.regions.learn(h["masked_region"], c["supplier_region"])
+        if c and _matches(c, filters):
+            hits.append((cid, 1.0 / (1 + h["rank"])))
+            texts[cid] = h["text"]
+    return {"hits": hits, "texts": texts, "source": "synapt", "nodes": node_fut.result(timeout=30)}
 
 
 def reciprocal_rank_fusion(legs: dict[str, tuple[float, list[tuple[str, float]]]], k: int = RRF_K) -> dict[str, dict]:
@@ -170,7 +150,7 @@ def hybrid_search(query: str, filters: dict | None = None, top_k: int = 10, mode
     pool_k = max(top_k * 3, 20)
     sem_query = f"{query} {filters_to_text(filters)}".strip()
     fut_kw = _pool.submit(lexical_search, sem_query, filters, pool_k) if mode in ("hybrid", "keyword") else None
-    sem = semantic_search_synapt(sem_query, filters, top_k, pool_k) if mode in ("hybrid", "semantic") else         {"hits": [], "texts": {}, "source": None, "fallback_reason": None, "nodes": []}
+    sem = semantic_search_synapt(sem_query, filters, top_k) if mode in ("hybrid", "semantic") else         {"hits": [], "texts": {}, "source": None, "nodes": []}
     kw_hits = fut_kw.result() if fut_kw else []
     prof_hits = profile_matches(reference, filters, pool_k) if (reference and mode == "hybrid") else []
 
@@ -200,8 +180,7 @@ def hybrid_search(query: str, filters: dict | None = None, top_k: int = 10, mode
     results = results[:top_k]
     return {
         "query": query, "mode": mode, "filters": filters or {}, "count": len(results),
-        "semantic_source": sem["source"] if mode != "keyword" else None,
-        "fallback_reason": sem["fallback_reason"], "latency_ms": int((time.time() - t0) * 1000),
+        "semantic_source": sem["source"], "latency_ms": int((time.time() - t0) * 1000),
         "results": results, "knowledge_nodes": sem["nodes"],
     }
 
@@ -243,16 +222,24 @@ def synapt_label(text: str, k: int = 20) -> dict:
 
 
 def hybrid_retrieval_node(state: dict) -> dict:
-    """LangGraph node (Investigation agent, part 1): hybrid search for similar historical cases,
-    running in parallel with the Synapt worker."""
+    """LangGraph node (Investigation agent, part 1): hybrid search for similar historical cases.
+    When the supervisor asks to broaden, the user's filters are dropped, the query is reduced to the
+    disruption type and industry, and more candidates are kept."""
     from agents.state import describe, emit
 
     t0 = time.time()
     emit("agent_start", "investigator")
     payload, incident = state["payload"], state["incident"]
-    search = hybrid_search(f"{state['query']}. {describe(incident)}", payload.get("filters"),
-                           top_k=payload.get("top_k", 8), mode="hybrid", reference=incident)
-    return {"search": search, "investigation_t0": t0}
+    broaden = (state.get("retrieval_plan") or {}).get("broaden", False)
+    rnd = state.get("retrieval_round", 0) + 1
+    if broaden:
+        core = {k: incident.get(k) for k in ("disruption_type", "industry")}
+        query, filters, top_k = describe(core), None, payload.get("top_k", 8) + 4
+    else:
+        query, filters, top_k = f"{state['query']}. {describe(incident)}", payload.get("filters"), payload.get("top_k", 8)
+    search = hybrid_search(query, filters, top_k=top_k, mode="hybrid", reference=incident)
+    search["round"], search["broadened"] = rnd, broaden
+    return {"search": search, "investigation_t0": t0, "retrieval_round": rnd, "retrieval_plan": {}}
 
 
 def evidence_fusion_node(state: dict) -> dict:
@@ -271,8 +258,9 @@ def evidence_fusion_node(state: dict) -> dict:
                          retrieval_score=None)
                 cases.append(c)
     sims = [c["similarity"] for c in cases if c.get("similarity") is not None]
-    summ = (f"{len(cases)} similar cases (avg similarity {np.mean(sims):.0%}) via "
-            f"{search['semantic_source']} + BM25" + (", graph-RAG answer received" if graph and graph.get("answer") else ""))
+    summ = (f"{len(cases)} similar cases (avg similarity {np.mean(sims) if sims else 0:.0%}) via "
+            f"{search['semantic_source']} + BM25" + (", graph-RAG answer received" if graph and graph.get("answer") else "")
+            + (f" · retrieval round {search.get('round')} (broadened)" if search.get("broadened") else ""))
     entry = done("investigator", state["investigation_t0"], summ,
                  {"search": {k: v for k, v in search.items() if k != "results"}, "cases": cases, "graph": graph})
     return {"cases": cases, "trace": [entry]}

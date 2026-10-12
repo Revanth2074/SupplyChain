@@ -12,7 +12,7 @@ An intelligent, multi-agent operations platform that helps supply-chain teams **
 - **Hybrid Fusion Retrieval (Lexical + Synapt Semantic + Profile + RRF)**:
   - Fuses BM25 candidates from the local 100k-case index, Synapt semantic retrieval and an attribute-profile leg over all 100k rows via Reciprocal Rank Fusion:
     $$\text{RRF Score}(d) = \sum_{m \in \{\text{Synapt},\, \text{BM25},\, \text{profile}\}} \frac{w_m}{60 + \text{rank}_m(d)}$$
-  - Synapt's semantic leg finds the right disruption type **87 %** of the time vs **68.5 %** for the local fallback; full hybrid reaches **100 %** either way.
+  - Synapt's semantic leg finds the right disruption type **87 %** of the time; the full hybrid reaches **100 %**.
 - **LangGraph Multi-Agent Workflow (7 agents)**: guardrails → classifier → (hybrid retriever ∥ Synapt worker) → evidence fusion → impact → planner → recovery → synthesis → judge, streamed live over SSE.
 - **Disruption Impact Prediction (Machine Learning)**:
   - `HistGradientBoosting` models trained on all 100,000 cases (80/20 split) with **P10–P90 ranges** (78–80 % coverage).
@@ -20,12 +20,12 @@ An intelligent, multi-agent operations platform that helps supply-chain teams **
 - **Prioritisation, Decision Support & Incident Desk**: P1–P4 priority (35 % severity · 30 % impact · 25 % loss · 10 % risk) with SLAs, scenario comparison in money (net benefit, ROI), root-cause chains, early warning, supplier network outage simulation, tracked actions.
 - **Domain Safety & Prompt-Injection Guardrails**: injection, secrets, script tags and off-topic text are blocked and PII redacted before any model or Synapt call (guardrail suite **10/10**).
 - **Evaluation**: DeepEval (faithfulness **0.90**, answer relevancy **0.985**), independent LLM-as-Judge benchmark **9/10** (grounding 0.98), deterministic fact-check **100 %**, rule classification **100 %** (98/98 fields), **28 pytest** unit tests.
-- **Graceful Degradation (Fallback Lab)**: per-tool circuit breakers and local fallbacks for Synapt, the LLM judge and the models; a live switchboard and self-test prove them (**15/15** checks with everything on, with Synapt off, and with the judge LLM + models + feed off).
+- **One mode, on Synapt**: Synapt is required. Start-up connects to Synapt first (credentials, authentication, MCP handshake); if it is not configured or unreachable the boot stage is `error`, data endpoints return 503 and the console shows the start-up error. A Synapt failure during a request surfaces as a clear error (HTTP 502 on `/api/ask` and `/api/synapt/*`, an error event on analyses) and `/api/health` reports the last failed tool and error; nothing silently switches to a weaker engine.
 - **External LLM only as the judge** (same pattern as the reference capstone): the workflow runs on rules, Synapt MCP,
   ML and templates; the aicredits.in model is called only by the evaluation (`scripts/llm_judge.py`,
   `scripts/deepeval_suite.py`, `POST /api/judge`).
-- **History**: every analysis, question, search, simulation, decision, incident action, evaluation and Fallback
-  Lab run is saved on the server in `backend/artifacts/history.json`, so the History tab shows the same list on any
+- **History**: every analysis, question, search, simulation, decision, incident action and evaluation
+  is saved on the server in `backend/artifacts/history.json`, so the History tab shows the same list on any
   device; past analyses re-open in full without re-running the agents.
 - **Operator-in-the-Loop Feedback**: ratings re-weight strategies, real outcomes retrain the models, verdicts go back to Synapt via `trident_feedback`.
 
@@ -36,7 +36,7 @@ An intelligent, multi-agent operations platform that helps supply-chain teams **
 ```mermaid
 flowchart TD
     subgraph Client_Layer ["Operations Console (backend/static: index.html · style.css · app.js)"]
-        UI["12 views: 3D Control Tower · Incident Cockpit · Search & Ask · Knowledge Graph · Impact Simulator<br/>Decision Studio + Triage · Early Warning · Portfolio & Network · Incident Desk · Quality & Learning · History · Fallback Lab"]
+        UI["11 views: 3D Control Tower · Incident Cockpit · Search & Ask · Knowledge Graph · Impact Simulator<br/>Decision Studio + Triage · Early Warning · Portfolio & Network · Incident Desk · Quality & Learning · History"]
     end
 
     subgraph Service_Layer ["FastAPI Service Layer (backend/server.py + routes/)"]
@@ -62,7 +62,7 @@ flowchart TD
     end
 
     subgraph Storage_Layer ["Data & Knowledge Substrates"]
-        DATA[("100,000-case CSV<br/>BM25 · LSA · profiles in memory")]
+        DATA[("100,000-case CSV<br/>BM25 · profiles in memory")]
         ML_MODEL[("models/disruption_predictors.joblib<br/>HistGradientBoosting + P10/P90")]
         SQL_DB[("artifacts/feedback.db<br/>analyses · feedback · incidents · signals")]
         SYNAPT_SUB[("Synapt Context Substrate<br/>Provider: supply_chain_disruptions<br/>894 nodes · 1,038 edges · 6 procedures")]
@@ -114,7 +114,7 @@ SupplyChain/
 │   ├── routes/                          # 14 modular FastAPI API routers
 │   ├── schemas/                         # Pydantic request/response models
 │   ├── services/                        # data store, LLM, feedback, evaluation, decision, early warning,
-│   │                                    # portfolio, network, incident desk, faults, fallback lab, web gate
+│   │                                    # portfolio, network, incident desk, bootstrap, web gate
 │   ├── synapt/
 │   │   ├── synapt_connector.py          # JWT authentication, MCP client (SynaptConfig, SynaptMCPConnector)
 │   │   ├── ingest_to_synapt.py          # Ingestion of cases, SOP playbooks and reference statistics
@@ -147,7 +147,7 @@ SupplyChain/
 │   ├── PRESENTATION_GUIDE.md            # 10-minute presentation & demo script
 │   ├── STUDY_GUIDE.md                   # Concepts, code reading order, mock Q&A
 │   ├── deepeval_benchmark_results.json  # Full evaluation logs
-│   ├── visual/                          # deck · architecture · design · synapt-modes · synapt-explained · console-cheatsheet
+│   ├── visual/                          # deck · architecture · design · synapt-mode · synapt-explained · console-cheatsheet
 │   └── Project_9_…_with_Synapt.pdf      # Problem statement
 └── supply_chain_disruption_recovery.csv # 100,000-case dataset
 ```
@@ -251,8 +251,8 @@ python scripts/smoke_test.py basic ask analyze      # API smoke test against a r
 
 Methodology, honest gaps and per-case results: [`documentation/EVALUATION_REPORT.md`](documentation/EVALUATION_REPORT.md).
 
-### Fallback Lab (test the fallbacks live)
-Sidebar → **System → Fallback Lab** switches off Synapt (all tools, graph-RAG only, playbooks only), the LLM judge, the prediction models or the live hazard feed at their lowest level, so the real fallbacks run (local LSA search, statistics-only plan, briefing without the Synapt answer, rule-rubric judging, cohort statistics instead of the models). **Run self-test** checks every feature answered through the expected engine. Switches are global and restore themselves; set `ENABLE_FALLBACK_LAB=0` to lock them on a shared deployment.
+### Synapt is required (single operating mode)
+The app runs in one mode, backed by Synapt. Start-up goes *connecting to Synapt* → *loading data* → *loading/training models* → *ready*; without `SYNAPT_USERNAME` / `SYNAPT_PASSWORD` / `SYNAPT_PROVIDER_ID`, or with Synapt unreachable, the boot stage is `error` and data endpoints return 503. At request time a Synapt failure is reported, not hidden: `/api/ask` and `/api/synapt/*` return 502, an analysis ends with an error, and `/api/health` → `synapt` shows `last_failed_tool` and `last_error` (each call still has a timeout). BM25 and the attribute profile are regular hybrid-search legs alongside Synapt's semantic leg, not substitutes for it. Unrelated to Synapt: without the trained model file the predictions use cohort statistics, and without the judge LLM the evaluation scores with the rule rubric.
 
 ---
 
@@ -281,7 +281,7 @@ Sidebar → **System → Fallback Lab** switches off Synapt (all tools, graph-RA
 | [PRESENTATION_GUIDE.md](documentation/PRESENTATION_GUIDE.md) | 10-minute talk + demo script |
 | [STUDY_GUIDE.md](documentation/STUDY_GUIDE.md) | Concepts, code reading order, 41-question mock Q&A |
 | [visual/how-it-works.html](documentation/visual/how-it-works.html) | 11-slide deck (← → to move, **F** for full screen) |
-| [visual/architecture.html](documentation/visual/architecture.html) · [design.html](documentation/visual/design.html) · [synapt-modes.html](documentation/visual/synapt-modes.html) | Interactive architecture, design and with/without-Synapt pages |
+| [visual/architecture.html](documentation/visual/architecture.html) · [design.html](documentation/visual/design.html) · [synapt-mode.html](documentation/visual/synapt-mode.html) | Interactive architecture, design and Synapt operating-mode pages |
 | [visual/synapt-explained.html](documentation/visual/synapt-explained.html) | The Synapt MCP connector explained simply: the 17 tools, how each is used, and what the Synapt console reports for our provider |
 | [visual/console-cheatsheet.html](documentation/visual/console-cheatsheet.html) | Page-by-page cheat sheet: what to click and ask on every console page, plus a 10-minute demo route |
 

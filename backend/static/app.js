@@ -119,7 +119,7 @@ function readIncident(prefix, fields = FIELDS) {
 /* ------------------------------------------------------------------ navigation */
 const VIEWS = {
   overview: ['Control Tower', 'Live picture of risk, incidents and learning across the supply base.'],
-  cockpit: ['Incident Cockpit', 'Seven agents investigate, predict, plan and audit a new disruption. No LLM in the loop: rules, Synapt MCP, ML and templates.'],
+  cockpit: ['Incident Cockpit', 'A supervisor agent decides which agent runs next to investigate, predict, plan and audit a new disruption. No LLM in the loop: rules, Synapt MCP, ML and templates.'],
   search: ['Search & Ask', 'Synapt graph-RAG answers and hybrid search over 100,000 historical disruptions.'],
   graph: ['Knowledge Graph', 'What Synapt holds, the reasoning subgraph it walked, playbooks and graph insights.'],
   simulator: ['Impact Simulator', 'Predicted impact with P10–P90 ranges, drivers, counterfactuals and the root-cause chain.'],
@@ -129,7 +129,6 @@ const VIEWS = {
   incidents: ['Incident Desk', 'Open incidents, SLA clocks, escalation and tracked actions with real outcomes.'],
   quality: ['Quality & Learning', 'Evaluation results, model accuracy, operator feedback and Synapt answer quality.'],
   history: ['History', 'Everything done in the console, saved on the server so it is the same on every device.'],
-  lab: ['Fallback Lab', 'Simulate outages of Synapt, the judge LLM, the models or the live feed and prove the fallbacks.'],
 };
 const LOADERS = {};
 
@@ -156,27 +155,26 @@ async function refreshHealth() {
     const h = await get('/health');
     state.health = h;
     const s = h.synapt || {};
-    const synOk = s.configured && !s.circuit_open && !(s.simulated_outage || []).length;
+    const synOk = s.configured && h.status !== 'error' && !s.last_error;
     $('dot-synapt').className = 'dot ' + (synOk ? 'ok' : s.configured ? 'warn' : 'bad');
-    $('st-synapt').textContent = !s.configured ? 'not configured' : s.circuit_open ? 'circuit open' : (s.simulated_outage || []).length ? 'simulated off' : 'connected';
+    $('st-synapt').textContent = !s.configured ? 'not configured' : h.status === 'error' ? 'unreachable' : s.last_error ? `error (${s.last_failed_tool || 'call'})` : 'connected';
+    $('st-synapt').title = s.last_error || h.error || '';
     const m = h.models || {};
     $('dot-models').className = 'dot ' + (m.ready && !m.fallback ? 'ok' : m.ready ? 'warn' : 'bad');
     $('st-models').textContent = m.training ? 'training' : m.fallback ? 'cohort stats' : m.ready ? 'ready' : 'loading';
     const l = h.llm || {};
-    const llmOff = (h.simulated_outages || []).includes('llm');
-    $('dot-llm').className = 'dot ' + (l.configured && !llmOff ? 'ok' : 'warn');
-    $('st-llm').textContent = llmOff ? 'rules (off)' : l.configured ? (l.judge_model || l.model || 'configured') : 'not set';
+    $('dot-llm').className = 'dot ' + (l.configured ? 'ok' : 'warn');
+    $('st-llm').textContent = l.configured ? (l.judge_model || l.model || 'configured') : 'not set';
     $('st-llm').title = l.base_url || '';
     $('provider-pill').textContent = `provider ${s.provider_id || '—'}`;
     $('boot-banner').hidden = h.status === 'ready';
+    if (h.status === 'error') $('boot-banner').textContent = `Start-up failed: ${h.error || 'unknown error'}. Synapt is required; check backend/.env and restart.`;
     if (h.status === 'ready' && !state.ready) {  // backend just finished loading: (re)load the open view
       state.ready = true;
       if (state.tab) { state.loaded[state.tab] = false; loadView(state.tab); }
     } else if (h.status !== 'ready') {
       setTimeout(refreshHealth, 4000);
     }
-    const outs = h.simulated_outages || [];
-    $('badge-lab').hidden = !outs.length;
     return h;
   } catch (e) {
     $('st-synapt').textContent = 'API down';
@@ -206,7 +204,7 @@ LOADERS.overview = async () => {
   const s = h.synapt || {};
   $('ov-health').innerHTML = `<dl class="stat-list">
     <dt>Synapt provider</dt><dd>${esc(s.provider_id || '—')}</dd>
-    <dt>Synapt circuit</dt><dd>${s.circuit_open ? pill('open', 'bad') : pill('closed', 'ok')}</dd>
+    <dt>Synapt connection</dt><dd>${s.last_error ? pill('last call failed', 'bad') : pill('connected', 'ok')}</dd>
     <dt>Region tokens learned</dt><dd>${num(s.region_tokens_learned)}</dd>
     <dt>Dataset rows</dt><dd>${num((h.data || {}).rows)}</dd>
     <dt>Models trained</dt><dd>${esc((h.models || {}).trained_at || '—')}</dd>
@@ -228,8 +226,22 @@ const SAMPLE = 'Ransomware attack on our Tier 2 electronics supplier in Asia-Pac
 
 function agentCards() {
   const agents = (state.meta && state.meta.agents) || [];
-  $('ck-agents').innerHTML = agents.map((a) => `<div class="agent" id="ag-${a.id}"><div class="n">${esc(a.name.replace(' Agent', ''))}</div>
-    <div class="s">${esc(a.description)}</div><div class="t"></div></div>`).join('');
+  $('ck-agents').innerHTML = agents.map((a) => (a.id === 'supervisor'
+    ? `<div class="agent supervisor" id="ag-supervisor"><div class="n">${esc(a.name)}</div>
+    <div class="s">${esc(a.description)}</div><ol class="route-log" id="ck-route"></ol></div>`
+    : `<div class="agent" id="ag-${a.id}"><div class="n">${esc(a.name.replace(' Agent', ''))}</div>
+    <div class="s">${esc(a.description)}</div><div class="t"></div></div>`)).join('');
+}
+// One supervisor decision: which agent(s) run next and why
+function routeItem(d) {
+  const next = (d.next || []).map((n) => (n === 'finish' ? 'finish' : n.replace(/_/g, ' '))).join(' + ');
+  return `<li><b>${esc(next)}</b> <span class="muted">· ${esc(d.reason)}</span></li>`;
+}
+function showRoute(d) {
+  const el = $('ag-supervisor');
+  if (!el) return;
+  el.className = (d.next || []).includes('finish') ? 'agent supervisor done' : 'agent supervisor running';
+  $('ck-route').insertAdjacentHTML('beforeend', routeItem(d));
 }
 
 async function streamAnalyze(payload, onEvent) {
@@ -275,6 +287,7 @@ async function runAnalysis() {
     const payload = { description: desc || null, incident: Object.keys(incident).length ? incident : null,
       use_graph: $('ck-graph').checked, judge: $('ck-judge').checked, top_k: 8 };
     const r = await streamAnalyze(payload, (ev) => {
+      if (ev.type === 'route') { showRoute(ev); return; }
       const el = $(`ag-${ev.agent}`);
       if (!el) return;
       if (ev.type === 'agent_start') el.className = 'agent running';
@@ -327,7 +340,7 @@ function renderAnalysis(r, ms) {
   const plan = r.plan || {};
   $('ck-plan-method').textContent = plan.method || '';
   const acts = (a) => (a || []).map((x) => (typeof x === 'string' ? `<li>${esc(x)}</li>` : `<li>${esc(x.action)} <span class="muted small">· ${esc(x.owner || '')} · ${esc(x.timeframe || '')}</span></li>`)).join('');
-  $('ck-plan').innerHTML = `<div class="chips">${pill('Primary: ' + (plan.primary_strategy || '—'), 'ok')}${pill('Fallback: ' + (plan.secondary_strategy || '—'))}
+  $('ck-plan').innerHTML = `<div class="chips">${pill('Primary: ' + (plan.primary_strategy || '—'), 'ok')}${pill('Secondary: ' + (plan.secondary_strategy || '—'))}
       ${plan.procedure ? pill('Synapt playbook: ' + plan.procedure.name, 'cyan') : ''}</div>
     <p class="muted">${esc(plan.rationale || '')}</p>
     <h4>Immediate</h4><ol class="steps">${acts(plan.immediate_actions)}</ol>
@@ -474,8 +487,8 @@ async function runSearch(btn) {
   const r = await guarded(btn, 'Searching', () => post('/search', { query: q, top_k: +$('sr-k').value, mode: $('sr-mode').value, filters: Object.keys(filters).length ? filters : null }));
   if (!r) return;
   state.searchRows = r.results || [];
-  $('sr-meta').innerHTML = `${num(r.count)} results · semantic leg: ${pill(r.semantic_source || '—', (r.semantic_source || '').startsWith('synapt') ? 'cyan' : 'warn')} · ${num(r.latency_ms)} ms
-    ${r.fallback_reason ? `<div class="alert warn">${esc(r.fallback_reason)}</div>` : ''}${(r.warnings || []).map((w) => `<div class="muted small">⚠ ${esc(w)}</div>`).join('')}`;
+  $('sr-meta').innerHTML = `${num(r.count)} results · semantic leg: ${pill(r.semantic_source || '—', 'cyan')} · ${num(r.latency_ms)} ms
+    ${(r.warnings || []).map((w) => `<div class="muted small">⚠ ${esc(w)}</div>`).join('')}`;
   track('search', q, `${r.count} results · ${$('sr-mode').value} · semantic leg ${r.semantic_source}`, { query: q, mode: $('sr-mode').value, filters, results: state.searchRows.slice(0, 10).map((c) => c.disruption_id) });
   $('sr-out').innerHTML = casesTable(state.searchRows).replace('<table class="data-table">', '<table class="data-table" data-src="search">');
 }
@@ -791,49 +804,14 @@ async function loadSynaptQuality() {
     ['Graph confidence', s.graph_confidence], ['Degraded rate', s.degraded_rate, 'var(--amber)']].filter((x) => x[1] !== undefined && x[1] !== null).map(([k, v, c]) => [k, v, c || 'var(--cyan)']), (v) => num(v, 3));
 }
 
-/* ================================================================== FALLBACK LAB */
-LOADERS.lab = async () => { await loadLab(); };
-async function loadLab() {
-  const l = await get('/fallback-lab');
-  $('lab-switches').innerHTML = (l.switches || []).map((s) => `<div class="card switch-card ${s.active ? 'off' : ''}">
-      <h3>${esc(s.label)} ${s.active ? pill(`OFF${s.restores_in_s ? ` · back in ${Math.ceil(s.restores_in_s / 60)} min` : ''}`, 'bad') : pill('on', 'ok')}</h3>
-      <div class="small"><b>When off:</b> ${esc(s.outage)}</div><div class="small muted"><b>Fallback:</b> ${esc(s.fallback)}</div>
-      <button class="btn small ${s.active ? 'on' : ''}" data-switch="${esc(s.id)}" data-active="${s.active ? 1 : 0}" ${l.enabled ? '' : 'disabled'}>${s.active ? 'Switch back on' : 'Switch off'}</button></div>`).join('');
-  if (!l.enabled) $('lab-switches').insertAdjacentHTML('afterbegin', '<div class="alert warn">The Fallback Lab is disabled on this deployment (ENABLE_FALLBACK_LAB=0).</div>');
-  refreshHealth();
-}
-document.addEventListener('click', async (e) => {
-  const b = e.target.closest('[data-switch]');
-  if (!b) return;
-  const off = b.dataset.active !== '1';
-  const ok = await guarded(b, '…', () => api('PUT', `/fallback-lab/${b.dataset.switch}`, { enabled: off, minutes: +$('lab-min').value }));
-  if (ok) track('fallback_lab', `${off ? 'Switched off' : 'Restored'}: ${b.closest('.card').querySelector('h3').firstChild.textContent.trim()}`, off ? `simulated outage for ${$('lab-min').value} min` : 'back to normal');
-  loadLab();
-});
-async function runSelfTest(btn) {
-  const r = await guarded(btn, 'Testing every feature', () => post('/fallback-lab/selftest', { full_workflow: $('lab-full').checked }));
-  if (!r) return;
-  track('fallback_lab', `Self-test: ${r.passed}/${r.total} passed`, `${r.fallbacks_used} fallback(s) used · switched off: ${(r.switched_off || []).join(', ') || 'none'}`,
-    { passed: r.passed, total: r.total, checks: (r.checks || []).map((c) => ({ check: c.label, expected: c.expected, got: c.got, passed: c.passed })) });
-  $('lab-score').innerHTML = `${pill(`${r.passed}/${r.total} passed`, r.passed === r.total ? 'ok' : 'bad')} ${pill(`${r.fallbacks_used} fallback(s) used`, r.fallbacks_used ? 'warn' : '')} ${pill(`${num(r.ms / 1000, 1)} s`)}`;
-  $('lab-out').innerHTML = table([
-    ['Check', (c) => `<b>${esc(c.label)}</b>${c.group ? `<div class="muted small">${esc(c.group)}</div>` : ''}`],
-    ['Depends on', (c) => esc(c.depends_on || '—')], ['Expected', (c) => esc(c.expected)],
-    ['Answered by', (c) => pill(c.got, c.got === 'crashed' ? 'bad' : c.fallback ? 'warn' : 'ok')],
-    ['Result', (c) => (c.passed ? pill('pass', 'ok') : pill('fail', 'bad'))],
-    ['Detail', (c) => `<span class="small">${esc(c.error || c.detail || '')}</span>${c.hint ? `<div class="small muted">${esc(c.hint)}</div>` : ''}`],
-    ['ms', (c) => num(c.ms), 'num'],
-  ], r.checks || []);
-}
-
 /* ================================================================== HISTORY
  * Everything done in the console, stored server-side in artifacts/history.json, so the list is the same
  * on every device that opens the app. Analyses re-open in full from feedback.db via /api/analyses/{id}. */
 const KIND_LABEL = { analysis: 'Analysis', ask: 'Question', search: 'Search', graph: 'Graph query', simulation: 'Simulation',
   decision: 'Decision', triage: 'Triage', portfolio: 'Portfolio', network: 'Network outage', signal: 'Signal', incident: 'Incident',
-  feedback: 'Feedback', evaluation: 'Evaluation', fallback_lab: 'Fallback Lab', playbook: 'Playbook', insight: 'Graph insight' };
+  feedback: 'Feedback', evaluation: 'Evaluation', playbook: 'Playbook', insight: 'Graph insight' };
 const KIND_CLS = { analysis: 'info', ask: 'cyan', graph: 'cyan', playbook: 'cyan', insight: 'cyan', search: '', simulation: 'violet',
-  decision: 'ok', triage: 'warn', incident: 'bad', feedback: 'ok', fallback_lab: 'warn', signal: 'warn' };
+  decision: 'ok', triage: 'warn', incident: 'bad', feedback: 'ok', signal: 'warn' };
 state.historyKind = '';
 LOADERS.history = async () => { await loadHistory(); };
 async function loadHistory() {
@@ -876,6 +854,7 @@ async function reopenAnalysis(id, btn) {
     const el = $(`ag-${t.agent}`);
     if (el) { el.className = 'agent done'; el.querySelector('.s').textContent = t.summary || ''; el.querySelector('.t').textContent = `${num(t.ms)} ms`; }
   });
+  (r.decisions || []).forEach(showRoute);
   $('ck-desc').value = (a.input || {}).description || '';
   renderAnalysis(r, r.total_ms || 0);
   toast(`Re-opened analysis from ${new Date(a.ts * 1000).toLocaleString()} (not re-run)`);
@@ -1771,7 +1750,7 @@ const Tower = (() => {
       ${r ? `<div class="ct-result"><div class="ct-stats"><div><span>Priority</span><strong>${esc(((r.impact || {}).priority || {}).level ? r.impact.priority.level.split(' ')[0] : '—')}</strong><em>${esc((r.impact || {}).priority ? r.impact.priority.action_sla : '')}</em></div>
           <div><span>Loss</span><strong>${money((r.recovery || {}).predicted_revenue_loss)}</strong><em>with ${esc((r.recovery || {}).strategy || '')}</em></div>
           <div><span>Recovery</span><strong>${esc((r.recovery || {}).predicted_full_days)}d</strong><em>partial ${esc((r.recovery || {}).predicted_partial_days)}d</em></div></div>
-          <div class="ct-eyebrow" style="margin-top:12px">Response: ${esc((r.plan || {}).primary_strategy)} → fallback ${esc((r.plan || {}).secondary_strategy)}</div>
+          <div class="ct-eyebrow" style="margin-top:12px">Response: ${esc((r.plan || {}).primary_strategy)} → secondary ${esc((r.plan || {}).secondary_strategy)}</div>
           ${(r.plan || {}).procedure ? `<ol class="ct-playbook">${r.plan.procedure.steps.slice(2, 6).map((s) => `<li>${esc(s.text)}</li>`).join('')}</ol>` : ''}
           <div class="ct-sub" style="margin-top:8px">🛡️ Judge: ${esc((r.judge || {}).verdict)} (${Math.round(((r.judge || {}).overall_score || 0) * 100)}%) · fact-check ${(r.fact_check || {}).passed ? 'passed' : 'flagged'}</div></div>` : ''}`;
     $('ct-close').onclick = () => select(null);
@@ -1787,6 +1766,7 @@ const Tower = (() => {
         incident: { disruption_type: type, industry: s.industry, supplier_region: s.supplier_region, supplier_tier: s.supplier_tier,
           supplier_size: s.supplier_size, has_backup_supplier: s.has_backup_supplier, disruption_severity: sev } },
       (ev) => {
+        if (ev.type === 'route') S.steps.supervisor = { status: (ev.next || []).includes('finish') ? 'done' : 'running', name: ev.name, summary: ev.reason };
         if (ev.type === 'agent_start') S.steps[ev.agent] = { status: 'running', name: ev.name };
         if (ev.type === 'agent_done') S.steps[ev.agent] = { status: 'done', name: ev.name, summary: ev.summary };
         if (S.selected === s) panel();
@@ -1952,8 +1932,6 @@ async function boot() {
   bind('inc-seed', async (b) => { await guarded(b, 'Loading', () => post('/incidents/seed-demo', {})); loadIncidents(); });
   bind('ev-run', runEval);
   bind('md-retrain', retrain);
-  bind('lab-reset', async (b) => { await guarded(b, 'Restoring', () => post('/fallback-lab/reset', {})); loadLab(); });
-  bind('lab-test', runSelfTest);
   bind('hist-refresh', () => loadHistory().catch((e) => toast(e.message)));
   bind('hist-clear', async () => {
     if (!confirm('Delete every history entry? Saved analyses stay in the database.')) return;

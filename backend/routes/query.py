@@ -1,6 +1,6 @@
 """
 Agent Copilot Query Routes.
-Invokes the LangGraph multi-agent workflow (streamed over Server-Sent Events or returned whole)
+Invokes the supervisor-led LangGraph agents (streamed over Server-Sent Events or returned whole)
 and the RAG Q&A grounded in Synapt graph-RAG + hybrid retrieval.
 """
 
@@ -33,7 +33,7 @@ def _payload(req: AnalyzeRequest) -> dict:
 
 @router.post("/analyze")
 def analyze(req: AnalyzeRequest):
-    """Run the 7-agent workflow and return the full analysis."""
+    """Run the supervisor-led agents and return the full analysis."""
     ready()
     try:
         return run_sync(_payload(req))
@@ -43,7 +43,7 @@ def analyze(req: AnalyzeRequest):
 
 @router.post("/analyze/stream")
 def analyze_stream(req: AnalyzeRequest):
-    """Server-Sent Events stream of the multi-agent workflow."""
+    """Server-Sent Events stream of the agents and the supervisor's routing decisions."""
     ready()
     payload = _payload(req)
 
@@ -67,23 +67,14 @@ def ask(req: AskRequest):
     ready()
     q = validate_text(req.question, "question")
     filters = compact(req.filters)
-    gfut = _pool.submit(syn.fetch_synapt_rag, q["text"], req.top_k, None, 75, "ask") \
-        if (req.use_graph and syn.configured()) else None
-    sres = hybrid_search(q["text"], filters, req.top_k)
-    graph = None
-    if gfut:
-        try:
-            graph = gfut.result(timeout=80)
-        except Exception as e:  # noqa: BLE001
-            graph = {"error": str(e)[:200]}
-    ctx = [{k: c.get(k) for k in ("disruption_id", "text")} for c in sres["results"]]
-    if graph and graph.get("answer"):  # Synapt's graph-RAG answer is the response
-        answer, method = graph["answer"], "synapt"
-    else:  # extractive fallback when Synapt is off or failed
-        answer, method = ("Most relevant historical cases:\n\n" +
-                          "\n".join(f"- **{c['disruption_id']}** — {c['text']}" for c in ctx[:5])), "extractive"
-    return {"question": q["text"], "answer": answer, "method": method, "sources": sres["results"],
-            "semantic_source": sres["semantic_source"], "fallback_reason": sres["fallback_reason"], "graph": graph}
+    gfut = _pool.submit(syn.fetch_synapt_rag, q["text"], req.top_k, None, 75, "ask")
+    try:
+        sres = hybrid_search(q["text"], filters, req.top_k)
+        graph = gfut.result(timeout=80)
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(502, f"Synapt query failed: {e}") from e
+    return {"question": q["text"], "answer": graph.get("answer") or "", "method": "synapt",
+            "sources": sres["results"], "semantic_source": sres["semantic_source"], "graph": graph}
 
 
 @router.get("/analyses")

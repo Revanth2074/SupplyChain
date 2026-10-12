@@ -1,18 +1,30 @@
 """
-LangGraph Multi-Agent Orchestration Graph.
-Wires the Guardrails, Classifier (Intake), Hybrid Retriever, Synapt Worker, Evidence Fusion,
-Impact, Planner, Recovery, Synthesis (Report) and Judge nodes into a stateful, compiled StateGraph.
+LangGraph Agent-Based Orchestration Graph (supervisor pattern).
+A Supervisor agent sits at the centre. Guardrails run first; after that every agent hands control
+back to the supervisor, which reads the shared state and decides which agent(s) run next, or that
+the analysis is finished. The order is not fixed: the supervisor can run retrieval and the Synapt
+worker in parallel, broaden retrieval when evidence is weak, ask Synapt again, send the briefing
+back for a strict rewrite, or start a revision round when the judge asks for one.
 
     START -> guardrails --(invalid)--> END
                  |
-              classifier
-               /      \\
-   hybrid_retriever   synapt_worker        (run in parallel)
-               \\      /
-            evidence_fusion -> impact_analyzer -> planner -> recovery -> synthesis -> judge -> END
+                 v
+            supervisor <-------------------------------------------+
+                 |  decides next agent(s) from the state            |
+                 +--> classifier           (Intake)                 |
+                 +--> hybrid_retriever  \\  (Investigation, may run  |
+                 +--> synapt_worker     /   in parallel)            |
+                 +--> evidence_fusion                               |
+                 +--> impact_analyzer                               |  every agent
+                 +--> planner                                       |  returns to the
+                 +--> recovery                                      |  supervisor
+                 +--> synthesis        (Report)                     |
+                 +--> judge                                         |
+                 +--> END  (when the supervisor decides it is done) |
+                 ---------------------------------------------------+
 
-Each node streams agent_start / agent_done events (stream_mode="custom") that the console
-shows live over Server-Sent Events.
+Each node streams agent_start / agent_done events and the supervisor streams a `route` event with
+its decision and reason (stream_mode="custom"); the console shows them live over Server-Sent Events.
 """
 
 from __future__ import annotations
@@ -31,53 +43,53 @@ from agents.planner import planner_node
 from agents.recovery import recovery_node
 from agents.retrieval import evidence_fusion_node, hybrid_retrieval_node
 from agents.state import DisruptionAgentState
+from agents.supervisor import route, supervisor_node
 from agents.synapt_tools import synapt_worker_node
 from agents.synthesis import synthesis_node
 from services import feedback
 
+WORKERS = {
+    "classifier": classifier_node,
+    "hybrid_retriever": hybrid_retrieval_node,
+    "synapt_worker": synapt_worker_node,
+    "evidence_fusion": evidence_fusion_node,
+    "impact_analyzer": impact_analysis_node,
+    "planner": planner_node,
+    "recovery": recovery_node,
+    "synthesis": synthesis_node,
+    "judge": judge_node,
+}
+RECURSION_LIMIT = 80  # supersteps; the supervisor's own MAX_ROUTES stops the loop well before this
 
-def guardrail_decision(state: DisruptionAgentState) -> Literal["classifier", "__end__"]:
+
+def guardrail_decision(state: DisruptionAgentState) -> Literal["supervisor", "__end__"]:
     """Conditional routing based on input guardrail checks."""
     guardrail = state.get("guardrail_result")
     if guardrail and not guardrail.get("is_valid", True):
         return END
-    return "classifier"
+    return "supervisor"
 
 
 def build_disruption_agent_graph():
-    """Builds and compiles the multi-agent StateGraph."""
+    """Builds and compiles the supervisor-centred StateGraph."""
     workflow = StateGraph(DisruptionAgentState)
 
-    # 1. Add All Agent Nodes
+    # 1. Guardrails, the supervisor and the worker agents
     workflow.add_node("guardrails", guardrails_node)
-    workflow.add_node("classifier", classifier_node)
-    workflow.add_node("hybrid_retriever", hybrid_retrieval_node)
-    workflow.add_node("synapt_worker", synapt_worker_node)
-    workflow.add_node("evidence_fusion", evidence_fusion_node)
-    workflow.add_node("impact_analyzer", impact_analysis_node)
-    workflow.add_node("planner", planner_node)
-    workflow.add_node("recovery", recovery_node)
-    workflow.add_node("synthesis", synthesis_node)
-    workflow.add_node("judge", judge_node)
+    workflow.add_node("supervisor", supervisor_node)
+    for name, fn in WORKERS.items():
+        workflow.add_node(name, fn)
 
-    # 2. Entry: START -> guardrails -> classifier OR END
+    # 2. Entry: START -> guardrails -> supervisor OR END
     workflow.add_edge(START, "guardrails")
-    workflow.add_conditional_edges("guardrails", guardrail_decision, {"classifier": "classifier", END: END})
+    workflow.add_conditional_edges("guardrails", guardrail_decision, {"supervisor": "supervisor", END: END})
 
-    # 3. Classifier fans out: local hybrid retrieval and the Synapt worker run in parallel
-    workflow.add_edge("classifier", "hybrid_retriever")
-    workflow.add_edge("classifier", "synapt_worker")
+    # 3. The supervisor picks the next agent(s); a list fans out in parallel
+    workflow.add_conditional_edges("supervisor", route, [*WORKERS, END])
 
-    # 4. Both branches join in evidence fusion
-    workflow.add_edge(["hybrid_retriever", "synapt_worker"], "evidence_fusion")
-
-    # 5. Impact -> Planner -> Recovery -> Synthesis -> Judge -> END
-    workflow.add_edge("evidence_fusion", "impact_analyzer")
-    workflow.add_edge("impact_analyzer", "planner")
-    workflow.add_edge("planner", "recovery")
-    workflow.add_edge("recovery", "synthesis")
-    workflow.add_edge("synthesis", "judge")
-    workflow.add_edge("judge", END)
+    # 4. Every agent reports back to the supervisor
+    for name in WORKERS:
+        workflow.add_edge(name, "supervisor")
 
     return workflow.compile()
 
@@ -106,6 +118,7 @@ def _report(state: DisruptionAgentState) -> Dict[str, Any]:
               "graph": graph, "impact": state["impact"], "strategies": state["strategies"], "plan": state["plan"],
               "recovery": state["recovery"], "summary": state["summary"], "facts": state["facts"],
               "fact_check": state["fact_check"], "judge": verdict, "trace": state["trace"],
+              "decisions": state.get("decisions", []),
               "total_ms": int((time.time() - state["started_at"]) * 1000),
               "retrieval_context": [c["text"] for c in cases[:8]] +
                                    ([graph["answer"]] if graph and graph.get("answer") else [])}
@@ -118,7 +131,8 @@ def _report(state: DisruptionAgentState) -> Dict[str, Any]:
 def run_workflow(payload: dict) -> Iterator[dict]:
     """Stream the graph: yields agent_start / agent_done events as nodes run, then {"type": "result"}."""
     final: Dict[str, Any] = {}
-    for mode, chunk in disruption_agent_graph.stream(_initial_state(payload), stream_mode=["custom", "values"]):
+    for mode, chunk in disruption_agent_graph.stream(_initial_state(payload), {"recursion_limit": RECURSION_LIMIT},
+                                                     stream_mode=["custom", "values"]):
         if mode == "custom":
             yield chunk
         else:
@@ -131,7 +145,7 @@ def run_workflow(payload: dict) -> Iterator[dict]:
 
 def run_sync(payload: dict) -> dict:
     """Run the whole workflow and return the final analysis."""
-    state = disruption_agent_graph.invoke(_initial_state(payload))
+    state = disruption_agent_graph.invoke(_initial_state(payload), {"recursion_limit": RECURSION_LIMIT})
     g = state.get("guardrail_result") or {}
     if not g.get("is_valid", False):
         _raise_guardrail(g)
@@ -139,5 +153,5 @@ def run_sync(payload: dict) -> dict:
 
 
 def ask_disruption_assistant(description: str, **options) -> Dict[str, Any]:
-    """Top-level invocation function for the multi-agent system."""
+    """Top-level invocation function for the agent-based system."""
     return run_sync({"description": description, "use_graph": True, "judge": True, "top_k": 8, **options})

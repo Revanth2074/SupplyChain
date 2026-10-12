@@ -96,10 +96,9 @@ def synapt_label_ep(req: LabelRequest):
     v = validate_text(req.description, "description")
     cls = classify(v["text"])
     inc = {**cls["fields"], **(compact(req.incident) or {})}
-    synapt_out: dict[str, Any]
     try:
         # semantic nearest-case vote covers every field; the ticket store (if any) adds its own labels
-        synapt_out = synapt_label(f"{v['text']} {describe(inc)}")
+        synapt_out: dict[str, Any] = synapt_label(f"{v['text']} {describe(inc)}")
         synapt_out["note"] = "Labels vote over the nearest Synapt-retrieved historical cases."
         if (syn.stats() or {}).get("has_ticket_store"):
             try:
@@ -114,7 +113,7 @@ def synapt_label_ep(req: LabelRequest):
             except Exception as e:  # noqa: BLE001
                 synapt_out["ticket_store_error"] = str(e)[:200]
     except Exception as e:  # noqa: BLE001
-        synapt_out = {"method": "unavailable", "error": str(e)[:200], "fields": {}}
+        raise HTTPException(502, f"Synapt labelling failed: {e}") from e
     strat = strategy_table(inc)["strategies"] if inc.get("disruption_type") else []
     best = strat[0]["strategy"] if strat else None
     app_view = {**{k: inc.get(k) for k in ("disruption_type", "industry", "supplier_region")}, "response_type": best}

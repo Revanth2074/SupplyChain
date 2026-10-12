@@ -208,13 +208,13 @@ def seed_demo() -> int:
     with feedback.conn() as c:
         if c.execute("SELECT COUNT(*) FROM incidents").fetchone()[0]:
             return 0
-    from agents.planner import fallback_plan  # template plan, no LLM call
+    from agents.planner import statistics_plan  # template plan, no LLM call
     n = 0
     for inc, title, hours_ago in DEMO:
         pred = registry.predict(inc)
         prio = priority(inc, pred)
         strat = strategy_table(inc)["strategies"]
-        plan = fallback_plan(inc, strat, [])
+        plan = statistics_plan(inc, strat, [])
         acts = [{"title": x["action"], "owner": x["owner"], "due_hours": _timeframe_hours(x["timeframe"], 24)}
                 for x in plan["immediate_actions"]]
         create(f"{title} (demo)", inc, {k: pred[k] for k in ("production_impact_pct", "revenue_loss_usd", "full_recovery_days")},

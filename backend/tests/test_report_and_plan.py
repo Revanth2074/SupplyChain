@@ -1,5 +1,5 @@
 """Report fact-check, plan rationale and Synapt playbook steps (all deterministic, no LLM)."""
-from agents.planner import _rationale, apply_playbook, fallback_plan
+from agents.planner import _rationale, apply_playbook, statistics_plan
 from agents.synthesis import check_report, strip_bad_ids
 
 CASES = [{"disruption_id": "DIS-000123", "revenue_loss_usd": 2_000_000, "production_impact_pct": 40.0,
@@ -45,7 +45,7 @@ def test_rationale_explains_ranking_and_names_fastest():
 
 
 def test_plan_uses_synapt_playbook_steps():
-    plan = fallback_plan({"disruption_type": "Cyber Attack", "has_backup_supplier": False}, STRATS, CASES)
+    plan = statistics_plan({"disruption_type": "Cyber Attack", "has_backup_supplier": False}, STRATS, CASES)
     assert plan["method"] == "statistics"
     assert plan["cited_cases"] == ["DIS-000123"]
     assert any("backup" in r.lower() for r in plan["risks"])

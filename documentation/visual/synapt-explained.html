@@ -111,10 +111,10 @@ h3{margin:0 0 6px;font-size:19px;font-weight:800}
 .gloss{width:100%;border-collapse:collapse;font-size:15px}
 .gloss th,.gloss td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);vertical-align:top}
 .gloss th{color:var(--ink-2);font-size:13px;text-transform:uppercase;letter-spacing:.06em}
-.breaker{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.alarm{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .lamp{width:22px;height:22px;border-radius:50%;background:var(--leaf);box-shadow:0 0 0 4px var(--leaf-soft);transition:.3s}
-.lamp.open{background:var(--tomato);box-shadow:0 0 0 4px var(--tomato-soft)}
-.lamp.half{background:var(--sun);box-shadow:0 0 0 4px var(--sun-soft)}
+.lamp.err{background:var(--tomato);box-shadow:0 0 0 4px var(--tomato-soft)}
+.lamp.cfg{background:var(--sun);box-shadow:0 0 0 4px var(--sun-soft)}
 footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
 /* console section */
 .menu-col h3{display:flex;align-items:center;gap:8px}
@@ -277,13 +277,13 @@ footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
 <!-- ================================================================ HELPERS -->
 <section id="helpers">
   <h2>The little helpers we built around the walkie-talkie</h2>
-  <p class="sub">Real libraries are sometimes busy or closed. These helpers make sure our app never gets stuck.</p>
+  <p class="sub">Our app only works with the big library: there is no plan B. These helpers keep the conversation safe, and when something goes wrong they say so plainly.</p>
   <div class="grid g2">
-    <div class="card"><div class="helper"><div class="emoji">🔌</div><div><h3>The safety switch (circuit breaker)</h3>
-      <p>If the library doesn't answer 3 times in a row, we stop calling for a minute instead of waiting and waiting. Then we try once more.</p>
-      <div class="breaker"><span class="lamp" id="lamp"></span><b id="lampText">Library OK — calls go through</b></div>
-      <div class="row"><button class="btn ghost" id="failBtn" type="button">📵 No answer</button><button class="btn ghost" id="okBtn" type="button">✅ Answer</button><button class="btn ghost" id="waitBtn" type="button">⏱️ Wait 60 s</button></div>
-      <div class="grown">One breaker per tool in <code>agents/synapt_tools.breaker_for</code>; 3 failures open it, 60 s later one trial call (half-open). The API reports <code>semantic_source</code> and <code>fallback_reason</code> so a degraded answer is never hidden.</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">🚨</div><div><h3>The honest alarm (clear errors)</h3>
+      <p>If the library doesn't answer in time, we don't pretend. We stop, tell you which button failed, and the status light in the app turns red.</p>
+      <div class="alarm"><span class="lamp" id="lamp"></span><b id="lampText">Synapt connected — calls go through</b></div>
+      <div class="row"><button class="btn ghost" id="failBtn" type="button">📵 No answer</button><button class="btn ghost" id="okBtn" type="button">✅ Answer</button><button class="btn ghost" id="cardBtn" type="button">🪪 No library card</button></div>
+      <div class="grown">Every tool call in <code>agents/synapt_tools.py</code> has a timeout; a failure raises <code>SynaptError</code>, which reaches the caller: <code>/api/analyze</code> and the stream return an error, <code>/api/ask</code> and <code>/api/synapt/*</code> return HTTP 502. <code>/api/health</code> shows <code>last_failed_tool</code> and <code>last_error</code>. <code>semantic_source</code> is always <code>synapt</code>.</div></div></div></div>
     <div class="card"><div class="helper"><div class="emoji">🎭</div><div><h3>The secret-code decoder (region masks)</h3>
       <p>The library hides place names for privacy, writing <code>[LOCATION_3]</code> instead of “Asia-Pacific”. We learned which code means which place, so we can read the answers.</p>
       <div class="grown"><code>regions</code> bridge in <code>agents/synapt_tools.py</code>: <code>mask()</code> before sending, <code>unmask()</code> after; tokens learned from returned case IDs and saved in <code>artifacts/synapt_region_tokens.json</code>.</div></div></div></div>
@@ -292,13 +292,13 @@ footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
       <div class="grown"><code>call_tool()</code> reads each tool's input schema and injects <code>provider_id</code> only where it is accepted (it is not, for example, on <code>trident_feedback</code>).</div></div></div></div>
     <div class="card"><div class="helper"><div class="emoji">🔁</div><div><h3>Try again (session refresh)</h3>
       <p>If the library says “who are you?” we show our card again. If it forgot our conversation, we say hello again.</p>
-      <div class="grown">401 → re-authenticate; 404 on the MCP session → new <code>initialize</code> handshake; tool errors (<code>isError</code>) raise <code>SynaptError</code> so callers can fall back.</div></div></div></div>
-    <div class="card"><div class="helper"><div class="emoji">🏠</div><div><h3>Our own small library (fallbacks)</h3>
-      <p>If the big library is closed, we still have a small one at home: keyword search and our own copies of all 100,000 cases. Answers are a bit less clever, but we still answer.</p>
-      <div class="grown">Local LSA semantic index + BM25 + profile match in <code>services/data_store.py</code> and <code>agents/retrieval.py</code>. Synapt's semantic leg found the right disruption type 87% of the time vs 68.5% for the local fallback.</div></div></div></div>
-    <div class="card"><div class="helper"><div class="emoji">🧪</div><div><h3>The pretend-it's-broken lab</h3>
-      <p>A button in our app that pretends the library is closed, so we can prove the helpers really work.</p>
-      <div class="grown">Fallback Lab (<code>services/faults.py</code>, <code>services/fallback_lab.py</code>): switches for all Synapt tools, graph-RAG only, or playbooks only. The self-test passes 15/15 with Synapt off.</div></div></div></div>
+      <div class="grown">401 → re-authenticate; 404 on the MCP session → new <code>initialize</code> handshake; tool errors (<code>isError</code>) raise <code>SynaptError</code>, which is passed on to the caller.</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">📒</div><div><h3>Our keyword notebook (extra opinions)</h3>
+      <p>Next to the big library we keep a notebook of all 100,000 cases, searchable by keywords and by what the case looks like. Its picks are mixed with the library's picks as extra opinions, not as a spare library.</p>
+      <div class="grown">BM25 keyword + attribute-profile legs over all 100k rows in <code>services/data_store.py</code> and <code>agents/retrieval.py</code>, fused with Synapt's semantic leg by Reciprocal Rank Fusion. Synapt's semantic leg found the right disruption type 87% of the time.</div></div></div></div>
+    <div class="card"><div class="helper"><div class="emoji">🚦</div><div><h3>The front-door check (start-up)</h3>
+      <p>Before the app opens, we check our library card works and say hello to the librarian. If that fails, the app tells you why instead of opening half-working.</p>
+      <div class="grown"><code>services/bootstrap.py</code>: the first stage, “connecting to Synapt”, checks <code>SYNAPT_USERNAME</code> / <code>PASSWORD</code> / <code>PROVIDER_ID</code>, authenticates and does the MCP handshake; then data, then models, then ready. If Synapt is not configured or unreachable the stage becomes “error”, data endpoints return 503 and the console banner shows the start-up error.</div></div></div></div>
   </div>
 </section>
 
@@ -447,7 +447,7 @@ footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
         <tr><td><b>Graph-RAG</b></td><td>The librarian reads pages, follows the web, then answers.</td><td>Retrieval-augmented generation that also traverses the graph for context.</td></tr>
         <tr><td><b>Confidence</b></td><td>How sure the librarian is, from 0 to 1.</td><td>Synapt's scores: overall, knowledge, procedural and graph confidence.</td></tr>
         <tr><td><b>Ingest</b></td><td>Putting new books on our shelf.</td><td><code>trident_ingest</code>: upload content; Synapt chunks it and extracts graph nodes.</td></tr>
-        <tr><td><b>Circuit breaker</b></td><td>The safety switch.</td><td>Stops calling a failing service for a while so the app stays fast.</td></tr>
+        <tr><td><b>SynaptError</b></td><td>The honest alarm.</td><td>Raised when a Synapt call fails or times out; it reaches the caller as an HTTP 502 or a stream error, and <code>/api/health</code> records it.</td></tr>
       </tbody>
     </table>
   </div>
@@ -457,7 +457,7 @@ footer{padding:50px 0 60px;color:var(--ink-3);font-size:14px;text-align:center}
 <footer>AI-Powered Supply-Chain Disruption Assistant · how the Synapt MCP connector is used · facts taken from <code>backend/synapt/synapt_connector.py</code> and <code>backend/agents/synapt_tools.py</code></footer>
 
 <script>
-// ------------------------------------------------------------------ the 17 tools (from TRIDENT_TOOLS_DEFINITIONS)
+// ------------------------------------------------------------------ the 17 tools (as listed by the live tools/list)
 const TOOLS = [
   { n: 'trident_query', ic: '🧙', s: 'used', kid: 'Ask the librarian a whole question. She reads, follows the web of ideas and answers with a "how sure am I" score.',
     real: 'Graph-RAG answer + confidence (overall, knowledge, procedural, graph) + reasoning subgraph + procedures and episodes it used.',
@@ -466,7 +466,7 @@ const TOOLS = [
   { n: 'trident_get_chunks', ic: '📄', s: 'used', kid: 'Find the pages whose meaning is closest to my question.',
     real: 'Semantic (embedding) search over raw ingested text; returns passages and scores.',
     where: 'The Synapt leg of hybrid search (agents/retrieval.semantic_search_synapt), fused with BM25 and profile matching by Reciprocal Rank Fusion. Also test_connection.py and region learning.',
-    got: 'Similar historical cases (joined back to the CSV by their DIS- id). Right disruption type 87% of the time vs 68.5% offline.' },
+    got: 'Similar historical cases (joined back to the CSV by their DIS- id). Right disruption type 87% of the time.' },
   { n: 'trident_search', ic: '🕸️', s: 'used', kid: 'Find the knots in the spider web that match my words.',
     real: 'Semantic search across graph nodes (entities, concepts, procedures, steps); returns node ids.',
     where: 'agents/synapt_tools.search_nodes, called next to get_chunks in the semantic leg.',
@@ -597,16 +597,16 @@ const MAX = 12;
 document.getElementById('timeline').innerHTML = TL.map(([l, a, b, c, t]) => `<div class="tl-row"><span>${l}</span><div class="tl-track">
   <div class="tl-bar" style="left:${(a / MAX) * 100}%;width:${Math.max(2.5, ((b - a) / MAX) * 100)}%;background:${c}" title="${t}">${(b - a) > 1 ? t : ''}</div></div></div>`).join('');
 
-// ------------------------------------------------------------------ circuit breaker toy
-let fails = 0; let state = 'closed';
+// ------------------------------------------------------------------ status light toy (mirrors the console sidebar)
+let state = 'ok';
 const lamp = document.getElementById('lamp'); const txt = document.getElementById('lampText');
 function paint() {
-  lamp.className = 'lamp' + (state === 'open' ? ' open' : state === 'half' ? ' half' : '');
-  txt.textContent = state === 'open' ? 'Switch OFF — using our home library for 60 s' : state === 'half' ? 'Trying the big library once more…' : `Library OK — calls go through${fails ? ` (${fails}/3 misses)` : ''}`;
+  lamp.className = 'lamp' + (state === 'err' ? ' err' : state === 'cfg' ? ' cfg' : '');
+  txt.textContent = state === 'err' ? 'Synapt error (trident_query) — that request returns HTTP 502' : state === 'cfg' ? 'Synapt not configured — start-up stops with an error' : 'Synapt connected — calls go through';
 }
-document.getElementById('failBtn').onclick = () => { if (state === 'open') return; fails++; if (fails >= 3 || state === 'half') { state = 'open'; } paint(); };
-document.getElementById('okBtn').onclick = () => { if (state === 'open') return; fails = 0; state = 'closed'; paint(); };
-document.getElementById('waitBtn').onclick = () => { if (state === 'open') { state = 'half'; fails = 0; } paint(); };
+document.getElementById('failBtn').onclick = () => { state = 'err'; paint(); };
+document.getElementById('okBtn').onclick = () => { state = 'ok'; paint(); };
+document.getElementById('cardBtn').onclick = () => { state = 'cfg'; paint(); };
 paint();
 
 // ------------------------------------------------------------------ console meters (values read from the Synapt console)

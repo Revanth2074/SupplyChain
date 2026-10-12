@@ -1,5 +1,5 @@
-"""Local dataset store: CSV loading, case text rendering, BM25 keyword index and
-LSA semantic index (used for hybrid search + fallback when Synapt is down)."""
+"""Local dataset store: CSV loading, case text rendering and the BM25 keyword index.
+Semantic retrieval is done by Synapt; this store backs the keyword and profile legs, stats and ML."""
 from __future__ import annotations
 
 import logging
@@ -11,9 +11,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 from rank_bm25 import BM25Okapi
-from sklearn.decomposition import TruncatedSVD
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.preprocessing import normalize
 
 from config import settings
 
@@ -66,17 +63,14 @@ class DataStore:
     """Loads the full dataset; builds indexes over a stratified index sample to
     keep startup fast while the full frame is used for stats & ML."""
 
-    # Cases in the local keyword + LSA index (all 100k by default, ~960 MB RAM). A smaller INDEX_SIZE (e.g. 10000,
-    # ~360 MB) suits low-memory machines; stats, the profile leg and the ML models still use every row.
+    # Cases in the local BM25 keyword index (all 100k by default). A smaller INDEX_SIZE (e.g. 10000)
+    # suits low-memory machines; stats, the profile leg and the ML models still use every row.
     INDEX_SIZE = int(os.getenv("INDEX_SIZE", "100000"))
 
     def __init__(self) -> None:
         self.df: pd.DataFrame | None = None
         self.idx_df: pd.DataFrame | None = None
         self.bm25: BM25Okapi | None = None
-        self.tfidf: TfidfVectorizer | None = None
-        self.svd: TruncatedSVD | None = None
-        self.lsa: np.ndarray | None = None
         self.ready = False
         self._lock = threading.Lock()
 
@@ -94,10 +88,6 @@ class DataStore:
             idx["text"] = [case_text(r) for r in idx.to_dict("records")]
             self.idx_df = idx
             self.bm25 = BM25Okapi([tokenize(t) for t in idx["text"]])
-            self.tfidf = TfidfVectorizer(ngram_range=(1, 2), min_df=2, sublinear_tf=True)
-            X = self.tfidf.fit_transform(idx["text"])
-            self.svd = TruncatedSVD(n_components=96, random_state=42)
-            self.lsa = normalize(self.svd.fit_transform(X))
             self.ready = True
             log.info("DataStore ready: %d rows, %d indexed", len(df), len(idx))
 
@@ -129,11 +119,6 @@ class DataStore:
     # -------------- search --------------
     def keyword_search(self, query: str, filters: dict | None, k: int) -> list[tuple[str, float]]:
         scores = self.bm25.get_scores(tokenize(query))
-        return self._rank(scores, filters, k)
-
-    def semantic_search(self, query: str, filters: dict | None, k: int) -> list[tuple[str, float]]:
-        q = normalize(self.svd.transform(self.tfidf.transform([query])))
-        scores = (self.lsa @ q.T).ravel()
         return self._rank(scores, filters, k)
 
     def _rank(self, scores: np.ndarray, filters: dict | None, k: int) -> list[tuple[str, float]]:
