@@ -174,11 +174,7 @@ pip install -r requirements.txt -c constraints.txt
 
 ```ini
 # Synapt Context Substrate Credentials
-SYNAPT_USERNAME=your_username@prodapt.com
-SYNAPT_PASSWORD=your_password
-SYNAPT_PROVIDER_ID=supply_chain_disruptions
-SYNAPT_AUTH_BASE=https://beta.synapt.ai/auth_service/api/v1/auth/token
-SYNAPT_MCP_URL=https://beta.synapt.ai/tristore/mcp/
+# Synapt connection settings belong in your local backend/.env file.
 
 # External LLM (OpenAI-compatible, aicredits.in) used ONLY as the independent judge
 # (scripts/llm_judge.py, scripts/deepeval_suite.py, POST /api/judge). The workflow never calls it.
